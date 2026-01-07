@@ -976,8 +976,8 @@ export default function TourSystemApp() {
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Contact Name</label>
-                  <input type="text" className="w-full border p-2 rounded text-sm bg-white" placeholder="Who to contact?" value={bookingDetails.contactName} onChange={(e) => setBookingDetails({ ...bookingDetails, contactName: e.target.value })} />
+                  <label className="text-xs font-bold text-gray-500 uppercase">Head Responsible</label>
+                  <input type="text" className="w-full border p-2 rounded text-sm bg-white" placeholder="Name of Head who manages this route" value={bookingDetails.contactName} onChange={(e) => setBookingDetails({ ...bookingDetails, contactName: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase">Tour Code (Optional)</label>
