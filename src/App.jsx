@@ -45,45 +45,23 @@ import {
 } from 'lucide-react';
 
 // --- Mock Data ---
+// === USER DEFINITIONS ===
+// ID 1: Manager (Admin)
+// ID 2: K.Boy - Sale (Head of Round 101)
+// ID 3: K.Anne - Sale (Head of Round 201)
+// ID 4: K.New - Sale (Junior)
 
 const USERS = [
   { id: 1, name: 'K.Admin', role: 'MANAGER', commission: 0, avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 2, name: 'K.Boy', role: 'SALE', commission: 3, avatar: 'https://i.pravatar.cc/150?u=2' }, // Head of 101
-  { id: 3, name: 'K.Anne', role: 'SALE', commission: 5, avatar: 'https://i.pravatar.cc/150?u=3' }, // Head of 201
-  { id: 4, name: 'K.New', role: 'SALE', commission: 2, avatar: 'https://i.pravatar.cc/150?u=4' }, // Normal Sale
+  { id: 2, name: 'K.Boy', role: 'SALE', commission: 3, avatar: 'https://i.pravatar.cc/150?u=2' },
+  { id: 3, name: 'K.Anne', role: 'SALE', commission: 5, avatar: 'https://i.pravatar.cc/150?u=3' },
+  { id: 4, name: 'K.New', role: 'SALE', commission: 2, avatar: 'https://i.pravatar.cc/150?u=4' },
 ];
 
-// Mock Payment Data
-const INITIAL_PAYMENTS = [
-  {
-    id: 1,
-    bookingId: 101,
-    routeId: 1,
-    roundId: 101,
-    saleId: 2,
-    contactName: 'SOMCHAI JAIDEE',
-    totalAmount: 77700,
-    paidAmount: 50000,
-    status: 'partial',
-    createdAt: '2025-12-20',
-    transactions: [
-      { id: 1, date: '2025-12-21', amount: 50000, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-12-21' }
-    ]
-  },
-  {
-    id: 2,
-    bookingId: 201,
-    routeId: 2,
-    roundId: 201,
-    saleId: 3,
-    contactName: 'JOHN DOE',
-    totalAmount: 98700,
-    paidAmount: 0,
-    status: 'pending',
-    createdAt: '2025-12-25',
-    transactions: []
-  }
-];
+// === ROUTES ===
+// ID 1: Beijing Route
+// ID 2: Kunming Route  
+// ID 3: Chengdu Route
 
 const MOCK_ROUTES = [
   { id: 1, name: 'BEIJING - UNIVERSAL STUDIO 5D4N', code: 'BJ-US', price: 25900, image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200' },
@@ -91,12 +69,96 @@ const MOCK_ROUTES = [
   { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, image: 'https://www.asiaodysseytravel.com/images/china-tours/banner/fcd009-chengdu-jiuzhaigou-zhangjiajie-tour.jpg' },
 ];
 
+// === ROUNDS ===
+// Round 101, 102, 103 = Route 1 (BJ-US)
+// Round 201 = Route 2 (KM-LS)
+// Round 301 = Route 3 (CD-JH)
+
 const MOCK_ROUNDS = [
-  { id: 101, routeId: 1, date: '12-16 OCT 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 2, status: 'Selling', headId: 2, head: 'K.Boy' },
-  { id: 102, routeId: 1, date: '19-23 OCT 2025', airline: 'CA', flight: 'CA980', seats: 30, sold: 5, status: 'Selling', headId: 0, head: 'Unassigned' },
-  { id: 201, routeId: 2, date: '20-25 NOV 2025', airline: 'MU', flight: 'MU742', seats: 20, sold: 20, status: 'Full', headId: 3, head: 'K.Anne' },
-  { id: 301, routeId: 3, date: '05-10 DEC 2025', airline: 'TG', flight: 'TG618', seats: 25, sold: 25, status: 'Full', headId: 0, head: 'K.Somchai' },
-  { id: 103, routeId: 1, date: '25-29 DEC 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 12, status: 'Selling', headId: 0, head: 'Unassigned' },
+  { id: 101, routeId: 1, date: '12-16 OCT 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 3, status: 'Selling', headId: 2, head: 'K.Boy', price: { adultTwin: 20000, adultSingle: 25000, adultTriple: 19000, childBed: 18000, childNoBed: 15000 } },
+  { id: 102, routeId: 1, date: '19-23 OCT 2025', airline: 'CA', flight: 'CA980', seats: 30, sold: 5, status: 'Selling', headId: 4, head: 'K.New', price: { adultTwin: 21000, adultSingle: 26000, adultTriple: 20000, childBed: 19000, childNoBed: 16000 } },
+  { id: 201, routeId: 2, date: '20-25 NOV 2025', airline: 'MU', flight: 'MU742', seats: 20, sold: 20, status: 'Full', headId: 3, head: 'K.Anne', price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 } },
+  { id: 301, routeId: 3, date: '05-10 DEC 2025', airline: 'TG', flight: 'TG618', seats: 25, sold: 25, status: 'Full', headId: 2, head: 'K.Boy', price: { adultTwin: 28900, adultSingle: 34900, adultTriple: 26900, childBed: 24900, childNoBed: 21000 } },
+  { id: 103, routeId: 1, date: '25-29 DEC 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 12, status: 'Selling', headId: 3, head: 'K.Anne', price: { adultTwin: 22000, adultSingle: 27000, adultTriple: 21000, childBed: 20000, childNoBed: 17000 } },
+];
+
+// === CUSTOMERS DATABASE ===
+// ownerId = who added this customer to the system
+
+const MOCK_CUSTOMERS_DB = [
+  {
+    id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี',
+    gender: 'M', dob: '1980-04-15', passportNo: 'AA1234567', passportIssue: '2020-01-01', passportExpire: '2025-01-01',
+    birthplace: 'BANGKOK', nationality: 'THAI', phone: '081-234-5678', email: 'somchai@email.com', lineId: 'somchai.j', remark: 'แพ้อาหารทะเล',
+    attachments: { passport: 'passport_scan.pdf', visa: null, ticket: null, insurance: null },
+    ownerId: 2 // Created by K.Boy
+  },
+  {
+    id: 2, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี',
+    gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', passportIssue: '2021-06-15', passportExpire: '2026-06-14',
+    birthplace: 'CHIANG MAI', nationality: 'THAI', phone: '089-999-8888', email: '', lineId: '', remark: '',
+    attachments: { passport: null, visa: null, ticket: null, insurance: null },
+    ownerId: 2 // Created by K.Boy
+  },
+  {
+    id: 3, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว',
+    gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', passportIssue: '2022-01-01', passportExpire: '2032-01-01',
+    birthplace: 'NEW YORK', nationality: 'USA', phone: '+1-555-0199', email: '', lineId: '', remark: 'Child Passenger',
+    attachments: { passport: null, visa: null, ticket: null, insurance: null },
+    ownerId: 3 // Created by K.Anne
+  },
+  {
+    id: 4, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี',
+    gender: 'M', dob: '1990-08-25', passportNo: 'AA84684645', passportIssue: '2023-03-01', passportExpire: '2033-03-01',
+    birthplace: 'BANGKOK', nationality: 'THAI', phone: '092-123-4567', email: 'wasin@email.com', lineId: 'wasin.g', remark: '',
+    attachments: { passport: null, visa: null, ticket: null, insurance: null },
+    ownerId: 1 // Created by K.Admin
+  }
+];
+
+// === PASSENGERS IN ROUND 101 ===
+// bookedBy = who sold/added this pax to the booking
+// This simulates existing bookings in Round 101 (BJ-US, Oct 12-16)
+
+const MOCK_PAX_IN_ROUND_101 = [
+  { ...MOCK_CUSTOMERS_DB[0], room: '101', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial' }, // SOMCHAI - sold by K.Boy
+  { ...MOCK_CUSTOMERS_DB[1], room: '101', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial' }, // SUDA - sold by K.Boy
+  { ...MOCK_CUSTOMERS_DB[2], room: '102', roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending' }  // LUCY - sold by K.Anne
+];
+
+// === INITIAL PAYMENTS ===
+// Payment 1: Booking 101 for Round 101 (BJ-US), partial payment
+// Payment 2: Booking 201 for Round 201 (KM-LS), pending
+
+const INITIAL_PAYMENTS = [
+  {
+    id: 1,
+    bookingId: 101,
+    routeId: 1,        // Route: BJ-US
+    roundId: 101,      // Round: 12-16 OCT 2025
+    saleId: 2,         // Primary sale: K.Boy
+    customerName: 'SOMCHAI JAIDEE GROUP',
+    totalAmount: 55000,  // 2x adultTwin (40,000) + 1x childNoBed (15,000)
+    paidAmount: 30000,
+    status: 'partial',
+    createdAt: '2025-09-20',
+    transactions: [
+      { id: 1, date: '2025-09-21', amount: 30000, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
+    ]
+  },
+  {
+    id: 2,
+    bookingId: 201,
+    routeId: 2,        // Route: KM-LS
+    roundId: 201,      // Round: 20-25 NOV 2025
+    saleId: 3,         // Primary sale: K.Anne
+    customerName: 'CORPORATE BOOKING - ABC CO.',
+    totalAmount: 98700,  // 3x adultTwin
+    paidAmount: 0,
+    status: 'pending',
+    createdAt: '2025-10-15',
+    transactions: []
+  }
 ];
 
 const INITIAL_BLACKLIST_DATA = [
@@ -108,7 +170,8 @@ const INITIAL_ATTACHMENTS = {
   passport: null,
   visa: null,
   ticket: null,
-  insurance: null
+  insurance: null,
+  birthCert: null // For passengers under 15
 };
 
 const INITIAL_CUSTOMER_STATE = {
@@ -126,44 +189,19 @@ const INITIAL_CUSTOMER_STATE = {
   birthplace: '',
   nationality: 'THAI',
   phone: '',
+  email: '',
+  lineId: '',
   remark: '',
   attachments: { ...INITIAL_ATTACHMENTS },
   ownerId: null // Track who created this pax
 };
 
-const MOCK_CUSTOMERS_DB = [
-  {
-    id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี',
-    gender: 'M', dob: '1980-04-15', passportNo: 'AA1234567', passportIssue: '2020-01-01', passportExpire: '2025-01-01',
-    birthplace: 'BANGKOK', nationality: 'THAI', phone: '081-234-5678', remark: 'แพ้อาหารทะเล',
-    attachments: { ...INITIAL_ATTACHMENTS, passport: 'passport_scan.pdf' },
-    ownerId: 2 // Created by K.Boy (Sale)
-  },
-  {
-    id: 2, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี',
-    gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', passportIssue: '2021-06-15', passportExpire: '2026-06-14',
-    birthplace: 'CHIANG MAI', nationality: 'THAI', phone: '089-999-8888', remark: '',
-    ownerId: 2 // Created by K.Boy
-  },
-  {
-    id: 3, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว',
-    gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', passportIssue: '2022-01-01', passportExpire: '2032-01-01',
-    birthplace: 'NEW YORK', nationality: 'USA', phone: '+1-555-0199', remark: 'Child Passenger',
-    ownerId: 3 // Created by K.Anne
-  }
-];
-
-const MOCK_PAX_IN_ROUND_101 = [
-  { ...MOCK_CUSTOMERS_DB[0], room: '101' },
-  { ...MOCK_CUSTOMERS_DB[1], room: '101' },
-  { ...MOCK_CUSTOMERS_DB[2], room: '102' }
-];
-
 const INDIVIDUAL_TASKS = [
   { key: 'passport', label: 'Passport', icon: FileText, color: 'text-[#03b8fa]', bg: 'bg-[#d9edf4]' },
   { key: 'visa', label: 'Visa', icon: ShieldAlert, color: 'text-[#37c3a5]', bg: 'bg-green-50' },
   { key: 'ticket', label: 'Ticket', icon: Plane, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { key: 'insurance', label: 'Ins.', icon: UserCheck, color: 'text-[#fdcf1a]', bg: 'bg-yellow-50' }
+  { key: 'insurance', label: 'Ins.', icon: UserCheck, color: 'text-[#fdcf1a]', bg: 'bg-yellow-50' },
+  { key: 'payment', label: 'Payment', icon: Wallet, color: 'text-green-600', bg: 'bg-green-50' }
 ];
 
 // --- Components ---
@@ -244,7 +282,12 @@ export default function TourSystemApp() {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [selectedPaxForBooking, setSelectedPaxForBooking] = useState([]); // Array of IDs to confirm
+  const [bookingPaxList, setBookingPaxList] = useState([]); // Passengers added to current booking session
+  const [bookingPaxMetadata, setBookingPaxMetadata] = useState({}); // { [paxId]: { addedBy: userId, timestamp: ... } }
+
   const [isBookingConfirmationModalOpen, setIsBookingConfirmationModalOpen] = useState(false);
+  const [viewingSaleId, setViewingSaleId] = useState(null); // ID of sale user to view details
+  const [viewingPaymentId, setViewingPaymentId] = useState(null); // ID of payment to view details
 
   const getPaxForRound = (roundId) => {
     const mockPax = roundId === 101 ? MOCK_PAX_IN_ROUND_101 : [];
@@ -272,11 +315,14 @@ export default function TourSystemApp() {
 
         paxList.forEach(pax => {
           if (!newStatus[pax.id]) {
+            // Auto-check payment if status is 'paid'
+            const isPaid = pax.paymentStatus === 'paid';
             newStatus[pax.id] = {
               passport: { checked: true, file: 'scanned_passport.pdf' },
               visa: { checked: pax.nationality === 'THAI', file: null },
               ticket: { checked: false, file: null },
-              insurance: { checked: false, file: null }
+              insurance: { checked: false, file: null },
+              payment: { checked: isPaid, file: isPaid ? 'receipt.pdf' : null }
             };
             hasChanges = true;
           }
@@ -305,12 +351,12 @@ export default function TourSystemApp() {
 
   const operationProgress = useMemo(() => {
     // Default safe return
-    const safeBreakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0 };
+    const safeBreakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, payment: 0 };
     if (!selectedOpRound || Object.keys(paxTaskStatus).length === 0) {
       return { total: 0, completed: 0, percent: 0, breakdown: safeBreakdown, paxCount: 0 };
     }
     let totalTasks = 0, completedTasks = 0;
-    const breakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0 };
+    const breakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, payment: 0 };
     const paxCount = Object.keys(paxTaskStatus).length;
     Object.values(paxTaskStatus).forEach(tasks => {
       Object.entries(tasks).forEach(([key, task]) => { totalTasks++; if (task.checked) { completedTasks++; breakdown[key]++; } });
@@ -380,7 +426,15 @@ export default function TourSystemApp() {
 
     if (formMode === 'create') {
       const newId = customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1;
-      setCustomers([...customers, { ...saveData, id: newId }]);
+      const newCustomer = { ...saveData, ownerId: currentUser.id, id: newId };
+
+      setCustomers(prev => [...prev, newCustomer]);
+
+      // If we are in booking step 3, also add to bookingPaxList
+      if (bookingStep === 3) {
+        setBookingPaxList(prev => [...prev, newCustomer]);
+        setSelectedPaxForBooking(prev => [...prev, newId]);
+      }
     } else { setCustomers(customers.map(c => c.id === formData.id ? saveData : c)); }
     setIsFormOpen(false);
   };
@@ -413,8 +467,8 @@ export default function TourSystemApp() {
           <div className="bg-[#0279a9] text-white px-6 py-4 flex justify-between items-center rounded-t-xl">
             <h3 className="font-bold flex items-center gap-2 text-lg">
               {formMode === 'create' ? <UserPlus size={20} /> : <Edit2 size={20} />}
-              {formMode === 'create' ? 'Add New Customer' : 'Edit Customer Details'}
-              {!canEdit && <span className="text-xs bg-white/20 px-2 py-0.5 rounded ml-2">View Only</span>}
+              {formMode === 'create' ? 'เพิ่มลูกค้าใหม่' : 'แก้ไขข้อมูลลูกค้า'}
+              {!canEdit && <span className="text-xs bg-white/20 px-2 py-0.5 rounded ml-2">ดูข้อมูลเท่านั้น</span>}
             </h3>
             <button onClick={() => setIsFormOpen(false)} className="hover:bg-[#03b8fa] p-1 rounded"><X size={24} /></button>
           </div>
@@ -422,15 +476,15 @@ export default function TourSystemApp() {
             {alerts.length > 0 && <div className="space-y-2 mb-4">{alerts.map((alert, idx) => <AlertBadge key={idx} type={alert.type} message={alert.msg} />)}</div>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="font-bold text-gray-800 border-b pb-2">Personal Information</h4>
+                <h4 className="font-bold text-gray-800 border-b pb-2">ข้อมูลส่วนตัว</h4>
                 <div className="grid grid-cols-3 gap-3">
-                  <div><label className="text-xs text-gray-500 font-medium">Title</label><select className="w-full border rounded p-2 text-sm" value={formData.title} onChange={e => handleFormChange('title', e.target.value)}><option value="MR">MR</option><option value="MS">MS</option><option value="MRS">MRS</option><option value="MSTR">MSTR</option><option value="MISS">MISS</option></select></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Gender</label><select className="w-full border rounded p-2 text-sm" value={formData.gender} onChange={e => handleFormChange('gender', e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Birth Date</label><input type="date" className="w-full border rounded p-2 text-sm" value={formData.dob} onChange={e => handleFormChange('dob', e.target.value)} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">คำนำหน้า</label><select className="w-full border rounded p-2 text-sm" value={formData.title} onChange={e => handleFormChange('title', e.target.value)}><option value="MR">MR</option><option value="MS">MS</option><option value="MRS">MRS</option><option value="MSTR">MSTR</option><option value="MISS">MISS</option></select></div>
+                  <div><label className="text-xs text-gray-500 font-medium">เพศ</label><select className="w-full border rounded p-2 text-sm" value={formData.gender} onChange={e => handleFormChange('gender', e.target.value)}><option value="M">ชาย</option><option value="F">หญิง</option></select></div>
+                  <div><label className="text-xs text-gray-500 font-medium">วันเกิด (วว/ดด/ปปปป)</label><input type="date" className="w-full border rounded p-2 text-sm" value={formData.dob} onChange={e => handleFormChange('dob', e.target.value)} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-xs text-gray-500 font-medium">First Name (EN)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="SOMCHAI" value={formData.firstNameEn} onChange={e => handleFormChange('firstNameEn', e.target.value.toUpperCase())} /></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Last Name (EN)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="JAIDEE" value={formData.lastNameEn} onChange={e => handleFormChange('lastNameEn', e.target.value.toUpperCase())} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">ชื่อ (อังกฤษ)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="SOMCHAI" value={formData.firstNameEn} onChange={e => handleFormChange('firstNameEn', e.target.value.toUpperCase())} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">นามสกุล (อังกฤษ)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="JAIDEE" value={formData.lastNameEn} onChange={e => handleFormChange('lastNameEn', e.target.value.toUpperCase())} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="text-xs text-gray-500 font-medium">ชื่อ (ไทย)</label><input type="text" className="w-full border rounded p-2 text-sm" placeholder="สมชาย" value={formData.firstNameTh} onChange={e => handleFormChange('firstNameTh', e.target.value)} /></div>
@@ -438,61 +492,88 @@ export default function TourSystemApp() {
                 </div>
               </div>
               <div className="space-y-4">
-                <h4 className="font-bold text-gray-800 border-b pb-2">Passport & Visa Data</h4>
+                <h4 className="font-bold text-gray-800 border-b pb-2">ข้อมูลพาสปอร์ต & วีซ่า</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-xs text-gray-500 font-medium">Passport No.</label><input type="text" className="w-full border rounded p-2 text-sm font-mono uppercase" placeholder="AA1234567" value={formData.passportNo} onChange={e => handleFormChange('passportNo', e.target.value.toUpperCase())} /></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Nationality</label><select className="w-full border rounded p-2 text-sm" value={formData.nationality} onChange={e => handleFormChange('nationality', e.target.value)}><option value="THAI">THAI</option><option value="USA">USA</option><option value="CHINA">CHINA</option><option value="UK">UK</option><option value="OTHER">OTHER</option></select></div>
+                  <div><label className="text-xs text-gray-500 font-medium">เลขที่พาสปอร์ต</label><input type="text" className="w-full border rounded p-2 text-sm font-mono uppercase" placeholder="AA1234567" value={formData.passportNo} onChange={e => handleFormChange('passportNo', e.target.value.toUpperCase())} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">สัญชาติ</label><select className="w-full border rounded p-2 text-sm" value={formData.nationality} onChange={e => handleFormChange('nationality', e.target.value)}><option value="THAI">THAI</option><option value="USA">USA</option><option value="CHINA">CHINA</option><option value="UK">UK</option><option value="OTHER">OTHER</option></select></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="text-xs text-gray-500 font-medium">Issue Date</label><input type="date" className="w-full border rounded p-2 text-sm" value={formData.passportIssue} onChange={e => handleFormChange('passportIssue', e.target.value)} /></div>
-                  <div><label className="text-xs text-gray-500 font-medium text-[#03b8fa]">Expire Date</label><input type="date" className="w-full border border-primary-200 bg-[#d9edf4] rounded p-2 text-sm" value={formData.passportExpire} onChange={e => handleFormChange('passportExpire', e.target.value)} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">วันที่ออก</label><input type="date" className="w-full border rounded p-2 text-sm" value={formData.passportIssue} onChange={e => handleFormChange('passportIssue', e.target.value)} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium text-[#03b8fa]">วันหมดอายุ</label><input type="date" className="w-full border border-primary-200 bg-[#d9edf4] rounded p-2 text-sm" value={formData.passportExpire} onChange={e => handleFormChange('passportExpire', e.target.value)} /></div>
                 </div>
-                <div><label className="text-xs text-gray-500 font-medium">Birth Place (Province/City)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="BANGKOK" value={formData.birthplace} onChange={e => handleFormChange('birthplace', e.target.value.toUpperCase())} /><p className="text-[10px] text-gray-400">Important for China Visa application</p></div>
+                <div><label className="text-xs text-gray-500 font-medium">สถานที่เกิด (จังหวัด/เมือง)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="BANGKOK" value={formData.birthplace} onChange={e => handleFormChange('birthplace', e.target.value.toUpperCase())} /><p className="text-[10px] text-gray-400">จำเป็นสำหรับการขอวีซ่าจีน</p></div>
               </div>
               <div className="col-span-1 md:col-span-2 space-y-4">
-                <h4 className="font-bold text-gray-800 border-b pb-2">Documents & Attachments</h4>
+                <h4 className="font-bold text-gray-800 border-b pb-2">เอกสารแนบ</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {['passport', 'visa', 'ticket', 'insurance'].map((docType) => (
-                    <div key={docType} className="border rounded-lg p-3 bg-gray-50 flex flex-col items-center text-center">
-                      <div className="mb-2 p-2 bg-white rounded-full shadow-sm">
-                        {formData.attachments?.[docType] ? <FileText size={20} className="text-green-600" /> : <Plus size={20} className="text-gray-400" />}
+
+                  {/* Calculate age from DOB to determine if birthCert needed */}
+                  {(() => {
+                    const calculateAge = (dob) => {
+                      if (!dob) return 99;
+                      const birthDate = new Date(dob);
+                      const today = new Date();
+                      return today.getFullYear() - birthDate.getFullYear();
+                    };
+                    const age = calculateAge(formData.dob);
+                    const isUnder15 = age < 15;
+
+                    // Include birthCert if under 15
+                    const docTypes = isUnder15
+                      ? ['passport', 'birthCert', 'visa', 'ticket', 'insurance']
+                      : ['passport', 'visa', 'ticket', 'insurance'];
+                    const docLabels = {
+                      passport: 'หน้าพาสปอร์ต',
+                      visa: 'วีซ่า',
+                      ticket: 'ตั๋วเครื่องบิน',
+                      insurance: 'ประกันเดินทาง',
+                      birthCert: 'สูติบัตร'
+                    };
+
+                    return docTypes.map((docType) => (
+                      <div key={docType} className={`border rounded-lg p-3 flex flex-col items-center text-center ${docType === 'birthCert' ? 'bg-pink-50 border-pink-200' : 'bg-gray-50'}`}>
+                        <div className={`mb-2 p-2 rounded-full shadow-sm ${docType === 'birthCert' ? 'bg-pink-100' : 'bg-white'}`}>
+                          {formData.attachments?.[docType] ? <FileText size={20} className="text-green-600" /> : <Plus size={20} className={docType === 'birthCert' ? 'text-pink-400' : 'text-gray-400'} />}
+                        </div>
+                        <label className={`text-xs font-bold uppercase mb-1 ${docType === 'birthCert' ? 'text-pink-600' : 'text-gray-600'}`}>{docLabels[docType] || docType}</label>
+                        {docType === 'birthCert' && <div className="text-[9px] text-pink-500 mb-1">(อายุต่ำกว่า 15 ปี)</div>}
+                        <div className="text-[10px] text-gray-400 truncate w-full mb-2">
+                          {formData.attachments?.[docType] ? formData.attachments[docType] : 'ไม่มีไฟล์'}
+                        </div>
+                        <div className="flex gap-1 w-full justify-center">
+                          <label className={`cursor-pointer border px-2 py-1 rounded text-[10px] hover:opacity-80 ${docType === 'birthCert' ? 'bg-pink-100 border-pink-300 text-pink-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+                            อัปโหลด
+                            <input type="file" className="hidden" onChange={(e) => handleFileAttach(docType, e.target.files[0])} />
+                          </label>
+                          {formData.attachments?.[docType] && (
+                            <button
+                              onClick={() => window.alert(`Opening ${formData.attachments[docType]}...`)}
+                              className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded text-[10px] hover:bg-blue-100"
+                            >
+                              ดูไฟล์
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <label className="text-xs font-bold uppercase text-gray-600 mb-1">{docType}</label>
-                      <div className="text-[10px] text-gray-400 truncate w-full mb-2">
-                        {formData.attachments?.[docType] ? formData.attachments[docType] : 'No file'}
-                      </div>
-                      <div className="flex gap-1 w-full justify-center">
-                        <label className="cursor-pointer bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded text-[10px] hover:bg-gray-50">
-                          Upload
-                          <input type="file" className="hidden" onChange={(e) => handleFileAttach(docType, e.target.files[0])} />
-                        </label>
-                        {formData.attachments?.[docType] && (
-                          <button
-                            onClick={() => window.alert(`Opening ${formData.attachments[docType]}...`)}
-                            className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded text-[10px] hover:bg-blue-100"
-                          >
-                            View
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
               <div className="col-span-1 md:col-span-2 space-y-4">
-                <h4 className="font-bold text-gray-800 border-b pb-2">Contact & Additional Info</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-xs text-gray-500 font-medium">Phone Number</label><input type="tel" className="w-full border rounded p-2 text-sm" placeholder="08X-XXX-XXXX" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} /></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Ticket No. (Optional)</label><input type="text" className="w-full border rounded p-2 text-sm" placeholder="999-XXXXXXXXXX" /></div>
+                <h4 className="font-bold text-gray-800 border-b pb-2">ข้อมูลการติดต่อ</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div><label className="text-xs text-gray-500 font-medium">เบอร์โทรศัพท์</label><input type="tel" className="w-full border rounded p-2 text-sm" placeholder="08X-XXX-XXXX" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">อีเมล</label><input type="email" className="w-full border rounded p-2 text-sm" placeholder="user@example.com" value={formData.email} onChange={e => handleFormChange('email', e.target.value)} /></div>
+                  <div><label className="text-xs text-gray-500 font-medium">ไลน์ (Line ID)</label><input type="text" className="w-full border rounded p-2 text-sm" placeholder="@lineid" value={formData.lineId} onChange={e => handleFormChange('lineId', e.target.value)} /></div>
                 </div>
-                <div><label className="text-xs text-gray-500 font-medium">Remark (Allergies, Wheelchair, etc.)</label><textarea className="w-full border rounded p-2 text-sm h-20" placeholder="e.g. No beef, Aisle seat request" value={formData.remark} onChange={e => handleFormChange('remark', e.target.value)}></textarea></div>
+                <div><label className="text-xs text-gray-500 font-medium">หมายเหตุ (แพ้อาหาร, วีลแชร์, ฯลฯ)</label><textarea className="w-full border rounded p-2 text-sm h-20" placeholder="e.g. ไม่ทานเนื้อ, ขอนั่งริมทางเดิน" value={formData.remark} onChange={e => handleFormChange('remark', e.target.value)}></textarea></div>
               </div>
             </div>
           </div>
           <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl border-t">
-            <button onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancel</button>
-            {canEdit && <button onClick={saveCustomer} disabled={alerts.some(a => a.type === 'danger')} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-medium hover:bg-[#0279a9] disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"><Save size={18} /> Save Customer</button>}
+            <button onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">ยกเลิก</button>
+            {canEdit && <button onClick={saveCustomer} disabled={alerts.some(a => a.type === 'danger')} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-medium hover:bg-[#0279a9] disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"><Save size={18} /> บันทึกข้อมูล</button>}
           </div>
         </div>
       </div>
@@ -502,21 +583,21 @@ export default function TourSystemApp() {
   const renderCRM = () => (
     <div className="space-y-6 h-full flex flex-col">
       <header className="flex justify-between items-center mb-2">
-        <div><h1 className="text-2xl font-bold text-gray-800">CRM & Blacklist</h1><p className="text-gray-500 text-sm">Customer Database and Security Management</p></div>
+        <div><h1 className="text-2xl font-bold text-gray-800">ฐานข้อมูลลูกค้า</h1><p className="text-gray-500 text-sm">Customer Database and Security Management</p></div>
         <div className="flex bg-gray-100 p-1 rounded-lg">
-          <button onClick={() => setCrmSubTab('customers')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${crmSubTab === 'customers' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Customer List</button>
-          <button onClick={() => setCrmSubTab('blacklist')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${crmSubTab === 'blacklist' ? 'bg-[#03b8fa] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ShieldAlert size={14} /> Blacklist</button>
+          <button onClick={() => setCrmSubTab('customers')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${crmSubTab === 'customers' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>รายชื่อลูกค้า</button>
+          <button onClick={() => setCrmSubTab('blacklist')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${crmSubTab === 'blacklist' ? 'bg-[#03b8fa] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ShieldAlert size={14} /> บัญชีดำ</button>
         </div>
       </header>
       {crmSubTab === 'customers' ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 overflow-hidden flex flex-col animate-fade-in">
           <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-            <div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search customer..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#6bc8e9] w-64" /></div>
-            <button onClick={() => openCustomerForm()} className="bg-[#03b8fa] text-white px-3 py-2 rounded-lg text-sm hover:bg-[#0279a9] flex items-center gap-2"><Plus size={16} /> Add Customer</button>
+            <div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="ค้นหาลูกค้า..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#6bc8e9] w-64" /></div>
+            <button onClick={() => openCustomerForm()} className="bg-[#03b8fa] text-white px-3 py-2 rounded-lg text-sm hover:bg-[#0279a9] flex items-center gap-2"><Plus size={16} /> เพิ่มลูกค้าใหม่</button>
           </div>
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">Name</th><th className="px-6 py-3 font-medium">Passport Info</th><th className="px-6 py-3 font-medium">Personal</th><th className="px-6 py-3 font-medium">Contact / Remark</th><th className="px-6 py-3 font-medium text-right">Actions</th></tr></thead>
+              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">ชื่อ-นามสกุล</th><th className="px-6 py-3 font-medium">ข้อมูลพาสปอร์ต</th><th className="px-6 py-3 font-medium">ส่วนตัว</th><th className="px-6 py-3 font-medium">ติดต่อ / หมายเหตุ</th><th className="px-6 py-3 font-medium text-right">จัดการ</th></tr></thead>
               <tbody className="divide-y divide-gray-100">
                 {customers.map(customer => (
                   <tr key={customer.id} className="hover:bg-gray-50 group">
@@ -530,27 +611,27 @@ export default function TourSystemApp() {
               </tbody>
             </table>
           </div>
-          <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 text-xs text-gray-500 flex justify-between"><span>Showing {customers.length} records</span><span>Database v1.0.2</span></div>
+          <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 text-xs text-gray-500 flex justify-between"><span>แสดงบัญชี: {customers.length} รายการ</span><span>Database v1.0.2</span></div>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-primary-200 flex-1 overflow-hidden flex flex-col animate-fade-in relative">
           {isBlacklistFormOpen && (
             <div className="absolute inset-0 bg-white/95 z-20 flex items-center justify-center p-8">
               <div className="w-full max-w-md bg-white border border-gray-200 shadow-xl rounded-xl p-6">
-                <h3 className="text-lg font-bold text-[#0279a9] mb-4 flex items-center gap-2"><Ban /> Add to Blacklist</h3>
+                <h3 className="text-lg font-bold text-[#0279a9] mb-4 flex items-center gap-2"><Ban /> เพิ่มรายชื่อบัญชีดำ</h3>
                 <div className="space-y-4">
-                  <div><label className="text-sm font-medium text-gray-700">Full Name (English)</label><input type="text" className="w-full border p-2 rounded uppercase" placeholder="SOMCHAI BADGUY" value={blacklistFormData.name} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, name: e.target.value.toUpperCase() })} /></div>
-                  <div><label className="text-sm font-medium text-gray-700">Passport / ID Card</label><input type="text" className="w-full border p-2 rounded uppercase font-mono" placeholder="A1234567" value={blacklistFormData.passport} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, passport: e.target.value.toUpperCase() })} /></div>
-                  <div><label className="text-sm font-medium text-gray-700">Reason</label><textarea className="w-full border p-2 rounded" placeholder="Why is this person blacklisted?" value={blacklistFormData.reason} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, reason: e.target.value })}></textarea></div>
-                  <div className="flex justify-end gap-3 pt-2"><button onClick={() => setIsBlacklistFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button><button onClick={handleBlacklistSubmit} className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg hover:bg-[#0279a9]">Add to Blacklist</button></div>
+                  <div><label className="text-sm font-medium text-gray-700">ชื่อ-นามสกุล (อังกฤษ)</label><input type="text" className="w-full border p-2 rounded uppercase" placeholder="SOMCHAI BADGUY" value={blacklistFormData.name} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, name: e.target.value.toUpperCase() })} /></div>
+                  <div><label className="text-sm font-medium text-gray-700">เลขพาสปอร์ต / บัตรประชาชน</label><input type="text" className="w-full border p-2 rounded uppercase font-mono" placeholder="A1234567" value={blacklistFormData.passport} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, passport: e.target.value.toUpperCase() })} /></div>
+                  <div><label className="text-sm font-medium text-gray-700">สาเหตุที่โดนแบน</label><textarea className="w-full border p-2 rounded" placeholder="ระบุสาเหตุ..." value={blacklistFormData.reason} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, reason: e.target.value })}></textarea></div>
+                  <div className="flex justify-end gap-3 pt-2"><button onClick={() => setIsBlacklistFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button><button onClick={handleBlacklistSubmit} className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg hover:bg-[#0279a9]">ยืนยันเพิ่ม Blacklist</button></div>
                 </div>
               </div>
             </div>
           )}
-          <div className="p-4 bg-[#d9edf4] border-b border-red-100 flex justify-between items-center"><div className="flex items-center gap-2 text-red-800 font-bold"><ShieldAlert size={20} /> High Risk Individuals ({blacklist.length})</div><button onClick={() => setIsBlacklistFormOpen(true)} className="bg-white border border-primary-200 text-[#0279a9] px-3 py-2 rounded-lg text-sm hover:bg-[#d9edf4] flex items-center gap-2"><Plus size={16} /> Add Blacklist</button></div>
+          <div className="p-4 bg-[#d9edf4] border-b border-red-100 flex justify-between items-center"><div className="flex items-center gap-2 text-red-800 font-bold"><ShieldAlert size={20} /> รายชื่อบุคคลเฝ้าระวัง ({blacklist.length})</div><button onClick={() => setIsBlacklistFormOpen(true)} className="bg-white border border-primary-200 text-[#0279a9] px-3 py-2 rounded-lg text-sm hover:bg-[#d9edf4] flex items-center gap-2"><Plus size={16} /> เพิ่ม Blacklist</button></div>
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">Name</th><th className="px-6 py-3 font-medium">ID / Passport</th><th className="px-6 py-3 font-medium">Reason</th><th className="px-6 py-3 font-medium text-right">Action</th></tr></thead>
+              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">ชื่อ-นามสกุล</th><th className="px-6 py-3 font-medium">ID / Passport</th><th className="px-6 py-3 font-medium">สาเหตุ</th><th className="px-6 py-3 font-medium text-right">ลบ</th></tr></thead>
               <tbody className="divide-y divide-gray-100">{blacklist.map(person => (<tr key={person.id} className="hover:bg-[#d9edf4] group transition-colors"><td className="px-6 py-4 font-bold text-gray-800">{person.name}</td><td className="px-6 py-4 font-mono text-gray-600">{person.passport}</td><td className="px-6 py-4 text-[#03b8fa]">{person.reason}</td><td className="px-6 py-4 text-right"><button onClick={() => deleteBlacklist(person.id)} className="text-gray-400 hover:text-[#03b8fa] p-2"><Trash2 size={16} /></button></td></tr>))}</tbody>
             </table>
           </div>
@@ -559,21 +640,153 @@ export default function TourSystemApp() {
     </div>
   );
 
-  const renderDashboard = () => (
-    <div className="space-y-6 animate-fade-in">
-      <header className="flex justify-between items-center mb-6"><div><h1 className="text-2xl font-bold text-gray-800">Executive Dashboard</h1><p className="text-gray-500 text-sm">Welcome back, K.Admin</p></div><button className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg shadow-sm hover:bg-[#0279a9] transition flex items-center gap-2" onClick={() => setActiveTab('booking')}><Plus size={18} /> New Booking</button></header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6"><StatCard title="Total Sales (Month)" value="฿2.4M" subtext="+12% from last month" icon={CreditCard} color="green" /><StatCard title="Active Tours" value="8 Groups" subtext="In operation pipeline" icon={Plane} color="blue" /><StatCard title="Pending Tasks" value="14 Tasks" subtext="Needs attention" icon={AlertTriangle} color="red" /></div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">Upcoming Tours Status</h3><span className="text-xs text-blue-600 cursor-pointer hover:underline">View All</span></div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-gray-500"><tr><th className="px-6 py-3 font-medium">Route</th><th className="px-6 py-3 font-medium">Date</th><th className="px-6 py-3 font-medium">Pax</th><th className="px-6 py-3 font-medium">Head</th><th className="px-6 py-3 font-medium">Progress</th></tr></thead>
-            <tbody className="divide-y divide-gray-100">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; return (<tr key={round.id} className="hover:bg-gray-50"><td className="px-6 py-4 font-medium text-gray-800">{route?.code}</td><td className="px-6 py-4 text-gray-600">{round.date}</td><td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>{round.sold}/{round.seats}</span></td><td className="px-6 py-4 text-gray-600">{round.head}</td><td className="px-6 py-4"><div className="w-24 bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div></div></td></tr>); })}</tbody>
-          </table>
+  const renderDashboard = () => {
+    // Dynamic Stats Calculation
+    const totalSales = payments.reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalRevenue = payments.reduce((sum, p) => sum + p.paidAmount, 0); // Actual cash in (optional stat)
+    // Note: User asked for "Total Sales" to update. We use 'totalAmount' (Booked Value). 
+    // If they want 'Cash Received', we'd use 'paidAmount'. Given context of "Sales", we usually mean Booked Value.
+
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <header className="flex justify-between items-center mb-6"><div><h1 className="text-2xl font-bold text-gray-800">แผงควบคุมผู้บริหาร</h1><p className="text-gray-500 text-sm">ยินดีต้อนรับ, K.Admin</p></div><button className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg shadow-sm hover:bg-[#0279a9] transition flex items-center gap-2" onClick={() => setActiveTab('booking')}><Plus size={18} /> จองทัวร์ใหม่</button></header>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard title="ยอดขายรวม (Booking Value)" value={`฿${totalSales.toLocaleString()}`} subtext="ยอดรวมจากการจองทั้งหมด" icon={CreditCard} color="green" />
+          <StatCard title="ยอดรับชำระแล้ว" value={`฿${totalRevenue.toLocaleString()}`} subtext="เงินสดที่ได้รับแล้ว" icon={Wallet} color="blue" />
+          <StatCard title="ทัวร์ที่กำลังออกเดินทาง" value="8 กรุ๊ป" subtext="อยู่ในระหว่างดำเนินการ" icon={Plane} />
+          <StatCard title="งานที่รอตรวจสอบ" value="14 รายการ" subtext="ต้องการการดำเนินการ" icon={AlertTriangle} color="red" />
         </div>
-      </div>
-    </div>
-  );
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">สถานะทัวร์เร็วๆนี้</h3><span className="text-xs text-blue-600 cursor-pointer hover:underline">ดูทั้งหมด</span></div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-gray-500"><tr><th className="px-6 py-3 font-medium">เส้นทาง</th><th className="px-6 py-3 font-medium">วันที่</th><th className="px-6 py-3 font-medium">ลูกทัวร์</th><th className="px-6 py-3 font-medium">หัวหน้าทัวร์</th><th className="px-6 py-3 font-medium">ความคืบหน้า</th></tr></thead>
+              <tbody className="divide-y divide-gray-100">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; return (<tr key={round.id} className="hover:bg-gray-50"><td className="px-6 py-4 font-medium text-gray-800">{route?.code}</td><td className="px-6 py-4 text-gray-600">{round.date}</td><td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>{round.sold}/{round.seats}</span></td><td className="px-6 py-4 text-gray-600">{round.head}</td><td className="px-6 py-4"><div className="w-24 bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div></div></td></tr>); })}</tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Commission Report Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} /> รายงานค่าคอมมิชชั่น (Sales Commission)</h3>
+            <span className="text-xs text-gray-400">คำนวณจากยอดที่ชำระแล้ว (Paid Amount)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-gray-500">
+                <tr>
+                  <th className="px-6 py-3 font-medium">พนักงานขาย</th>
+                  <th className="px-6 py-3 font-medium text-right">ยอดขายรวม</th>
+                  <th className="px-6 py-3 font-medium text-right">ยอดรับชำระแล้ว</th>
+                  <th className="px-6 py-3 font-medium text-center">Rate</th>
+                  <th className="px-6 py-3 font-bold text-[#37c3a5] text-right">ค่าคอมมิชชั่น</th>
+                  <th className="px-6 py-3 text-center"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {appUsers.filter(u => u.role === 'SALE').map(user => {
+                  // Aggregate sales for this user
+                  const userPayments = payments.filter(p => p.saleId === user.id);
+                  const totalSales = userPayments.reduce((sum, p) => sum + p.totalAmount, 0);
+                  const totalPaid = userPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+                  const commission = totalPaid * (user.commission / 100);
+
+                  return (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-800">{user.name}</div>
+                        <div className="text-xs text-gray-400">{user.role}</div>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-gray-600">฿{totalSales.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right font-mono font-medium text-blue-600">฿{totalPaid.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center text-xs bg-gray-50 rounded mx-auto w-fit">{user.commission}%</td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-[#37c3a5]">฿{commission.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => setViewingSaleId(user.id)} className="p-2 text-gray-400 hover:text-[#03b8fa] hover:bg-blue-50 rounded-full transition">
+                          <ArrowRight size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {appUsers.filter(u => u.role === 'SALE').length === 0 && (
+                  <tr><td colSpan="5" className="text-center py-8 text-gray-400">ไม่พบข้อมูลพนักงานขาย</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        {/* Sale Detail Modal */}
+        {
+          viewingSaleId && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+                {(() => {
+                  const user = appUsers.find(u => u.id === viewingSaleId);
+                  const userPayments = payments.filter(p => p.saleId === viewingSaleId);
+                  const totalCommission = userPayments.reduce((sum, p) => sum + (p.paidAmount * (user.commission / 100)), 0);
+
+                  return (
+                    <>
+                      <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
+                        <div>
+                          <h3 className="font-bold text-lg flex items-center gap-2"><Wallet size={20} /> รายละเอียดยอดขาย: {user?.name}</h3>
+                          <p className="text-gray-400 text-xs">Commission Rate: {user?.commission}% | Total Earned: ฿{totalCommission.toLocaleString()}</p>
+                        </div>
+                        <button onClick={() => setViewingSaleId(null)} className="hover:bg-gray-700 p-1 rounded"><X size={20} /></button>
+                      </header>
+                      <div className="p-6 overflow-y-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-gray-50 text-gray-500 border-b">
+                            <tr>
+                              <th className="px-4 py-3">วันที่ / รายการจ่าย</th>
+                              <th className="px-4 py-3 md:table-cell hidden">เส้นทาง</th>
+                              <th className="px-4 py-3">ลูกค้า</th>
+                              <th className="px-4 py-3 text-right">ยอดรับชำระ</th>
+                              <th className="px-4 py-3 text-right text-[#37c3a5] font-bold">คอมมิชชั่น</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {userPayments.length > 0 ? userPayments.map(p => {
+                              const route = routes.find(r => r.id === p.routeId);
+                              const comm = p.paidAmount * (user.commission / 100);
+                              return (
+                                <tr key={p.id}>
+                                  <td className="px-4 py-3">
+                                    <div className="font-mono text-xs text-gray-500">{p.createdAt}</div>
+                                    <div className="text-xs text-blue-600">ID: #{p.id}</div>
+                                  </td>
+                                  <td className="px-4 py-3 md:table-cell hidden">
+                                    <div className="font-medium text-gray-800">{route?.code}</div>
+                                    <div className="text-xs text-gray-500 truncate max-w-[150px]">{route?.name}</div>
+                                  </td>
+                                  <td className="px-4 py-3 text-gray-700">{p.customerName}</td>
+                                  <td className="px-4 py-3 text-right font-mono">฿{p.paidAmount.toLocaleString()}</td>
+                                  <td className="px-4 py-3 text-right font-mono font-bold text-[#37c3a5]">฿{comm.toLocaleString()}</td>
+                                </tr>
+                              );
+                            }) : (
+                              <tr><td colSpan="5" className="text-center py-8 text-gray-400">ยังไม่มีรายการขายที่ชำระเงินแล้ว</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="bg-gray-50 px-6 py-4 flex justify-end border-t">
+                        <button onClick={() => setViewingSaleId(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิดหน้าต่าง</button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )
+        }
+      </div >
+    );
+  };
 
   // --- Helper for Complex Pricing ---
   const formatPrice = (p) => p ? `฿${p.toLocaleString()}` : '-';
@@ -582,20 +795,20 @@ export default function TourSystemApp() {
     const isNew = !editorRoute.id;
 
     const handleSaveRouteDetails = () => {
-      if (!editorRoute.name || !editorRoute.code) return alert("Name and Code are required");
+      if (!editorRoute.name || !editorRoute.code) return alert("กรุณาระบุชื่อและรหัสเส้นทาง");
       if (isNew) {
         const newRoute = { ...editorRoute, id: Date.now() };
         setRoutes([...routes, newRoute]);
         setEditorRoute(newRoute);
-        alert("Route Created! You can now add rounds.");
+        alert("สร้างเส้นทางเรียบร้อย! สามารถเพิ่มรอบเดินทางได้แล้ว");
       } else {
         setRoutes(routes.map(r => r.id === editorRoute.id ? editorRoute : r));
-        alert("Route Saved!");
+        alert("บันทึกข้อมูลเรียบร้อย");
       }
     };
 
     const handleAddRound = () => {
-      if (isNew && !routes.find(r => r.id === editorRoute.id)) return alert("Please Save Basic Info First");
+      if (isNew && !routes.find(r => r.id === editorRoute.id)) return alert("กรุณาบันทึกข้อมูลทั่วไปก่อนเพิ่มรอบ");
       const newRound = {
         id: Date.now(),
         routeId: editorRoute.id,
@@ -629,13 +842,13 @@ export default function TourSystemApp() {
           <div className="flex items-center gap-4">
             <button onClick={() => { setBookingMode('wizard'); setEditorRoute(null); }} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 transition"><ArrowLeft size={20} /></button>
             <div>
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">{isNew ? 'Create New Route' : 'Edit Route'} <span className="text-xs font-normal bg-red-100 text-[#03b8fa] px-2 py-0.5 rounded-full">{isNew ? 'Draft' : 'Live'}</span></h2>
-              <p className="text-xs text-gray-400">Configure route details, pricing, and operational settings</p>
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">{isNew ? 'สร้างเส้นทางใหม่' : 'แก้ไขเส้นทาง'} <span className="text-xs font-normal bg-red-100 text-[#03b8fa] px-2 py-0.5 rounded-full">{isNew ? 'Draft' : 'Live'}</span></h2>
+              <p className="text-xs text-gray-400">ตั้งค่ารายละเอียดเส้นทาง, ราคา, และรอบเดินทาง</p>
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-lg text-sm font-medium">Discard</button>
-            <button onClick={handleSaveRouteDetails} className="bg-[#03b8fa] text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary-200 hover:bg-[#0279a9] transition flex items-center gap-2"><Save size={18} /> Save Changes</button>
+            <button className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-lg text-sm font-medium">ยกเลิก</button>
+            <button onClick={handleSaveRouteDetails} className="bg-[#03b8fa] text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary-200 hover:bg-[#0279a9] transition flex items-center gap-2"><Save size={18} /> บันทึกข้อมูล</button>
           </div>
         </div>
 
@@ -644,30 +857,30 @@ export default function TourSystemApp() {
 
             {/* 1. Basic Info Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center gap-2 font-bold text-gray-700"><Globe size={18} /> General Information</div>
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center gap-2 font-bold text-gray-700"><Globe size={18} /> ข้อมูลทั่วไป</div>
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Route Name</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ชื่อเส้นทาง</label>
                     <input type="text" className="w-full text-lg font-bold border-b-2 border-gray-200 focus:border-[#03b8fa] outline-none py-2 bg-transparent placeholder-gray-300" placeholder="e.g. GRAND JAPAN - TOKYO FUJI NIKKO" value={editorRoute.name} onChange={e => setEditorRoute({ ...editorRoute, name: e.target.value })} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Route Code</label>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">รหัสเส้นทาง</label>
                       <input type="text" className="w-full border rounded-lg p-2.5 text-sm bg-gray-50 font-mono" placeholder="JP-TYO01" value={editorRoute.code} onChange={e => setEditorRoute({ ...editorRoute, code: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</label>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ระยะเวลา</label>
                       <input type="text" className="w-full border rounded-lg p-2.5 text-sm" placeholder="e.g. 6 Days 5 Nights" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Highlights / Description</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ไฮไลท์ / รายละเอียด</label>
                     <textarea className="w-full border rounded-lg p-3 text-sm h-24" placeholder="Briefly describe the highlights..."></textarea>
                   </div>
                 </div>
                 <div className="lg:col-span-1">
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Cover Image Preview</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">รูปภาพปก</label>
                   <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 relative group border-2 border-dashed border-gray-200 hover:border-[#6bc8e9] transition">
                     {editorRoute.image ? <img src={editorRoute.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center justify-center h-full text-gray-400"><ImageIcon size={32} /><span className="text-xs mt-2">No Image</span></div>}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
@@ -682,17 +895,17 @@ export default function TourSystemApp() {
             {/* 2. Rounds & Pricing Config */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
-                <div className="flex items-center gap-2 font-bold text-gray-700"><DollarSign size={18} /> Rounds & Pricing Configuration</div>
-                <button onClick={handleAddRound} className="text-xs bg-[#03b8fa] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#0279a9] transition shadow flex items-center gap-1"><Plus size={14} /> Add Travel Date</button>
+                <div className="flex items-center gap-2 font-bold text-gray-700"><DollarSign size={18} /> บริหารจัดการรอบ & ราคา</div>
+                <button onClick={handleAddRound} className="text-xs bg-[#03b8fa] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#0279a9] transition shadow flex items-center gap-1"><Plus size={14} /> เพิ่มรอบเดินทาง</button>
               </div>
 
               <div className="p-6">
                 {filteredRounds.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                     <Calendar size={48} className="mx-auto text-gray-300 mb-3" />
-                    <h3 className="text-gray-500 font-bold">No Rounds Scheduled</h3>
+                    <h3 className="text-gray-500 font-bold">ยังไม่ได้เพิ่มรอบเดินทาง</h3>
                     <p className="text-sm text-gray-400 mb-4">Add travel dates to start selling this tour.</p>
-                    <button onClick={handleAddRound} className="text-[#03b8fa] font-bold text-sm hover:underline">Add First Round</button>
+                    <button onClick={handleAddRound} className="text-[#03b8fa] font-bold text-sm hover:underline">เริ่มสร้างรอบแรก</button>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -702,15 +915,15 @@ export default function TourSystemApp() {
                           <div className="flex items-center gap-3">
                             <div className="bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 text-sm">#{idx + 1}</div>
                             <div className="grid grid-cols-2 gap-2">
-                              <div><label className="text-[10px] uppercase font-bold text-gray-400">Date Range</label><input type="text" className="block w-40 font-bold text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.date} onChange={e => updateRound(round.id, 'date', e.target.value)} /></div>
-                              <div><label className="text-[10px] uppercase font-bold text-gray-400">Airline</label><input type="text" className="block w-20 font-bold text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.airline} onChange={e => updateRound(round.id, 'airline', e.target.value)} /></div>
+                              <div><label className="text-[10px] uppercase font-bold text-gray-400">วันที่เดินทาง</label><input type="text" className="block w-40 font-bold text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.date} onChange={e => updateRound(round.id, 'date', e.target.value)} /></div>
+                              <div><label className="text-[10px] uppercase font-bold text-gray-400">สายการบิน</label><input type="text" className="block w-20 font-bold text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.airline} onChange={e => updateRound(round.id, 'airline', e.target.value)} /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                              <div><label className="text-[10px] uppercase font-bold text-gray-400">Flight</label><input type="text" className="block w-20 text-gray-600 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.flight} onChange={e => updateRound(round.id, 'flight', e.target.value)} /></div>
-                              <div><label className="text-[10px] uppercase font-bold text-gray-400">Seats</label><input type="number" className="block w-16 text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.seats} onChange={e => updateRound(round.id, 'seats', Number(e.target.value))} /></div>
+                              <div><label className="text-[10px] uppercase font-bold text-gray-400">เที่ยวบิน</label><input type="text" className="block w-20 text-gray-600 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.flight} onChange={e => updateRound(round.id, 'flight', e.target.value)} /></div>
+                              <div><label className="text-[10px] uppercase font-bold text-gray-400">ที่นั่ง</label><input type="number" className="block w-16 text-gray-800 border-b border-gray-200 focus:border-[#03b8fa] outline-none text-sm py-0.5" value={round.seats} onChange={e => updateRound(round.id, 'seats', Number(e.target.value))} /></div>
                             </div>
                             <div className="pl-4 border-l border-gray-200 ml-2">
-                              <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Assigned Head</label>
+                              <label className="text-[10px] uppercase font-bold text-gray-400 mb-1 block">หัวหน้าทัวร์</label>
                               <select
                                 className="block w-32 text-sm border-b border-gray-200 focus:border-[#03b8fa] outline-none py-0.5 bg-transparent"
                                 value={round.headId || 0}
@@ -729,11 +942,11 @@ export default function TourSystemApp() {
                         </div>
 
                         <div className="bg-gray-50/50 rounded-lg p-4">
-                          <label className="text-xs font-bold text-gray-400 uppercase mb-3 block flex items-center gap-2"><DollarSign size={14} /> Pricing Tier (THB)</label>
+                          <label className="text-xs font-bold text-gray-400 uppercase mb-3 block flex items-center gap-2"><DollarSign size={14} /> กำหนดราคาขาย (บาท)</label>
                           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                             {[
-                              { s: 'Adult (Twin)', k: 'adultTwin' }, { s: 'Adult (Single)', k: 'adultSingle' }, { s: 'Adult (Triple)', k: 'adultTriple' },
-                              { s: 'Child (Bed)', k: 'childBed' }, { s: 'Child (No Bed)', k: 'childNoBed' }
+                              { s: 'ผู้ใหญ่ (พักคู่)', k: 'adultTwin' }, { s: 'ผู้ใหญ่ (พักเดี่ยว)', k: 'adultSingle' }, { s: 'ผู้ใหญ่ (พัก 3 ท่าน)', k: 'adultTriple' },
+                              { s: 'เด็ก (มีเตียง)', k: 'childBed' }, { s: 'เด็ก (ไม่มีเตียง)', k: 'childNoBed' }
                             ].map(item => (
                               <div key={item.k} className="relative">
                                 <div className="text-[10px] text-gray-500 mb-1">{item.s}</div>
@@ -757,15 +970,15 @@ export default function TourSystemApp() {
 
             {/* 3. Assets & Docs */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center gap-2 font-bold text-gray-700"><FileIcon size={18} /> Route Assets & Documents</div>
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex items-center gap-2 font-bold text-gray-700"><FileIcon size={18} /> เอกสาร & ไฟล์แนบ</div>
               <div className="p-6">
                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:bg-gray-50 transition cursor-pointer" onClick={() => {
                   const fileName = prompt("Enter File Name to simulate upload (e.g. Program_Full.pdf):");
                   if (fileName) setEditorRoute({ ...editorRoute, attachment: fileName });
                 }}>
                   <div className="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3"><Download size={24} /></div>
-                  <h3 className="text-gray-800 font-bold">Upload Route Program (PDF)</h3>
-                  <p className="text-sm text-gray-400 mb-4">Upload beautiful itinerary PDF for sales team to download.</p>
+                  <h3 className="text-gray-800 font-bold">อัปโหลดโปรแกรมทัวร์</h3>
+                  <p className="text-sm text-gray-400 mb-4">แนบไฟล์โปรแกรมทัวร์เพื่อให้ฝ่ายขายดาวน์โหลดไปใช้งาน</p>
                   {editorRoute.attachment ? (
                     <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200">
                       <FileIcon size={16} /> {editorRoute.attachment}
@@ -794,13 +1007,13 @@ export default function TourSystemApp() {
       <div className="space-y-6 h-full flex flex-col">
         <header className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">New Booking</h1>
+            <h1 className="text-2xl font-bold text-gray-800">จองทัวร์ใหม่</h1>
             <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-              <span className={`px-2 py-1 rounded ${bookingStep >= 1 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>1. Select Route</span>
+              <span className={`px-2 py-1 rounded ${bookingStep >= 1 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>1. เลือกเส้นทาง</span>
               <span>→</span>
-              <span className={`px-2 py-1 rounded ${bookingStep >= 2 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>2. Select Round</span>
+              <span className={`px-2 py-1 rounded ${bookingStep >= 2 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>2. เลือกรอบเดินทาง</span>
               <span>→</span>
-              <span className={`px-2 py-1 rounded ${bookingStep >= 3 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>3. Pax Info</span>
+              <span className={`px-2 py-1 rounded ${bookingStep >= 3 ? 'bg-red-100 text-[#0279a9] font-bold' : ''}`}>3. ข้อมูลผู้เดินทาง</span>
             </div>
           </div>
         </header>
@@ -808,7 +1021,7 @@ export default function TourSystemApp() {
         {bookingStep === 1 && (
           <div className="flex-1 overflow-y-auto p-1">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-lg text-gray-800">Select a Route</h2>
+              <h2 className="font-bold text-lg text-gray-800">เลือกเส้นทางทัวร์</h2>
               {currentUser.role === 'MANAGER' && (
                 <button
                   onClick={() => {
@@ -817,7 +1030,7 @@ export default function TourSystemApp() {
                   }}
                   className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#0279a9] shadow-md transition"
                 >
-                  <Plus size={16} /> Create New Route
+                  <Plus size={16} /> สร้างเส้นทางใหม่
                 </button>
               )}
             </div>
@@ -839,11 +1052,11 @@ export default function TourSystemApp() {
                           <Clock size={12} /> {route.duration}
                         </span>
                         <span className="text-xs text-gray-400 font-medium pl-1">
-                          {rounds.filter(r => r.routeId === route.id && r.status !== 'Full').length} rounds open
+                          {rounds.filter(r => r.routeId === route.id && r.status !== 'Full').length} รอบที่เปิดจอง
                         </span>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-gray-400 font-normal mb-[-2px]">Starting at</div>
+                        <div className="text-[10px] text-gray-400 font-normal mb-[-2px]">เริ่มต้นที่</div>
                         <span className="font-bold text-[#03b8fa] text-lg">฿{route.price?.toLocaleString()}</span>
                       </div>
                     </div>
@@ -858,8 +1071,8 @@ export default function TourSystemApp() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <button onClick={() => setBookingStep(1)} className="text-gray-400 hover:text-gray-600">← Back</button>
-                <h2 className="font-bold text-lg">Select Round for <span className="text-[#03b8fa]">{selectedRoute.code}</span></h2>
+                <button onClick={() => setBookingStep(1)} className="text-gray-400 hover:text-gray-600">← ย้อนกลับ</button>
+                <h2 className="font-bold text-lg">เลือกรอบเดินทางสำหรับ <span className="text-[#03b8fa]">{selectedRoute.code}</span></h2>
               </div>
               {/* Manager Actions for this Route */}
               {currentUser.role === 'MANAGER' && (
@@ -870,7 +1083,7 @@ export default function TourSystemApp() {
                   }}
                   className="bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 shadow-sm transition"
                 >
-                  <Settings size={14} /> Manage Route / Rounds
+                  <Settings size={14} /> จัดการเส้นทาง / รอบ
                 </button>
               )}
             </div>
@@ -878,12 +1091,14 @@ export default function TourSystemApp() {
             <div className="space-y-4">
               {/* Header Row */}
               <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 bg-gray-100 rounded text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <div className="col-span-1">Airline</div>
-                <div className="col-span-3">Date</div>
-                <div className="col-span-2 text-right">Adult (Twin)</div>
-                <div className="col-span-2 text-right">Adult (Single)</div>
-                <div className="col-span-2 text-center">Availability</div>
-                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-1">สายการบิน</div>
+                <div className="col-span-2">วันที่เดินทาง</div>
+                <div className="col-span-2 text-right">ผู้ใหญ่ (พักคู่)</div>
+                <div className="col-span-1 text-right">พักเดี่ยว</div>
+                <div className="col-span-2 text-center">หัวหน้าทัวร์</div>
+                <div className="col-span-1 text-center">ที่นั่งรวม</div>
+                <div className="col-span-1 text-center">จองแล้ว</div>
+                <div className="col-span-2 text-center">สถานะ</div>
               </div>
 
               {rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
@@ -893,15 +1108,17 @@ export default function TourSystemApp() {
                 return (
                   <div key={round.id} className="border border-gray-200 rounded-lg group hover:border-[#03b8fa] transition">
                     {/* Main Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-2 p-4 items-center cursor-pointer" onClick={() => { setSelectedRound({ ...round, price: prices }); setBookingStep(3); }}>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-2 p-4 items-center cursor-pointer" onClick={() => { setSelectedRound({ ...round, price: prices }); setBookingDetails(prev => ({ ...prev, contactName: round.head || '' })); setBookingStep(3); }}>
                       <div className="col-span-1 font-bold text-[#03b8fa]">{round.airline}</div>
-                      <div className="col-span-3 font-medium text-gray-800">{round.date}</div>
-                      <div className="col-span-2 text-right font-mono font-bold">{prices.adultTwin?.toLocaleString()}</div>
-                      <div className="col-span-2 text-right font-mono text-gray-600">{prices.adultSingle?.toLocaleString()}</div>
-                      <div className="col-span-2 text-center text-sm">{round.seats} seats</div>
+                      <div className="col-span-2 font-medium text-gray-800 text-xs">{round.date}</div>
+                      <div className="col-span-2 text-right font-mono font-bold text-[#03b8fa]">{prices.adultTwin?.toLocaleString()}</div>
+                      <div className="col-span-1 text-right font-mono text-gray-500 text-xs">{prices.adultSingle?.toLocaleString()}</div>
+                      <div className="col-span-2 text-center text-xs text-gray-600 truncate" title={round.head}>{round.head || '-'}</div>
+                      <div className="col-span-1 text-center text-sm font-bold">{round.seats}</div>
+                      <div className="col-span-1 text-center text-sm text-gray-600">{round.sold}</div>
                       <div className="col-span-2 text-center">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${isFull ? 'text-[#03b8fa] bg-[#d9edf4]' : 'text-green-600 bg-green-50'}`}>
-                          {isFull ? 'Sold Out' : 'Available'}
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${isFull ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'}`}>
+                          {isFull ? 'เต็ม' : 'ว่าง'}
                         </span>
                       </div>
                     </div>
@@ -910,14 +1127,14 @@ export default function TourSystemApp() {
                       <div>Adult (Triple): <strong>{formatPrice(prices.adultTriple)}</strong></div>
                       <div>Child (Bed): <strong>{formatPrice(prices.childBed)}</strong></div>
                       <div>Child (No Bed): <strong>{formatPrice(prices.childNoBed)}</strong></div>
-                      <div className="text-right text-gray-400 italic">Click to select</div>
+                      <div className="text-right text-gray-400 italic">คลิกเพื่อเลือก</div>
                     </div>
                   </div>
                 )
               })}
 
               {rounds.filter(r => r.routeId === selectedRoute.id).length === 0 && (
-                <div className="text-center py-10 text-gray-400">No active rounds for this route. Contact Manager.</div>
+                <div className="text-center py-10 text-gray-400">ไม่มีรอบเดินทางที่เปิดจอง ติดต่อ Manager</div>
               )}
             </div>
           </div>
@@ -929,9 +1146,9 @@ export default function TourSystemApp() {
               <div className="flex items-center gap-4">
                 <button onClick={() => setBookingStep(2)} className="text-gray-400 hover:text-gray-600">← Back</button>
                 <div>
-                  <h2 className="font-bold text-lg">Passenger Details</h2>
+                  <h2 className="font-bold text-lg">ข้อมูลผู้โดยสาร</h2>
                   <div className="text-xs text-gray-500">
-                    Round: {selectedRound.date} | Base Price: <span className="font-bold text-[#03b8fa]">฿{selectedRound.price?.adultTwin?.toLocaleString()}</span>
+                    รอบเดินทาง: {selectedRound.date} | ราคาเริ่มต้น: <span className="font-bold text-[#03b8fa]">฿{selectedRound.price?.adultTwin?.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -943,7 +1160,7 @@ export default function TourSystemApp() {
                     <input
                       type="text"
                       className="px-3 py-1.5 text-sm outline-none w-full"
-                      placeholder="Search DB (Name/Passport)..."
+                      placeholder="ค้นหาลูกค้า (ชื่อ/พาสปอร์ต)..."
                       value={customerSearchTerm}
                       onChange={(e) => {
                         setCustomerSearchTerm(e.target.value);
@@ -961,7 +1178,7 @@ export default function TourSystemApp() {
                         c.firstNameEn.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
                         (c.passportNo && c.passportNo.includes(customerSearchTerm))
                       ).length === 0 ? (
-                        <div className="p-4 text-center text-gray-400 text-xs">No customers found.</div>
+                        <div className="p-4 text-center text-gray-400 text-xs">ไม่พบข้อมูลลูกค้า</div>
                       ) : (
                         <div>
                           {MOCK_CUSTOMERS_DB.filter(c =>
@@ -969,8 +1186,11 @@ export default function TourSystemApp() {
                             (c.passportNo && c.passportNo.includes(customerSearchTerm))
                           ).map(c => (
                             <div key={c.id} className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50" onClick={() => {
-                              if (!customers.find(existing => existing.id === c.id)) {
-                                setCustomers([...customers, { ...c, paymentStatus: 'pending' }]);
+                              // Add to bookingPaxList if not already there
+                              if (!bookingPaxList.find(p => p.id === c.id)) {
+                                setBookingPaxList(prev => [...prev, { ...c, paymentStatus: 'pending' }]);
+                              }
+                              if (!selectedPaxForBooking.includes(c.id)) {
                                 setSelectedPaxForBooking(prev => [...prev, c.id]);
                               }
                               setShowCustomerSearch(false);
@@ -986,8 +1206,10 @@ export default function TourSystemApp() {
                   )}
                   {showCustomerSearch && <div className="fixed inset-0 z-40" onClick={() => setShowCustomerSearch(false)}></div>}
                 </div>
+                {/* Search Result Click Handler Logic (inlined above but cleaner to verify) */}
+                {/* Actually Step 979 is where onClick is. Need to replace that block to add metadata */}
                 <button onClick={() => openCustomerForm()} className="bg-[#d9edf4] text-[#03b8fa] border border-primary-200 px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 hover:bg-red-100 transition whitespace-nowrap">
-                  <Plus size={16} /> Manual Add
+                  <Plus size={16} /> เพิ่มลูกค้าใหม่
                 </button>
               </div>
             </div>
@@ -996,36 +1218,43 @@ export default function TourSystemApp() {
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Head Responsible</label>
-                  <input type="text" className="w-full border p-2 rounded text-sm bg-white" placeholder="Name of Head who manages this route" value={bookingDetails.contactName} onChange={(e) => setBookingDetails({ ...bookingDetails, contactName: e.target.value })} />
+                  <label className="text-xs font-bold text-gray-500 uppercase">หัวหน้าทัวร์ผู้ดูแล</label>
+                  <input
+                    type="text"
+                    className={`w-full border p-2 rounded text-sm bg-white ${currentUser.role !== 'MANAGER' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="ระบุชื่อหัวหน้าทัวร์ที่ดูแลเส้นทางนี้"
+                    value={bookingDetails.contactName}
+                    onChange={(e) => setBookingDetails({ ...bookingDetails, contactName: e.target.value })}
+                    disabled={currentUser.role !== 'MANAGER'}
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Tour Code (Optional)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase">รหัสทัวร์ (ถ้ามี)</label>
                   <input type="text" className="w-full border p-2 rounded text-sm bg-white font-mono uppercase" placeholder="e.g. RNAT250662" value={bookingDetails.tourCode} onChange={(e) => setBookingDetails({ ...bookingDetails, tourCode: e.target.value.toUpperCase() })} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">Special Note / Internal Memo</label>
-                <input type="text" className="w-full border p-2 rounded text-sm bg-white" placeholder="Discount? Request?" value={bookingDetails.specialRequest} onChange={(e) => setBookingDetails({ ...bookingDetails, specialRequest: e.target.value })} />
+                <label className="text-xs font-bold text-gray-500 uppercase">หมายเหตุ / บันทึกภายใน</label>
+                <input type="text" className="w-full border p-2 rounded text-sm bg-white" placeholder="ส่วนลด? คำขอพิเศษ?" value={bookingDetails.specialRequest} onChange={(e) => setBookingDetails({ ...bookingDetails, specialRequest: e.target.value })} />
               </div>
             </div>
 
             <div className="space-y-4 mb-6">
-              {customers.length === 0 ? (
+              {bookingPaxList.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed">
                   <Search size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No passengers added.</p>
-                  <p className="text-xs">Search database or add manually.</p>
+                  <p>ยังไม่ได้เพิ่มรายชื่อผู้เดินทาง</p>
+                  <p className="text-xs">ค้นหาจากฐานข้อมูล หรือ เพิ่มใหม่</p>
                 </div>
               ) : (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4 flex justify-between items-center">
-                  <p className="text-sm text-blue-800 flex items-center gap-2"><CheckCircle size={16} /> Review Passenger List</p>
+                  <p className="text-sm text-blue-800 flex items-center gap-2"><CheckCircle size={16} /> ตรวจสอบรายชื่อผู้เดินทาง</p>
                   <div className="text-xs text-blue-600 font-bold">
-                    {selectedPaxForBooking.length} / {customers.length} Selected for Booking
+                    เลือกจอง {selectedPaxForBooking.length} / {bookingPaxList.length} คน
                   </div>
                 </div>
               )}
-              {customers.map((pax, index) => (
+              {bookingPaxList.map((pax, index) => (
                 <div key={pax.id} className={`border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 transition-all ${selectedPaxForBooking.includes(pax.id) ? 'bg-white border-[#03b8fa] shadow-sm' : 'bg-gray-50 border-gray-200 opacity-70'}`}>
                   <div className="flex gap-4 items-center flex-1">
                     <input
@@ -1033,14 +1262,24 @@ export default function TourSystemApp() {
                       className="w-5 h-5 cursor-pointer accent-[#03b8fa]"
                       checked={selectedPaxForBooking.includes(pax.id)}
                       onChange={(e) => {
-                        if (e.target.checked) setSelectedPaxForBooking([...selectedPaxForBooking, pax.id]);
-                        else setSelectedPaxForBooking(selectedPaxForBooking.filter(id => id !== pax.id));
+                        if (e.target.checked) {
+                          setSelectedPaxForBooking([...selectedPaxForBooking, pax.id]);
+                        } else {
+                          setSelectedPaxForBooking(selectedPaxForBooking.filter(id => id !== pax.id));
+                        }
                       }}
                     />
                     <div className="bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 text-xs">{index + 1}</div>
                     <div>
                       <div className="font-bold text-gray-800">{pax.firstNameEn} {pax.lastNameEn}</div>
                       <div className="text-xs text-gray-500 font-mono">{pax.passportNo} | {pax.nationality}</div>
+                      {/* Show Added By User - Check OwnerId Only */}
+                      {pax.ownerId && (
+                        <div className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded w-fit mt-1 border border-blue-100 flex items-center gap-1">
+                          <UserPlus size={10} />
+                          Added by: {appUsers.find(u => u.id === pax.ownerId)?.name || 'Unknown'}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1052,14 +1291,14 @@ export default function TourSystemApp() {
                         className="text-xs font-bold border rounded px-2 py-1 outline-none bg-white text-gray-700"
                         value={pax.roomType || 'adultTwin'}
                         onChange={(e) => {
-                          setCustomers(customers.map(c => c.id === pax.id ? { ...c, roomType: e.target.value } : c));
+                          setBookingPaxList(prev => prev.map(c => c.id === pax.id ? { ...c, roomType: e.target.value } : c));
                         }}
                       >
-                        <option value="adultTwin">Adult (Twin)</option>
-                        <option value="adultSingle">Adult (Single)</option>
-                        <option value="adultTriple">Adult (Triple)</option>
-                        <option value="childBed">Child (With Bed)</option>
-                        <option value="childNoBed">Child (No Bed)</option>
+                        <option value="adultTwin">ผู้ใหญ่ (พักคู่)</option>
+                        <option value="adultSingle">ผู้ใหญ่ (พักเดี่ยว)</option>
+                        <option value="adultTriple">ผู้ใหญ่ (พัก 3 ท่าน)</option>
+                        <option value="childBed">เด็ก (มีเตียง)</option>
+                        <option value="childNoBed">เด็ก (ไม่มีเตียง)</option>
                       </select>
                       <span className="font-mono font-bold text-[#03b8fa] w-16 text-right">
                         ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
@@ -1093,10 +1332,10 @@ export default function TourSystemApp() {
 
             <div className="pt-4 border-t border-gray-200">
               <div className="flex justify-between text-lg font-bold mt-3 text-[#03b8fa] mb-4">
-                <span>Total Estimate:</span>
+                <span>ยอดรวมโดยประมาณ:</span>
                 {/* Calculate based on selected pax only */}
                 <span>฿{(selectedPaxForBooking.reduce((sum, paxId) => {
-                  const pax = customers.find(c => c.id === paxId);
+                  const pax = bookingPaxList.find(c => c.id === paxId);
                   if (!pax) return sum;
                   const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
                   return sum + price;
@@ -1107,123 +1346,164 @@ export default function TourSystemApp() {
                 disabled={selectedPaxForBooking.length === 0}
                 onClick={() => setIsBookingConfirmationModalOpen(true)}
               >
-                Proceed to Payment ({selectedPaxForBooking.length} Pax)
+                ดำเนินการชำระเงิน - {selectedPaxForBooking.length} ท่าน
               </button>
             </div>
           </div>
-        )}
+        )
+        }
 
         {/* Booking Confirmation & Payment Modal */}
-        {isBookingConfirmationModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
-              <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
-                <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} /> Payment Selection</h3>
-                <button onClick={() => setIsBookingConfirmationModalOpen(false)}><X size={20} /></button>
-              </header>
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <div className="text-gray-500 text-sm mb-1">Total Amount</div>
-                  <div className="text-3xl font-bold text-[#03b8fa]">
-                    ฿{(selectedPaxForBooking.reduce((sum, paxId) => {
-                      const pax = customers.find(c => c.id === paxId);
-                      if (!pax) return sum;
-                      const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                      return sum + price;
-                    }, 0)).toLocaleString()}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      const amount = selectedPaxForBooking.reduce((sum, paxId) => {
-                        const pax = customers.find(c => c.id === paxId);
+        {
+          isBookingConfirmationModalOpen && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+                <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} /> เลือกวิธีการชำระเงิน</h3>
+                  <button onClick={() => setIsBookingConfirmationModalOpen(false)}><X size={20} /></button>
+                </header>
+                <div className="p-6">
+                  <div className="text-center mb-6">
+                    <div className="text-gray-500 text-sm mb-1">ยอดรวมทั้งหมด</div>
+                    <div className="text-3xl font-bold text-[#03b8fa]">
+                      ฿{(selectedPaxForBooking.reduce((sum, paxId) => {
+                        const pax = bookingPaxList.find(c => c.id === paxId);
                         if (!pax) return sum;
-                        return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
-                      }, 0);
-
-                      // Create Booking
-                      const finalPax = customers.filter(c => selectedPaxForBooking.includes(c.id));
-                      const bookingId = Date.now();
-                      const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
-                      setBookings(prev => [...prev, newBooking]);
-
-                      // Create Payment Record
-                      const newPayment = {
-                        id: Date.now() + 1,
-                        bookingId: bookingId,
-                        customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
-                        totalAmount: amount,
-                        paidAmount: 0,
-                        status: 'pending',
-                        transactions: []
-                      };
-                      setPayments(prev => [newPayment, ...prev]);
-
-                      // UPDATE UI STATUS instead of clearing
-                      setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'pending' } : c));
-                      setIsBookingConfirmationModalOpen(false);
-
-                      // Optional: Uncheck them to prevent double booking? Or keep them checks?
-                      // Let's keep them checked but visual status updated serves as feedback.
-                      alert("Booking Confirmed! Status updated to Pending.");
-                    }}
-                    className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg font-bold text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] hover:bg-blue-50 transition"
-                  >
-                    Confirm & Pay Later (Invoice)
-                  </button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-gray-200"></div></div>
-                    <div className="relative flex justify-center"><span className="bg-white px-2 text-sm text-gray-500">OR PAY NOW</span></div>
+                        const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                        return sum + price;
+                      }, 0)).toLocaleString()}
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      // Same Create Logic
-                      const amount = selectedPaxForBooking.reduce((sum, paxId) => {
-                        const pax = customers.find(c => c.id === paxId);
-                        if (!pax) return sum;
-                        return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
-                      }, 0);
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        const amount = selectedPaxForBooking.reduce((sum, paxId) => {
+                          const pax = bookingPaxList.find(c => c.id === paxId);
+                          if (!pax) return sum;
+                          return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                        }, 0);
 
-                      const finalPax = customers.filter(c => selectedPaxForBooking.includes(c.id));
-                      const bookingId = Date.now();
-                      const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
-                      setBookings(prev => [...prev, newBooking]);
+                        // Create Booking
+                        const finalPax = bookingPaxList
+                          .filter(c => selectedPaxForBooking.includes(c.id))
+                          .map(c => ({
+                            ...c,
+                            bookedBy: bookingPaxMetadata[c.id]?.addedBy || currentUser.id // Attach sales tracking
+                          }));
+                        const bookingId = Date.now();
+                        const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
+                        setBookings(prev => [...prev, newBooking]);
 
-                      const newPayment = {
-                        id: Date.now() + 1,
-                        bookingId: bookingId,
-                        customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
-                        totalAmount: amount,
-                        paidAmount: 0,
-                        status: 'pending',
-                        transactions: []
-                      };
-                      setPayments(prev => [newPayment, ...prev]);
+                        // Create Payment Record
+                        const newPayment = {
+                          id: Date.now() + 1,
+                          bookingId: bookingId,
+                          customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
+                          totalAmount: amount,
+                          paidAmount: 0,
+                          status: 'pending',
+                          transactions: []
+                        };
+                        setPayments(prev => [newPayment, ...prev]);
 
-                      // UPDATE UI STATUS
-                      setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'deposit' } : c)); // Mocking deposit status
-                      setIsBookingConfirmationModalOpen(false);
+                        // UPDATE UI STATUS instead of clearing - Update both customers DB and bookingPaxList
+                        setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'pending' } : c));
+                        setBookingPaxList(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'pending' } : c));
+                        setIsBookingConfirmationModalOpen(false);
 
-                      alert("Redirecting to Payment Gateway... (Status updated)");
-                      // Ideally we redirect, but user asked for "list not to disappear", so maybe we stay here?
-                      // "รายการจะไม่หายไปแต่จะเป็นการ อัปเดทสถานะแทน" -> List won't disappear but update status.
-                      // I will NOT redirect to payment tab automatically then, or maybe confirm with user.
-                      // Let's stay on this page to satisfy the request.
-                    }}
-                    className="w-full bg-[#03b8fa] text-white py-3 rounded-lg font-bold hover:bg-[#0279a9] shadow-md transition flex justify-center items-center gap-2"
-                  >
-                    <CreditCard size={18} /> Pay Deposit / Full Amount
-                  </button>
+                        // Optional: Uncheck them to prevent double booking? Or keep them checks?
+                        // Let's keep them checked but visual status updated serves as feedback.
+                        alert("Booking Confirmed! Status updated to Pending.");
+                      }}
+                      className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg font-bold text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] hover:bg-blue-50 transition"
+                    >
+                      ยืนยันการจอง & จ่ายทีหลัง (วางบิล)
+                    </button>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-gray-200"></div></div>
+                      <div className="relative flex justify-center"><span className="bg-white px-2 text-sm text-gray-500">หรือ ชำระเงิน (บางส่วน/เต็มจำนวน)</span></div>
+                    </div>
+
+                    {/* Input Paid Amount */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <div className="mb-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">ระบุยอดชำระ</label>
+                        <input
+                          type="number"
+                          className="w-full border p-2 rounded text-lg font-bold text-right text-gray-800 outline-none focus:border-[#03b8fa]"
+                          placeholder="0.00"
+                          defaultValue={selectedPaxForBooking.reduce((sum, paxId) => {
+                            const pax = bookingPaxList.find(c => c.id === paxId);
+                            if (!pax) return sum;
+                            return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                          }, 0)}
+                          id="manualPaidAmountInput"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const totalAmount = selectedPaxForBooking.reduce((sum, paxId) => {
+                            const pax = bookingPaxList.find(c => c.id === paxId);
+                            if (!pax) return sum;
+                            return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                          }, 0);
+
+                          // Capture Input Value
+                          const inputEl = document.getElementById('manualPaidAmountInput');
+                          const paidAmount = Number(inputEl.value) || 0;
+
+                          // Create Booking
+                          const finalPax = bookingPaxList
+                            .filter(c => selectedPaxForBooking.includes(c.id))
+                            .map(c => ({
+                              ...c,
+                              bookedBy: bookingPaxMetadata[c.id]?.addedBy || currentUser.id // Attach sales tracking
+                            }));
+                          const bookingId = Date.now();
+                          const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
+                          setBookings(prev => [...prev, newBooking]);
+
+                          // Determine Status
+                          let status = 'pending';
+                          if (paidAmount >= totalAmount) status = 'paid';
+                          else if (paidAmount > 0) status = 'partial';
+
+                          // Create Payment Record
+                          const newPayment = {
+                            id: Date.now() + 1,
+                            bookingId: bookingId,
+                            customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
+                            totalAmount: totalAmount,
+                            paidAmount: paidAmount,
+                            saleId: currentUser.id, // Track Sales Rep
+                            routeId: selectedRoute.id, // Track Route for Commission
+                            status: status,
+                            createdAt: new Date().toLocaleDateString(),
+                            transactions: []
+                          };
+                          setPayments(prev => [newPayment, ...prev]);
+
+                          // UPDATE UI STATUS - Update both customers DB and bookingPaxList
+                          setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status } : c));
+                          setBookingPaxList(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status } : c));
+                          setIsBookingConfirmationModalOpen(false);
+                          alert(`Booking Confirmed! Payment Status: ${status.toUpperCase()} (Paid: ฿${paidAmount.toLocaleString()})`);
+                        }}
+                        className="w-full bg-[#37c3a5] text-white py-3 rounded-lg font-bold hover:bg-[#2da188] shadow-lg transition"
+                      >
+                        ยืนยันการชำระเงิน
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
     );
   };
 
@@ -1245,8 +1525,8 @@ export default function TourSystemApp() {
     if (operationView === 'list') {
       return (
         <div className="space-y-6 animate-fade-in">
-          <header className="mb-6 flex justify-between items-center"><div><h1 className="text-2xl font-bold text-gray-800">Operations Center</h1><p className="text-gray-500 text-sm">Overview of all active tour groups and assignments</p></div><div className="flex gap-2"><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search tours..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#6bc8e9] outline-none" /></div></div></header>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; const isFull = round.sold === round.seats; return (<div key={round.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer flex flex-col justify-between group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); }}><div><div className="flex justify-between items-start mb-4"><div className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code}</div><span className={`px-2 py-1 rounded-full text-xs font-medium ${isFull ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{round.status}</span></div><h3 className="font-bold text-gray-800 mb-1 line-clamp-2 group-hover:text-[#0279a9] transition">{route?.name}</h3><div className="text-sm text-gray-500 mb-4 flex items-center gap-2"><Calendar size={14} /> {round.date}</div></div><div className="space-y-3 pt-3 border-t border-gray-100"><div className="flex justify-between text-sm"><span className="text-gray-500">Head:</span><span className={`font-medium ${round.head === 'Unassigned' ? 'text-[#03b8fa] italic' : 'text-gray-800'}`}>{round.head}</span></div><div className="flex justify-between text-sm"><span className="text-gray-500">Pax:</span><span className="font-medium text-gray-800">{round.sold}/{round.seats}</span></div><div className="space-y-1"><div className="flex justify-between text-xs text-gray-400"><span>Task Completion</span><span>{progress}%</span></div><div className="w-full bg-gray-100 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : 'bg-[#fdcf1a]'}`} style={{ width: `${progress}%` }}></div></div></div></div></div>); })}</div>
+          <header className="mb-6 flex justify-between items-center"><div><h1 className="text-2xl font-bold text-gray-800">ศูนย์ปฏิบัติการทัวร์</h1><p className="text-gray-500 text-sm">Overview of all active tour groups and assignments</p></div><div className="flex gap-2"><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="ค้นหาทัวร์..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#6bc8e9] outline-none" /></div></div></header>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; const isFull = round.sold === round.seats; return (<div key={round.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer flex flex-col justify-between group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); }}><div><div className="flex justify-between items-start mb-4"><div className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code}</div><span className={`px-2 py-1 rounded-full text-xs font-medium ${isFull ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{round.status === 'Selling' ? 'เปิดจอง' : round.status === 'Full' ? 'เต็ม' : round.status}</span></div><h3 className="font-bold text-gray-800 mb-1 line-clamp-2 group-hover:text-[#0279a9] transition">{route?.name}</h3><div className="text-sm text-gray-500 mb-4 flex items-center gap-2"><Calendar size={14} /> {round.date}</div></div><div className="space-y-3 pt-3 border-t border-gray-100"><div className="flex justify-between text-sm"><span className="text-gray-500">Head:</span><span className={`font-medium ${round.head === 'Unassigned' ? 'text-[#03b8fa] italic' : 'text-gray-800'}`}>{round.head}</span></div><div className="flex justify-between text-sm"><span className="text-gray-500">Pax:</span><span className="font-medium text-gray-800">{round.sold}/{round.seats}</span></div><div className="space-y-1"><div className="flex justify-between text-xs text-gray-400"><span>ความคืบหน้า</span><span>{progress}%</span></div><div className="w-full bg-gray-100 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : 'bg-[#fdcf1a]'}`} style={{ width: `${progress}%` }}></div></div></div></div></div>); })}</div>
         </div>
       );
     }
@@ -1256,9 +1536,9 @@ export default function TourSystemApp() {
       return (
         <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
           <AlertTriangle size={48} className="text-[#03b8fa]" />
-          <h3 className="text-xl font-bold">No Tour Selected</h3>
-          <p>Please go back to the list and select a tour group.</p>
-          <button onClick={() => setOperationView('list')} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700">Back to List</button>
+          <h3 className="text-xl font-bold">ยังไม่ได้เลือกทัวร์</h3>
+          <p>กรุณากลับไปที่หน้ารายการ เพื่อเลือกกรุ๊ปทัวร์ที่ต้องการจัดการ</p>
+          <button onClick={() => setOperationView('list')} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700">กลับหน้าหลัก</button>
         </div>
       );
     }
@@ -1268,12 +1548,12 @@ export default function TourSystemApp() {
 
     return (
       <div className="h-full flex flex-col animate-fade-in">
-        <header className="mb-6 flex justify-between items-center"><div className="flex items-center gap-4"><button onClick={() => setOperationView('list')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 transition"><ArrowLeft size={20} /></button><div><h1 className="text-2xl font-bold text-gray-800">Operation Workspace</h1><p className="text-gray-500 text-sm">{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</p></div></div><div className="flex gap-2"><button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><FileDown size={16} /> Export Name List</button><button onClick={() => setShowTagPreview(true)} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><Tags size={16} /> Gen Tags</button></div></header>
+        <header className="mb-6 flex justify-between items-center"><div className="flex items-center gap-4"><button onClick={() => setOperationView('list')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 transition"><ArrowLeft size={20} /></button><div><h1 className="text-2xl font-bold text-gray-800">พื้นที่จัดการทัวร์</h1><p className="text-gray-500 text-sm">{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</p></div></div><div className="flex gap-2"><button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><FileDown size={16} /> ดาวน์โหลดรายชื่อ</button><button onClick={() => setShowTagPreview(true)} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><Tags size={16} /> สร้างป้ายกระเป๋า</button></div></header>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-end mb-4">
-                <h3 className="font-bold text-gray-800">Overall Progress</h3>
+                <h3 className="font-bold text-gray-800">ความคืบหน้าภาพรวม</h3>
                 <span className="text-2xl font-bold text-[#03b8fa]">{operationProgress.percent}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-4 mb-6 relative overflow-hidden">
@@ -1285,7 +1565,7 @@ export default function TourSystemApp() {
                 </div>
               </div>
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Task Breakdown</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">รายละเอียดงาน</h4>
                 {INDIVIDUAL_TASKS.map(task => (
                   <div key={task.key} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-transparent hover:border-[#d9edf4] transition-colors">
                     <div className="flex items-center gap-2">
@@ -1301,13 +1581,13 @@ export default function TourSystemApp() {
                 ))}
               </div>
             </div>
-            <div className="bg-[#d9edf4] rounded-xl p-6 border border-[#6bc8e9]"><h3 className="font-bold text-[#0279a9] mb-2 flex items-center gap-2"><Users size={18} /> Head Assignment</h3><p className="text-sm text-[#03b8fa] mb-3">Current Head: <strong>{selectedOpRound.head}</strong></p>{isManager && <button className="text-xs bg-white text-[#03b8fa] px-3 py-1 rounded border border-[#6bc8e9] hover:bg-[#d9edf4]">Change Head</button>}</div>
+            <div className="bg-[#d9edf4] rounded-xl p-6 border border-[#6bc8e9]"><h3 className="font-bold text-[#0279a9] mb-2 flex items-center gap-2"><Users size={18} /> หัวหน้าทัวร์ที่รับผิดชอบ</h3><p className="text-sm text-[#03b8fa] mb-3">Current Head: <strong>{selectedOpRound.head}</strong></p>{isManager && <button className="text-xs bg-white text-[#03b8fa] px-3 py-1 rounded border border-[#6bc8e9] hover:bg-[#d9edf4]">เปลี่ยนหัวหน้าทัวร์</button>}</div>
           </div>
           <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">Pax Manifest & Tracking ({paxList.length} Pax)</h3><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search pax..." className="pl-9 pr-4 py-1 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" /></div></div>
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">รายชื่อลูกทัวร์ & สถานะเอกสาร ({paxList.length} ท่าน)</h3><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search pax..." className="pl-9 pr-4 py-1 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" /></div></div>
             <div className="overflow-auto flex-1 p-2">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th className="px-4 py-2 w-16">Room</th><th className="px-4 py-2">Name / Passport</th>{INDIVIDUAL_TASKS.map(task => (<th key={task.key} className="px-2 py-2 text-center w-20">{task.label}</th>))}<th className="px-4 py-2 text-right">Action</th></tr></thead>
+                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th className="px-4 py-2 w-16">ห้อง</th><th className="px-4 py-2">ชื่อ-นามสกุล / พาสปอร์ต</th>{INDIVIDUAL_TASKS.map(task => (<th key={task.key} className="px-2 py-2 text-center w-20">{task.label}</th>))}<th className="px-4 py-2 text-right">จัดการ</th></tr></thead>
                 <tbody className="divide-y divide-gray-100">{paxList.map(pax => (
                   <tr key={pax.uniqueId || pax.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-500">{pax.room}</td>
@@ -1328,7 +1608,7 @@ export default function TourSystemApp() {
                       const status = paxTaskStatus[pax.id]?.[task.key] || { checked: false, file: null };
                       const isChildPax = isChild(pax.dob);
 
-                      // Render Child Cert Button
+                      // Render Child Cert Button for passport column if child
                       if (task.key === 'passport' && isChildPax) {
                         return (
                           <td key={task.key} className="px-2 py-3 text-center">
@@ -1337,6 +1617,21 @@ export default function TourSystemApp() {
                               <span className="text-[10px] uppercase font-bold mt-0.5">Birth Cert</span>
                               {status.file && <div className="absolute top-0 right-0 bg-blue-500 w-2 h-2 rounded-full border border-white"></div>}
                             </button>
+                          </td>
+                        );
+                      }
+
+                      // Render Payment Status - Auto-check if paid
+                      if (task.key === 'payment') {
+                        const paymentStatus = pax.paymentStatus || 'pending';
+                        const isPaid = paymentStatus === 'paid';
+                        const isPartial = paymentStatus === 'partial';
+                        return (
+                          <td key={task.key} className="px-2 py-3 text-center">
+                            <div className={`px-2 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${isPaid ? 'bg-green-100 text-green-700' : isPartial ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                              {isPaid ? <CheckCircle size={12} /> : isPartial ? <Clock size={12} /> : <XCircle size={12} />}
+                              {isPaid ? 'Paid' : isPartial ? 'Partial' : 'Pending'}
+                            </div>
                           </td>
                         );
                       }
@@ -1374,23 +1669,23 @@ export default function TourSystemApp() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-300 italic">View Only</span>
+                        <span className="text-xs text-gray-300 italic">ดูข้อมูลเท่านั้น</span>
                       )}
                     </td>
                   </tr>
                 ))}</tbody>
               </table>
             </div>
-            {!canEdit && <div className="bg-yellow-50 text-yellow-800 text-xs p-2 text-center border-t border-yellow-100">View Only / Restricted Access (Sale)</div>}
+            {!canEdit && <div className="bg-yellow-50 text-yellow-800 text-xs p-2 text-center border-t border-yellow-100">ดูข้อมูลเท่านั้น / จำกัดสิทธิ์ (สำหรับฝ่ายขาย)</div>}
           </div>
         </div>
         {showTagPreview && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
               {/* Mock Tag Preview Content */}
-              <div className="bg-gray-800 text-white px-4 py-3 flex justify-between items-center"><h3 className="font-bold flex items-center gap-2"><Printer size={18} /> Print Preview: Luggage Tags</h3><button onClick={() => setShowTagPreview(false)}><X size={20} /></button></div>
+              <div className="bg-gray-800 text-white px-4 py-3 flex justify-between items-center"><h3 className="font-bold flex items-center gap-2"><Printer size={18} /> ตัวอย่างพิมพ์: ป้ายติดกระเป๋า</h3><button onClick={() => setShowTagPreview(false)}><X size={20} /></button></div>
               <div className="p-6 bg-gray-100 max-h-[60vh] overflow-y-auto"><div className="bg-white shadow-lg p-4 mx-auto w-full aspect-[1/1.414] text-xs flex flex-col gap-2"><div className="border-2 border-dashed border-gray-300 rounded p-2 flex flex-col bg-white"><div className="bg-[#0279a9] text-white text-center font-bold py-1">BJ-US | 12-16 OCT</div><div className="p-2"><div className="font-bold text-lg">MR. SOMCHAI JAIDEE</div><div className="text-gray-500">คุณ สมชาย ใจดี</div><div className="mt-2 flex items-center gap-2 font-bold"><span className="bg-gray-200 px-1 rounded">TG</span> TG614</div></div></div><div className="text-center text-gray-400 mt-4 italic">... Mock Tags ...</div></div></div>
-              <div className="p-4 border-t border-gray-200 flex justify-end gap-3"><button onClick={() => setShowTagPreview(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button><button className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg hover:bg-[#0279a9] flex items-center gap-2" onClick={() => alert("Printing sent to printer!")}><Printer size={16} /> Print Now</button></div>
+              <div className="p-4 border-t border-gray-200 flex justify-end gap-3"><button onClick={() => setShowTagPreview(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button><button className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg hover:bg-[#0279a9] flex items-center gap-2" onClick={() => alert("Printing sent to printer!")}><Printer size={16} /> สั่งพิมพ์ทันที</button></div>
             </div>
           </div>
         )}
@@ -1401,19 +1696,19 @@ export default function TourSystemApp() {
   const renderSettings = () => (
     <div className="space-y-6 flex flex-col h-full animate-fade-in">
       <header className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-800">System Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-800">ตั้งค่าระบบ</h1>
         <p className="text-gray-500 text-sm">Manage users, roles, and permissions</p>
       </header>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-          <h3 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> User Access & Commissions</h3>
+          <h3 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> จัดการผู้ใช้งาน & ค่าคอมมิชชั่น</h3>
           <div className="text-xs text-gray-500 bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Role: Manager Access Only</div>
         </div>
         <div className="overflow-auto flex-1 p-4">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-              <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Commission (%)</th><th className="px-4 py-3 text-right">Action</th></tr>
+              <tr><th className="px-4 py-3">ผู้ใช้งาน</th><th className="px-4 py-3">ตำแหน่ง</th><th className="px-4 py-3">ค่าคอมมิชชั่น (%)</th><th className="px-4 py-3 text-right">จัดการ</th></tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {appUsers.map(user => (
@@ -1466,24 +1761,24 @@ export default function TourSystemApp() {
     return (
       <div className="space-y-6 h-full flex flex-col animate-fade-in">
         <header className="mb-2">
-          <h1 className="text-2xl font-bold text-gray-800">Payment History</h1>
+          <h1 className="text-2xl font-bold text-gray-800">ประวัติการชำระเงิน</h1>
           <p className="text-gray-500 text-sm">View all payment records and transactions</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">Total Outstanding</p>
+            <p className="text-xs text-gray-500 font-medium">ยอดคงค้างรวม</p>
             <p className="text-2xl font-bold text-red-600">฿{payments.reduce((sum, p) => sum + (p.totalAmount - p.paidAmount), 0).toLocaleString()}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">Paid This Month</p>
+            <p className="text-xs text-gray-500 font-medium">ยอดรับเดือนนี้</p>
             <p className="text-2xl font-bold text-[#37c3a5]">฿{payments.reduce((sum, p) => sum + p.paidAmount, 0).toLocaleString()}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} /> Transaction History</h3>
+            <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} /> รายการธุรกรรมทั้งหมด</h3>
           </div>
           <div className="overflow-auto flex-1">
             <table className="w-full text-sm text-left">
@@ -1491,13 +1786,13 @@ export default function TourSystemApp() {
                 <tr>
                   <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Booking ID</th>
-                  <th className="px-4 py-3">Customer</th>
-                  <th className="px-4 py-3">Route</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3 text-right">Paid</th>
-                  <th className="px-4 py-3 text-right">Balance</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-center">Date</th>
+                  <th className="px-4 py-3">เส้นทาง</th>
+                  <th className="px-4 py-3 text-right">ยอดรวม</th>
+                  <th className="px-4 py-3 text-right">จ่ายแล้ว</th>
+                  <th className="px-4 py-3 text-right">คงค้าง</th>
+                  <th className="px-4 py-3 text-center">สถานะ</th>
+                  <th className="px-4 py-3 text-center">วันที่</th>
+                  <th className="px-4 py-3 text-center">ดูรายการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1508,7 +1803,6 @@ export default function TourSystemApp() {
                     <tr key={payment.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-mono text-gray-500">#{payment.id}</td>
                       <td className="px-4 py-3 font-mono font-bold text-gray-700">#{payment.bookingId}</td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{payment.customerName}</td>
                       <td className="px-4 py-3">
                         <span className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code || 'N/A'}</span>
                       </td>
@@ -1523,6 +1817,11 @@ export default function TourSystemApp() {
                       <td className="px-4 py-3 text-center text-gray-500 text-xs">
                         {new Date(payment.id).toLocaleDateString()}
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        <button onClick={() => setViewingPaymentId(payment.id)} className="p-2 text-gray-400 hover:text-[#03b8fa] hover:bg-blue-50 rounded-full transition" title="ดูรายละเอียด">
+                          <Search size={16} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1530,6 +1829,84 @@ export default function TourSystemApp() {
             </table>
           </div>
         </div>
+
+        {/* Payment Detail Modal */}
+        {viewingPaymentId && (() => {
+          const payment = payments.find(p => p.id === viewingPaymentId);
+          const booking = bookings.find(b => b.id === payment?.bookingId);
+          const route = routes.find(r => r.id === payment?.routeId);
+          const paxList = booking?.pax || [];
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]">
+                <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><FileText size={20} /> รายละเอียดการชำระเงิน</h3>
+                  <button onClick={() => setViewingPaymentId(null)}><X size={20} /></button>
+                </header>
+                <div className="p-6 overflow-y-auto flex-1">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-1">เส้นทาง</div>
+                      <div className="font-bold text-[#03b8fa] text-lg">{route?.code || 'N/A'}</div>
+                      <div className="text-sm text-gray-600">{route?.name || '-'}</div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-1">สถานะการชำระ</div>
+                      <div className={`font-bold text-lg ${payment?.status === 'paid' ? 'text-green-600' : payment?.status === 'partial' ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {payment?.status === 'paid' ? 'ชำระแล้ว' : payment?.status === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-1">ยอดชำระแล้ว</div>
+                      <div className="font-bold text-[#37c3a5] text-xl">฿{payment?.paidAmount?.toLocaleString()}</div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-1">ยอดรวมทั้งหมด</div>
+                      <div className="font-bold text-gray-800 text-xl">฿{payment?.totalAmount?.toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Users size={16} /> รายชื่อลูกทัวร์ ({paxList.length} ท่าน)</h4>
+                    {paxList.length === 0 ? (
+                      <div className="text-center py-6 text-gray-400 text-sm">ไม่พบข้อมูลลูกทัวร์ (อาจเป็น Mock Data)</div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left">ชื่อ-นามสกุล</th>
+                            <th className="px-3 py-2 text-left">Passport</th>
+                            <th className="px-3 py-2 text-left">ประเภทห้อง</th>
+                            <th className="px-3 py-2 text-left">ผู้ขาย</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {paxList.map(p => {
+                            const seller = appUsers.find(u => u.id === p.bookedBy);
+                            return (
+                              <tr key={p.id} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 font-medium">{p.firstNameEn} {p.lastNameEn}</td>
+                                <td className="px-3 py-2 font-mono text-gray-500">{p.passportNo}</td>
+                                <td className="px-3 py-2 text-xs text-gray-600">{p.roomType || 'adultTwin'}</td>
+                                <td className="px-3 py-2 text-xs">
+                                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{seller?.name || 'N/A'}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-6 py-4 flex justify-end border-t">
+                  <button onClick={() => setViewingPaymentId(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิดหน้าต่าง</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     );
   };
@@ -1557,8 +1934,8 @@ export default function TourSystemApp() {
           </div>
         )}
 
-        <nav className="flex-1 py-4 space-y-1 overflow-y-auto"><SidebarItem icon={Users} label={isSidebarOpen ? "CRM & Blacklist" : ""} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} /><SidebarItem icon={LayoutDashboard} label={isSidebarOpen ? "Dashboard" : ""} active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} /><SidebarItem icon={Calendar} label={isSidebarOpen ? "Bookings" : ""} active={activeTab === 'booking'} onClick={() => setActiveTab('booking')} /><SidebarItem icon={FileText} label={isSidebarOpen ? "Operations" : ""} active={activeTab === 'operation'} onClick={() => setActiveTab('operation')} /><SidebarItem icon={Wallet} label={isSidebarOpen ? "Payments" : ""} active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} /><SidebarItem icon={Settings} label={isSidebarOpen ? "Settings" : ""} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} /></nav>
-        <div className="p-4 border-t border-gray-100"><SidebarItem icon={LogOut} label={isSidebarOpen ? "Logout" : ""} active={false} onClick={() => alert("Logged out")} /></div>
+        <nav className="flex-1 py-4 space-y-1 overflow-y-auto"><SidebarItem icon={Users} label={isSidebarOpen ? "ระบบจัดการลูกค้า" : ""} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} /><SidebarItem icon={LayoutDashboard} label={isSidebarOpen ? "ภาพรวม" : ""} active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} /><SidebarItem icon={Calendar} label={isSidebarOpen ? "จองทัวร์" : ""} active={activeTab === 'booking'} onClick={() => setActiveTab('booking')} /><SidebarItem icon={FileText} label={isSidebarOpen ? "ระบบจัดการทัวร์" : ""} active={activeTab === 'operation'} onClick={() => setActiveTab('operation')} /><SidebarItem icon={Wallet} label={isSidebarOpen ? "ประวัติการชำระเงิน" : ""} active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} /><SidebarItem icon={Settings} label={isSidebarOpen ? "ตั้งค่าระบบ" : ""} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} /></nav>
+        <div className="p-4 border-t border-gray-100"><SidebarItem icon={LogOut} label={isSidebarOpen ? "ออกจากระบบ" : ""} active={false} onClick={() => alert("Logged out")} /></div>
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <div className="h-16 bg-white border-b border-gray-100 flex items-center px-4 lg:hidden"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button></div>
@@ -1568,3 +1945,5 @@ export default function TourSystemApp() {
     </div>
   );
 }
+
+

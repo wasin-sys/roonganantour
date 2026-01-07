@@ -85,7 +85,7 @@ export const MOCK_CUSTOMERS_DB = [
         birthplace: 'NEW YORK',
         nationality: 'USA',
         phone: '+1-555-0199',
-        remark: 'Need Visa'
+        remark: 'ต้องการวีซ่า'
     }
 ];
 
