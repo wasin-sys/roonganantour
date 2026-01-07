@@ -1,7 +1,7 @@
 export const MOCK_ROUTES = [
-    { id: 1, name: 'BEIJING - UNIVERSAL STUDIO 5D4N', code: 'BJ-US', price: 25900, image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200' },
-    { id: 2, name: 'KUNMING - LIJIANG - SHANGRI-LA 6D5N', code: 'KM-LS', price: 32900, image: 'https://images.unsplash.com/photo-1527684651001-705ed533005b?auto=format&fit=crop&q=80&w=300&h=200' },
-    { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, image: 'https://images.unsplash.com/photo-1620984846468-b7692131972f?auto=format&fit=crop&q=80&w=300&h=200' },
+    { id: 1, name: 'BEIJING - UNIVERSAL STUDIO 5D4N', code: 'BJ-US', price: 25900, duration: '5D4N', image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200' },
+    { id: 2, name: 'KUNMING - LIJIANG - SHANGRI-LA 6D5N', code: 'KM-LS', price: 32900, duration: '6D5N', image: 'https://images.unsplash.com/photo-1527684651001-705ed533005b?auto=format&fit=crop&q=80&w=300&h=200' },
+    { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, duration: '5D4N', image: 'https://images.unsplash.com/photo-1620984846468-b7692131972f?auto=format&fit=crop&q=80&w=300&h=200' },
 ];
 
 export const MOCK_ROUNDS = [

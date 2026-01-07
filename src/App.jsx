@@ -87,8 +87,8 @@ const INITIAL_PAYMENTS = [
 
 const MOCK_ROUTES = [
   { id: 1, name: 'BEIJING - UNIVERSAL STUDIO 5D4N', code: 'BJ-US', price: 25900, image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200' },
-  { id: 2, name: 'KUNMING - LIJIANG - SHANGRI-LA 6D5N', code: 'KM-LS', price: 32900, image: 'https://images.unsplash.com/photo-1527684651001-705ed533005b?auto=format&fit=crop&q=80&w=300&h=200' },
-  { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, image: 'https://images.unsplash.com/photo-1620984846468-b7692131972f?auto=format&fit=crop&q=80&w=300&h=200' },
+  { id: 2, name: 'KUNMING - LIJIANG - SHANGRI-LA 6D5N', code: 'KM-LS', price: 32900, image: 'https://images.chinahighlights.com/allpicture/2024/08/d09f58648bf547418c54ce3e6790c0af_cut_2560x800_296_1722698401.jpg' },
+  { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, image: 'https://www.asiaodysseytravel.com/images/china-tours/banner/fcd009-chengdu-jiuzhaigou-zhangjiajie-tour.jpg' },
 ];
 
 const MOCK_ROUNDS = [
@@ -833,9 +833,19 @@ export default function TourSystemApp() {
                       <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-[#03b8fa] transition">{route.name}</h3>
                       <p className="text-sm text-gray-500 line-clamp-2">{route.description}</p>
                     </div>
-                    <div className="mt-4 flex justify-between items-center text-sm">
-                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-bold">{route.duration}</span>
-                      <span className="font-bold text-[#03b8fa]">From ฿{route.price?.toLocaleString()}</span>
+                    <div className="mt-4 flex justify-between items-end">
+                      <div className="flex flex-col gap-2">
+                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-bold w-fit flex items-center gap-1">
+                          <Clock size={12} /> {route.duration}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium pl-1">
+                          {rounds.filter(r => r.routeId === route.id && r.status !== 'Full').length} rounds open
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-gray-400 font-normal mb-[-2px]">Starting at</div>
+                        <span className="font-bold text-[#03b8fa] text-lg">฿{route.price?.toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
