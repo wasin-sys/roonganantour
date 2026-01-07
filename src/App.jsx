@@ -44,157 +44,20 @@ import {
   XCircle
 } from 'lucide-react';
 
-// --- Mock Data ---
-// === USER DEFINITIONS ===
-// ID 1: Manager (Admin)
-// ID 2: K.Boy - Sale (Head of Round 101)
-// ID 3: K.Anne - Sale (Head of Round 201)
-// ID 4: K.New - Sale (Junior)
-
-const USERS = [
-  { id: 1, name: 'K.Admin', role: 'MANAGER', commission: 0, avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 2, name: 'K.Boy', role: 'SALE', commission: 3, avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: 3, name: 'K.Anne', role: 'SALE', commission: 5, avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: 4, name: 'K.New', role: 'SALE', commission: 2, avatar: 'https://i.pravatar.cc/150?u=4' },
-];
-
-// === ROUTES ===
-// ID 1: Beijing Route
-// ID 2: Kunming Route  
-// ID 3: Chengdu Route
-
-const MOCK_ROUTES = [
-  { id: 1, name: 'BEIJING - UNIVERSAL STUDIO 5D4N', code: 'BJ-US', price: 25900, image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200' },
-  { id: 2, name: 'KUNMING - LIJIANG - SHANGRI-LA 6D5N', code: 'KM-LS', price: 32900, image: 'https://images.chinahighlights.com/allpicture/2024/08/d09f58648bf547418c54ce3e6790c0af_cut_2560x800_296_1722698401.jpg' },
-  { id: 3, name: 'CHENGDU - JIUHAIGOU 5D4N', code: 'CD-JH', price: 28900, image: 'https://www.asiaodysseytravel.com/images/china-tours/banner/fcd009-chengdu-jiuzhaigou-zhangjiajie-tour.jpg' },
-];
-
-// === ROUNDS ===
-// Round 101, 102, 103 = Route 1 (BJ-US)
-// Round 201 = Route 2 (KM-LS)
-// Round 301 = Route 3 (CD-JH)
-
-const MOCK_ROUNDS = [
-  { id: 101, routeId: 1, date: '12-16 OCT 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 3, status: 'Selling', headId: 2, head: 'K.Boy', price: { adultTwin: 20000, adultSingle: 25000, adultTriple: 19000, childBed: 18000, childNoBed: 15000 } },
-  { id: 102, routeId: 1, date: '19-23 OCT 2025', airline: 'CA', flight: 'CA980', seats: 30, sold: 5, status: 'Selling', headId: 4, head: 'K.New', price: { adultTwin: 21000, adultSingle: 26000, adultTriple: 20000, childBed: 19000, childNoBed: 16000 } },
-  { id: 201, routeId: 2, date: '20-25 NOV 2025', airline: 'MU', flight: 'MU742', seats: 20, sold: 20, status: 'Full', headId: 3, head: 'K.Anne', price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 } },
-  { id: 301, routeId: 3, date: '05-10 DEC 2025', airline: 'TG', flight: 'TG618', seats: 25, sold: 25, status: 'Full', headId: 2, head: 'K.Boy', price: { adultTwin: 28900, adultSingle: 34900, adultTriple: 26900, childBed: 24900, childNoBed: 21000 } },
-  { id: 103, routeId: 1, date: '25-29 DEC 2025', airline: 'TG', flight: 'TG614', seats: 25, sold: 12, status: 'Selling', headId: 3, head: 'K.Anne', price: { adultTwin: 22000, adultSingle: 27000, adultTriple: 21000, childBed: 20000, childNoBed: 17000 } },
-];
-
-// === CUSTOMERS DATABASE ===
-// ownerId = who added this customer to the system
-
-const MOCK_CUSTOMERS_DB = [
-  {
-    id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี',
-    gender: 'M', dob: '1980-04-15', passportNo: 'AA1234567', passportIssue: '2020-01-01', passportExpire: '2025-01-01',
-    birthplace: 'BANGKOK', nationality: 'THAI', phone: '081-234-5678', email: 'somchai@email.com', lineId: 'somchai.j', remark: 'แพ้อาหารทะเล',
-    attachments: { passport: 'passport_scan.pdf', visa: null, ticket: null, insurance: null },
-    ownerId: 2 // Created by K.Boy
-  },
-  {
-    id: 2, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี',
-    gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', passportIssue: '2021-06-15', passportExpire: '2026-06-14',
-    birthplace: 'CHIANG MAI', nationality: 'THAI', phone: '089-999-8888', email: '', lineId: '', remark: '',
-    attachments: { passport: null, visa: null, ticket: null, insurance: null },
-    ownerId: 2 // Created by K.Boy
-  },
-  {
-    id: 3, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว',
-    gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', passportIssue: '2022-01-01', passportExpire: '2032-01-01',
-    birthplace: 'NEW YORK', nationality: 'USA', phone: '+1-555-0199', email: '', lineId: '', remark: 'Child Passenger',
-    attachments: { passport: null, visa: null, ticket: null, insurance: null },
-    ownerId: 3 // Created by K.Anne
-  },
-  {
-    id: 4, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี',
-    gender: 'M', dob: '1990-08-25', passportNo: 'AA84684645', passportIssue: '2023-03-01', passportExpire: '2033-03-01',
-    birthplace: 'BANGKOK', nationality: 'THAI', phone: '092-123-4567', email: 'wasin@email.com', lineId: 'wasin.g', remark: '',
-    attachments: { passport: null, visa: null, ticket: null, insurance: null },
-    ownerId: 1 // Created by K.Admin
-  }
-];
-
-// === PASSENGERS IN ROUND 101 ===
-// bookedBy = who sold/added this pax to the booking
-// This simulates existing bookings in Round 101 (BJ-US, Oct 12-16)
-
-const MOCK_PAX_IN_ROUND_101 = [
-  { ...MOCK_CUSTOMERS_DB[0], room: '101', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial' }, // SOMCHAI - sold by K.Boy
-  { ...MOCK_CUSTOMERS_DB[1], room: '101', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial' }, // SUDA - sold by K.Boy
-  { ...MOCK_CUSTOMERS_DB[2], room: '102', roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending' }  // LUCY - sold by K.Anne
-];
-
-// === INITIAL PAYMENTS ===
-// Payment 1: Booking 101 for Round 101 (BJ-US), partial payment
-// Payment 2: Booking 201 for Round 201 (KM-LS), pending
-
-const INITIAL_PAYMENTS = [
-  {
-    id: 1,
-    bookingId: 101,
-    routeId: 1,        // Route: BJ-US
-    roundId: 101,      // Round: 12-16 OCT 2025
-    saleId: 2,         // Primary sale: K.Boy
-    customerName: 'SOMCHAI JAIDEE GROUP',
-    totalAmount: 55000,  // 2x adultTwin (40,000) + 1x childNoBed (15,000)
-    paidAmount: 30000,
-    status: 'partial',
-    createdAt: '2025-09-20',
-    transactions: [
-      { id: 1, date: '2025-09-21', amount: 30000, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
-    ]
-  },
-  {
-    id: 2,
-    bookingId: 201,
-    routeId: 2,        // Route: KM-LS
-    roundId: 201,      // Round: 20-25 NOV 2025
-    saleId: 3,         // Primary sale: K.Anne
-    customerName: 'CORPORATE BOOKING - ABC CO.',
-    totalAmount: 98700,  // 3x adultTwin
-    paidAmount: 0,
-    status: 'pending',
-    createdAt: '2025-10-15',
-    transactions: []
-  }
-];
-
-const INITIAL_BLACKLIST_DATA = [
-  { id: 1, name: 'SOMBAT BADGUY', passport: 'A00000000', reason: 'หนีทัวร์ปี 2023' },
-  { id: 2, name: 'SOMSAK TROUBLE', passport: 'A11111111', reason: 'เมาสุราอาละวาด สร้างความวุ่นวาย' }
-];
-
-const INITIAL_ATTACHMENTS = {
-  passport: null,
-  visa: null,
-  ticket: null,
-  insurance: null,
-  birthCert: null // For passengers under 15
-};
-
-const INITIAL_CUSTOMER_STATE = {
-  id: null,
-  title: 'MR',
-  firstNameEn: '',
-  lastNameEn: '',
-  firstNameTh: '',
-  lastNameTh: '',
-  gender: 'M',
-  dob: '',
-  passportNo: '',
-  passportIssue: '',
-  passportExpire: '',
-  birthplace: '',
-  nationality: 'THAI',
-  phone: '',
-  email: '',
-  lineId: '',
-  remark: '',
-  attachments: { ...INITIAL_ATTACHMENTS },
-  ownerId: null // Track who created this pax
-};
+import {
+  MOCK_USERS as USERS,
+  MOCK_ROUTES,
+  MOCK_ROUNDS,
+  MOCK_CUSTOMERS_DB,
+  MOCK_PAX_IN_ROUND_101,
+  MOCK_PAX_IN_ROUND_102,
+  MOCK_PAX_IN_ROUND_201,
+  MOCK_PAX_IN_ROUND_301,
+  MOCK_PAX_IN_ROUND_103,
+  INITIAL_PAYMENTS,
+  INITIAL_BLACKLIST_DATA,
+  INITIAL_CUSTOMER_STATE
+} from './mockData';
 
 const INDIVIDUAL_TASKS = [
   { key: 'passport', label: 'Passport', icon: FileText, color: 'text-[#03b8fa]', bg: 'bg-[#d9edf4]' },
@@ -203,6 +66,8 @@ const INDIVIDUAL_TASKS = [
   { key: 'insurance', label: 'Ins.', icon: UserCheck, color: 'text-[#fdcf1a]', bg: 'bg-yellow-50' },
   { key: 'payment', label: 'Payment', icon: Wallet, color: 'text-green-600', bg: 'bg-green-50' }
 ];
+
+
 
 // --- Components ---
 
@@ -290,7 +155,12 @@ export default function TourSystemApp() {
   const [viewingPaymentId, setViewingPaymentId] = useState(null); // ID of payment to view details
 
   const getPaxForRound = (roundId) => {
-    const mockPax = roundId === 101 ? MOCK_PAX_IN_ROUND_101 : [];
+    let mockPax = [];
+    if (roundId === 101) mockPax = MOCK_PAX_IN_ROUND_101;
+    else if (roundId === 102) mockPax = MOCK_PAX_IN_ROUND_102;
+    else if (roundId === 201) mockPax = MOCK_PAX_IN_ROUND_201;
+    else if (roundId === 301) mockPax = MOCK_PAX_IN_ROUND_301;
+    else if (roundId === 103) mockPax = MOCK_PAX_IN_ROUND_103;
 
     // Get unique passengers from actual bookings for this round
     const realPax = bookings
@@ -661,7 +531,7 @@ export default function TourSystemApp() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-500"><tr><th className="px-6 py-3 font-medium">เส้นทาง</th><th className="px-6 py-3 font-medium">วันที่</th><th className="px-6 py-3 font-medium">ลูกทัวร์</th><th className="px-6 py-3 font-medium">หัวหน้าทัวร์</th><th className="px-6 py-3 font-medium">ความคืบหน้า</th></tr></thead>
-              <tbody className="divide-y divide-gray-100">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; return (<tr key={round.id} className="hover:bg-gray-50"><td className="px-6 py-4 font-medium text-gray-800">{route?.code}</td><td className="px-6 py-4 text-gray-600">{round.date}</td><td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>{round.sold}/{round.seats}</span></td><td className="px-6 py-4 text-gray-600">{round.head}</td><td className="px-6 py-4"><div className="w-24 bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div></div></td></tr>); })}</tbody>
+              <tbody className="divide-y divide-gray-100">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; return (<tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest"><td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td><td className="px-6 py-4 text-gray-600">{round.date}</td><td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>{round.sold}/{round.seats}</span></td><td className="px-6 py-4 text-gray-600">{round.head}</td><td className="px-6 py-4"><div className="w-24 bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div></div></td></tr>); })}</tbody>
             </table>
           </div>
         </div>
@@ -1206,13 +1076,53 @@ export default function TourSystemApp() {
                   )}
                   {showCustomerSearch && <div className="fixed inset-0 z-40" onClick={() => setShowCustomerSearch(false)}></div>}
                 </div>
-                {/* Search Result Click Handler Logic (inlined above but cleaner to verify) */}
-                {/* Actually Step 979 is where onClick is. Need to replace that block to add metadata */}
+
                 <button onClick={() => openCustomerForm()} className="bg-[#d9edf4] text-[#03b8fa] border border-primary-200 px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 hover:bg-red-100 transition whitespace-nowrap">
                   <Plus size={16} /> เพิ่มลูกค้าใหม่
                 </button>
               </div>
             </div>
+
+            {/* Existing Passengers Section */}
+            {(() => {
+              const existingPax = getPaxForRound(selectedRound.id);
+              if (existingPax.length > 0) {
+                return (
+                  <div className="mb-8 border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-2 text-sm font-bold text-gray-600 flex justify-between">
+                      <span>รายชื่อผู้ที่จองแล้วในรอบนี้ ({existingPax.length} ท่าน)</span>
+                      <span className="text-xs font-normal text-gray-400">จากระบบจัดการทัวร์</span>
+                    </div>
+                    <div className="bg-gray-50 max-h-48 overflow-y-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-gray-100 text-gray-500 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2">ชื่อ-นามสกุล</th>
+                            <th className="px-4 py-2">วันที่ชำระเงิน</th>
+                            <th className="px-4 py-2">สถานะ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {existingPax.map((pax, idx) => (
+                            <tr key={idx} className="hover:bg-gray-100">
+                              <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
+                              <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
+                              <td className="px-4 py-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] border ${pax.paymentStatus === 'paid' ? 'bg-green-100 text-green-700 border-green-200' :
+                                    pax.paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                      'bg-orange-50 text-orange-600 border-orange-200'
+                                  }`}>{pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Booking Customization Area */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 space-y-4">
@@ -1243,12 +1153,12 @@ export default function TourSystemApp() {
               {bookingPaxList.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed">
                   <Search size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>ยังไม่ได้เพิ่มรายชื่อผู้เดินทาง</p>
-                  <p className="text-xs">ค้นหาจากฐานข้อมูล หรือ เพิ่มใหม่</p>
+                  <p>ยังไม่ได้เพิ่มรายชื่อผู้เดินทางใหม่ (New Booking)</p>
+                  <p className="text-xs">ค้นหาจากฐานข้อมูลด้านบน หรือ เพิ่มใหม่</p>
                 </div>
               ) : (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4 flex justify-between items-center">
-                  <p className="text-sm text-blue-800 flex items-center gap-2"><CheckCircle size={16} /> ตรวจสอบรายชื่อผู้เดินทาง</p>
+                  <p className="text-sm text-blue-800 flex items-center gap-2"><CheckCircle size={16} /> ตรวจสอบรายชื่อผู้เดินทาง เพื่อดำเนินการจอง</p>
                   <div className="text-xs text-blue-600 font-bold">
                     เลือกจอง {selectedPaxForBooking.length} / {bookingPaxList.length} คน
                   </div>
