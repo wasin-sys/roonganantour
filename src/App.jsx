@@ -866,6 +866,16 @@ export default function TourSystemApp() {
             </div>
 
             <div className="space-y-4">
+              {/* Header Row */}
+              <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 bg-gray-100 rounded text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <div className="col-span-1">Airline</div>
+                <div className="col-span-3">Date</div>
+                <div className="col-span-2 text-right">Adult (Twin)</div>
+                <div className="col-span-2 text-right">Adult (Single)</div>
+                <div className="col-span-2 text-center">Availability</div>
+                <div className="col-span-2 text-center">Status</div>
+              </div>
+
               {rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
                 const isFull = round.sold >= round.seats;
                 const prices = round.price || selectedRoute.price || {};
