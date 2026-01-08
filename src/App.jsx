@@ -161,6 +161,10 @@ export default function TourSystemApp() {
   const [viewingSaleId, setViewingSaleId] = useState(null); // ID of sale user to view details
   const [viewingPaymentId, setViewingPaymentId] = useState(null); // ID of payment to view details
 
+  // User Management State
+  const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
+  const [userFormData, setUserFormData] = useState({ name: '', role: 'SALE', commission: 0, avatar: 'https://i.pravatar.cc/150?u=99' });
+
   const getPaxForRound = (roundId) => {
     let mockPax = [];
     if (roundId === 101) mockPax = MOCK_PAX_IN_ROUND_101;
@@ -1713,6 +1717,47 @@ export default function TourSystemApp() {
     );
   };
 
+  const renderUserFormModal = () => (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden">
+        <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
+          <h3 className="font-bold text-lg flex items-center gap-2"><UserPlus size={20} /> เพิ่มพนักงานใหม่</h3>
+          <button onClick={() => setIsUserFormModalOpen(false)}><X size={20} /></button>
+        </header>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-center mb-4">
+            <img src={userFormData.avatar} className="w-20 h-20 rounded-full border-4 border-gray-100 shadow-sm" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">ชื่อ-นามสกุล</label>
+            <input type="text" className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none" value={userFormData.name} onChange={e => setUserFormData({ ...userFormData, name: e.target.value })} placeholder="เช่น สมชาย ใจดี" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">ตำแหน่ง (Role)</label>
+            <select className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none bg-white" value={userFormData.role} onChange={e => setUserFormData({ ...userFormData, role: e.target.value })}>
+              <option value="SALE">Sale (ฝ่ายขาย)</option>
+              <option value="MANAGER">Manager (ผู้จัดการ)</option>
+              <option value="GUIDE">Guide (ไกด์/Ops)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">ค่าคอมมิชชั่น (%)</label>
+            <input type="number" className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none" value={userFormData.commission} onChange={e => setUserFormData({ ...userFormData, commission: Number(e.target.value) })} />
+          </div>
+          <button onClick={() => {
+            if (!userFormData.name) return alert("กรุณาระบุชื่อพนักงาน");
+            const newUser = {
+              id: Date.now(),
+              ...userFormData
+            };
+            setAppUsers([...appUsers, newUser]);
+            setIsUserFormModalOpen(false);
+          }} className="w-full bg-[#03b8fa] text-white py-2 rounded-lg font-bold hover:bg-[#0279a9] transition shadow-lg mt-2">บันทึกพนักงาน</button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderSettings = () => (
     <div className="space-y-6 flex flex-col h-full animate-fade-in">
       <header className="mb-2">
@@ -1723,7 +1768,7 @@ export default function TourSystemApp() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
           <h3 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> จัดการผู้ใช้งาน & ค่าคอมมิชชั่น</h3>
-          <div className="text-xs text-gray-500 bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Role: Manager Access Only</div>
+          <button onClick={() => { setUserFormData({ name: '', role: 'SALE', commission: 0, avatar: `https://i.pravatar.cc/150?u=${Date.now()}` }); setIsUserFormModalOpen(true); }} className="bg-[#03b8fa] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#0279a9] flex items-center gap-1 shadow-sm"><UserPlus size={14} /> เพิ่มพนักงาน</button>
         </div>
         <div className="overflow-auto flex-1 p-4">
           <table className="w-full text-sm text-left">
@@ -1986,6 +2031,7 @@ export default function TourSystemApp() {
         <div className="h-16 bg-white border-b border-gray-100 flex items-center px-4 lg:hidden"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button></div>
         <div className="flex-1 overflow-y-auto p-4 md:p-8">{activeTab === 'dashboard' && renderDashboard()}{activeTab === 'booking' && renderBooking()}{activeTab === 'operation' && renderOperation()}{activeTab === 'payment' && renderPayment()}{activeTab === 'crm' && renderCRM()}{activeTab === 'settings' && renderSettings()}</div>
         {isFormOpen && renderCustomerFormModal()}
+        {isUserFormModalOpen && renderUserFormModal()}
 
         {/* Booking Confirmation & Payment Modal */}
         {isBookingConfirmationModalOpen && (
@@ -2210,7 +2256,6 @@ export default function TourSystemApp() {
                               id: Date.now() + 1,
                               bookingId: bookingId,
                               routeId: selectedRoute.id,
-                              roundId: selectedRound.id,
                               roundId: selectedRound.id,
                               saleId: currentUser.id,
                               paxIds: selectedPaxForBooking,
