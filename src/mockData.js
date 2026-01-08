@@ -302,12 +302,12 @@ export const INITIAL_PAYMENTS = [
         roundId: 201,
         saleId: 3,
         customerName: 'CORPORATE BOOKING - ABC CO.',
-        totalAmount: 658000,
-        paidAmount: 658000,
+        totalAmount: 668100,
+        paidAmount: 668100,
         status: 'paid',
         createdAt: '2025-10-15',
         transactions: [
-            { id: 2, date: '2025-10-16', amount: 658000, method: 'cheque', receipt: 'cheque_001.jpg', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-17' }
+            { id: 2, date: '2025-10-16', amount: 668100, method: 'cheque', receipt: 'cheque_001.jpg', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-17' }
         ]
     }
 ];

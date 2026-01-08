@@ -132,6 +132,7 @@ export default function TourSystemApp() {
   const [isBlacklistFormOpen, setIsBlacklistFormOpen] = useState(false);
   const [blacklistFormData, setBlacklistFormData] = useState({ name: '', passport: '', reason: '' });
   const [operationView, setOperationView] = useState('list');
+  const [operationTab, setOperationTab] = useState('upcoming'); // 'upcoming' | 'ongoing' | 'completed'
   const [selectedOpRound, setSelectedOpRound] = useState(null);
   const [showTagPreview, setShowTagPreview] = useState(false);
   const [paxTaskStatus, setPaxTaskStatus] = useState({});
@@ -1098,23 +1099,44 @@ export default function TourSystemApp() {
                         <thead className="bg-gray-100 text-gray-500 sticky top-0">
                           <tr>
                             <th className="px-4 py-2">ชื่อ-นามสกุล</th>
+                            <th className="px-4 py-2">ผู้ขาย</th>
                             <th className="px-4 py-2">วันที่ชำระเงิน</th>
+                            <th className="px-4 py-2 text-right">ยอดจอง</th>
                             <th className="px-4 py-2">สถานะ</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {existingPax.map((pax, idx) => (
-                            <tr key={idx} className="hover:bg-gray-100">
-                              <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
-                              <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
-                              <td className="px-4 py-2">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] border ${pax.paymentStatus === 'paid' ? 'bg-green-100 text-green-700 border-green-200' :
+                          {existingPax.map((pax, idx) => {
+                            const seller = appUsers.find(u => u.id === pax.bookedBy);
+                            return (
+                              <tr key={idx} className="hover:bg-gray-100">
+                                <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
+                                <td className="px-4 py-2">
+                                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
+                                    {seller?.name || '-'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
+                                <td className="px-4 py-2 text-right font-mono font-bold text-[#03b8fa]">
+                                  ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] border ${pax.paymentStatus === 'paid' ? 'bg-green-100 text-green-700 border-green-200' :
                                     pax.paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                                       'bg-orange-50 text-orange-600 border-orange-200'
-                                  }`}>{pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}</span>
-                              </td>
-                            </tr>
-                          ))}
+                                    }`}>{pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {/* Total Row */}
+                          <tr className="bg-gray-100 font-bold">
+                            <td className="px-4 py-2 text-gray-600" colSpan={3}>รวมยอดจอง ({existingPax.length} ท่าน)</td>
+                            <td className="px-4 py-2 text-right font-mono text-[#0279a9]">
+                              ฿{existingPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-2"></td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -1309,10 +1331,15 @@ export default function TourSystemApp() {
                         const newPayment = {
                           id: Date.now() + 1,
                           bookingId: bookingId,
+                          routeId: selectedRoute.id,
+                          roundId: selectedRound.id,
+                          saleId: currentUser.id,
+                          paxIds: selectedPaxForBooking, // Track which pax are in this payment
                           customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
                           totalAmount: amount,
                           paidAmount: 0,
                           status: 'pending',
+                          createdAt: new Date().toLocaleDateString(),
                           transactions: []
                         };
                         setPayments(prev => [newPayment, ...prev]);
@@ -1385,11 +1412,13 @@ export default function TourSystemApp() {
                           const newPayment = {
                             id: Date.now() + 1,
                             bookingId: bookingId,
+                            routeId: selectedRoute.id,
+                            roundId: selectedRound.id,
+                            saleId: currentUser.id, // Track Sales Rep
+                            paxIds: selectedPaxForBooking, // Track which pax are in this payment
                             customerName: bookingDetails.contactName || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
                             totalAmount: totalAmount,
                             paidAmount: paidAmount,
-                            saleId: currentUser.id, // Track Sales Rep
-                            routeId: selectedRoute.id, // Track Route for Commission
                             status: status,
                             createdAt: new Date().toLocaleDateString(),
                             transactions: []
@@ -1433,10 +1462,142 @@ export default function TourSystemApp() {
     const canEdit = currentUser.role !== 'GUIDE';
 
     if (operationView === 'list') {
+      // Filter rounds based on tab
+      // For demo purposes: 
+      // - upcoming: status = 'Selling' (still open for booking)
+      // - ongoing: status = 'Full' and date is in the future or current
+      // - completed: marked as completed (we'll use a simple check)
+      const today = new Date();
+
+      const getFilteredRounds = () => {
+        switch (operationTab) {
+          case 'upcoming':
+            // Rounds that are still selling (not full yet)
+            return rounds.filter(r => r.status === 'Selling');
+          case 'ongoing':
+            // Rounds that are full (ready to travel / in operation)
+            return rounds.filter(r => r.status === 'Full');
+          case 'completed':
+            // For demo: no completed rounds yet (could add a 'Completed' status in future)
+            return rounds.filter(r => r.status === 'Completed');
+          default:
+            return rounds;
+        }
+      };
+
+      const filteredRounds = getFilteredRounds();
+
+      const tabs = [
+        { key: 'upcoming', label: 'ทัวร์ที่กำลังจะถึง', icon: Calendar, count: rounds.filter(r => r.status === 'Selling').length },
+        { key: 'ongoing', label: 'กำลังออกเดินทาง', icon: Plane, count: rounds.filter(r => r.status === 'Full').length },
+        { key: 'completed', label: 'เสร็จสิ้นแล้ว', icon: CheckCircle, count: rounds.filter(r => r.status === 'Completed').length }
+      ];
+
       return (
         <div className="space-y-6 animate-fade-in">
-          <header className="mb-6 flex justify-between items-center"><div><h1 className="text-2xl font-bold text-gray-800">ศูนย์ปฏิบัติการทัวร์</h1><p className="text-gray-500 text-sm">Overview of all active tour groups and assignments</p></div><div className="flex gap-2"><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="ค้นหาทัวร์..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#6bc8e9] outline-none" /></div></div></header>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; const isFull = round.sold === round.seats; return (<div key={round.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer flex flex-col justify-between group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); }}><div><div className="flex justify-between items-start mb-4"><div className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code}</div><span className={`px-2 py-1 rounded-full text-xs font-medium ${isFull ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{round.status === 'Selling' ? 'เปิดจอง' : round.status === 'Full' ? 'เต็ม' : round.status}</span></div><h3 className="font-bold text-gray-800 mb-1 line-clamp-2 group-hover:text-[#0279a9] transition">{route?.name}</h3><div className="text-sm text-gray-500 mb-4 flex items-center gap-2"><Calendar size={14} /> {round.date}</div></div><div className="space-y-3 pt-3 border-t border-gray-100"><div className="flex justify-between text-sm"><span className="text-gray-500">Head:</span><span className={`font-medium ${round.head === 'Unassigned' ? 'text-[#03b8fa] italic' : 'text-gray-800'}`}>{round.head}</span></div><div className="flex justify-between text-sm"><span className="text-gray-500">Pax:</span><span className="font-medium text-gray-800">{round.sold}/{round.seats}</span></div><div className="space-y-1"><div className="flex justify-between text-xs text-gray-400"><span>ความคืบหน้า</span><span>{progress}%</span></div><div className="w-full bg-gray-100 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : 'bg-[#fdcf1a]'}`} style={{ width: `${progress}%` }}></div></div></div></div></div>); })}</div>
+          <header className="mb-6 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">ศูนย์ปฏิบัติการทัวร์</h1>
+              <p className="text-gray-500 text-sm">Overview of all active tour groups and assignments</p>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder="ค้นหาทัวร์..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#6bc8e9] outline-none" />
+              </div>
+            </div>
+          </header>
+
+          {/* Tab Switcher */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 inline-flex gap-1">
+            {tabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setOperationTab(tab.key)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${operationTab === tab.key
+                    ? 'bg-[#03b8fa] text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                <tab.icon size={16} />
+                <span>{tab.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${operationTab === tab.key
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                  }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tour Cards Grid */}
+          {filteredRounds.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                {operationTab === 'upcoming' && <Calendar size={48} className="mx-auto opacity-50" />}
+                {operationTab === 'ongoing' && <Plane size={48} className="mx-auto opacity-50" />}
+                {operationTab === 'completed' && <CheckCircle size={48} className="mx-auto opacity-50" />}
+              </div>
+              <h3 className="text-lg font-bold text-gray-600 mb-2">
+                {operationTab === 'upcoming' && 'ไม่มีทัวร์ที่กำลังจะถึง'}
+                {operationTab === 'ongoing' && 'ไม่มีทัวร์ที่กำลังออกเดินทาง'}
+                {operationTab === 'completed' && 'ไม่มีทัวร์ที่เสร็จสิ้น'}
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {operationTab === 'upcoming' && 'ทัวร์ที่ยังเปิดรับจองจะแสดงที่นี่'}
+                {operationTab === 'ongoing' && 'ทัวร์ที่ที่นั่งเต็มและพร้อมออกเดินทางจะแสดงที่นี่'}
+                {operationTab === 'completed' && 'ทัวร์ที่เดินทางเสร็จสิ้นแล้วจะแสดงที่นี่'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredRounds.map(round => {
+                const route = routes.find(r => r.id === round.routeId);
+                const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10;
+                const isFull = round.sold === round.seats;
+                return (
+                  <div
+                    key={round.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                    onClick={() => { setSelectedOpRound(round); setOperationView('detail'); }}
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code}</div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${isFull ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {round.status === 'Selling' ? 'เปิดจอง' : round.status === 'Full' ? 'เต็ม' : round.status}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-gray-800 mb-1 line-clamp-2 group-hover:text-[#0279a9] transition">{route?.name}</h3>
+                      <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
+                        <Calendar size={14} /> {round.date}
+                      </div>
+                    </div>
+                    <div className="space-y-3 pt-3 border-t border-gray-100">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Head:</span>
+                        <span className={`font-medium ${round.head === 'Unassigned' ? 'text-[#03b8fa] italic' : 'text-gray-800'}`}>{round.head}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Pax:</span>
+                        <span className="font-medium text-gray-800">{round.sold}/{round.seats}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>ความคืบหน้า</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div className={`h-1.5 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : 'bg-[#fdcf1a]'}`} style={{ width: `${progress}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       );
     }
@@ -1745,7 +1906,19 @@ export default function TourSystemApp() {
           const payment = payments.find(p => p.id === viewingPaymentId);
           const booking = bookings.find(b => b.id === payment?.bookingId);
           const route = routes.find(r => r.id === payment?.routeId);
-          const paxList = booking?.pax || [];
+          const round = rounds.find(r => r.id === payment?.roundId);
+
+          // Get pax list: prioritize paxIds (for new bookings), then roundId (for mock data), then booking.pax
+          let paxList = [];
+          if (payment?.paxIds && payment.paxIds.length > 0) {
+            // For new bookings: filter customers by paxIds
+            paxList = customers.filter(c => payment.paxIds.includes(c.id));
+          } else if (payment?.roundId) {
+            // For mock data: get all pax in round
+            paxList = getPaxForRound(payment.roundId);
+          } else if (booking?.pax) {
+            paxList = booking.pax;
+          }
 
           return (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -1788,23 +1961,36 @@ export default function TourSystemApp() {
                             <th className="px-3 py-2 text-left">ชื่อ-นามสกุล</th>
                             <th className="px-3 py-2 text-left">Passport</th>
                             <th className="px-3 py-2 text-left">ประเภทห้อง</th>
+                            <th className="px-3 py-2 text-right">ยอดจอง</th>
                             <th className="px-3 py-2 text-left">ผู้ขาย</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
                           {paxList.map(p => {
                             const seller = appUsers.find(u => u.id === p.bookedBy);
+                            const paxPrice = round?.price?.[p.roomType || 'adultTwin'] || 0;
                             return (
-                              <tr key={p.id} className="hover:bg-gray-50">
+                              <tr key={p.id || p.uniqueId} className="hover:bg-gray-50">
                                 <td className="px-3 py-2 font-medium">{p.firstNameEn} {p.lastNameEn}</td>
                                 <td className="px-3 py-2 font-mono text-gray-500">{p.passportNo}</td>
                                 <td className="px-3 py-2 text-xs text-gray-600">{p.roomType || 'adultTwin'}</td>
+                                <td className="px-3 py-2 text-right font-mono font-bold text-[#03b8fa]">
+                                  ฿{paxPrice.toLocaleString()}
+                                </td>
                                 <td className="px-3 py-2 text-xs">
                                   <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{seller?.name || 'N/A'}</span>
                                 </td>
                               </tr>
                             );
                           })}
+                          {/* Total Row */}
+                          <tr className="bg-gray-100 font-bold">
+                            <td className="px-3 py-2 text-gray-600" colSpan={3}>รวมยอดจอง ({paxList.length} ท่าน)</td>
+                            <td className="px-3 py-2 text-right font-mono text-[#0279a9]">
+                              ฿{paxList.reduce((sum, p) => sum + (round?.price?.[p.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2"></td>
+                          </tr>
                         </tbody>
                       </table>
                     )}
