@@ -55,11 +55,14 @@ export const MOCK_ROUNDS = [
     {
         id: 101,
         routeId: 1,
-        date: '12-16 OCT 2025',
+        date: '15-19 JAN 2026',
         airline: 'TG',
         flight: 'TG614',
         seats: 25,
         sold: 3,
+        paidCount: 0,
+        pendingCount: 1,
+        partialCount: 2,
         status: 'Selling',
         headId: 2,
         head: 'K.Boy',
@@ -68,11 +71,14 @@ export const MOCK_ROUNDS = [
     {
         id: 102,
         routeId: 1,
-        date: '19-23 OCT 2025',
+        date: '22-26 JAN 2026',
         airline: 'CA',
         flight: 'CA980',
         seats: 30,
         sold: 5,
+        paidCount: 3,
+        pendingCount: 0,
+        partialCount: 2,
         status: 'Selling',
         headId: 4,
         head: 'K.New',
@@ -81,11 +87,14 @@ export const MOCK_ROUNDS = [
     {
         id: 201,
         routeId: 2,
-        date: '20-25 NOV 2025',
+        date: '10-15 FEB 2026',
         airline: 'MU',
         flight: 'MU742',
         seats: 20,
         sold: 20,
+        paidCount: 20,
+        pendingCount: 0,
+        partialCount: 0,
         status: 'Full',
         headId: 3,
         head: 'K.Anne',
@@ -94,11 +103,14 @@ export const MOCK_ROUNDS = [
     {
         id: 301,
         routeId: 3,
-        date: '05-10 DEC 2025',
+        date: '25 FEB - 02 MAR 2026',
         airline: 'TG',
         flight: 'TG618',
         seats: 25,
         sold: 25,
+        paidCount: 25,
+        pendingCount: 0,
+        partialCount: 0,
         status: 'Full',
         headId: 2,
         head: 'K.Boy',
@@ -107,15 +119,50 @@ export const MOCK_ROUNDS = [
     {
         id: 103,
         routeId: 1,
-        date: '25-29 DEC 2025',
+        date: '05-09 FEB 2026',
         airline: 'TG',
         flight: 'TG614',
         seats: 25,
         sold: 12,
+        paidCount: 8,
+        pendingCount: 2,
+        partialCount: 2,
         status: 'Selling',
         headId: 3,
         head: 'K.Anne',
         price: { adultTwin: 29900, adultSingle: 35900, adultTriple: 28900, childBed: 27900, childNoBed: 24900 }
+    },
+    {
+        id: 401,
+        routeId: 4,
+        date: '10-15 DEC 2025',
+        airline: 'TG',
+        flight: 'TG640',
+        seats: 20,
+        sold: 20,
+        paidCount: 20,
+        pendingCount: 0,
+        partialCount: 0,
+        status: 'Completed',
+        headId: 2,
+        head: 'K.Boy',
+        price: { adultTwin: 42900, adultSingle: 48900, adultTriple: 40900, childBed: 38900, childNoBed: 35000 }
+    },
+    {
+        id: 402,
+        routeId: 2,
+        date: '20-25 DEC 2025',
+        airline: 'MU',
+        flight: 'MU742',
+        seats: 18,
+        sold: 18,
+        paidCount: 18,
+        pendingCount: 0,
+        partialCount: 0,
+        status: 'Completed',
+        headId: 3,
+        head: 'K.Anne',
+        price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 }
     }
 ];
 
@@ -262,20 +309,69 @@ export const MOCK_PAX_IN_ROUND_301 = [
     { ...MOCK_CUSTOMERS_DB[28], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '29-301' }
 ];
 
-// Round 103: 12 pax (Sold: 12)
+// Round 103: 12 pax (Sold: 12) - 8 paid, 2 pending, 2 partial
 export const MOCK_PAX_IN_ROUND_103 = [
+    // 8 PAID
     { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-01', uniqueId: '4-103' },
     { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-01', uniqueId: '5-103' },
     { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-02', uniqueId: '6-103' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-02', uniqueId: '7-103' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-03', uniqueId: '8-103' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-03', uniqueId: '9-103' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '10-103' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '11-103' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '12-103' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '13-103' },
+    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-02', uniqueId: '7-103' },
+    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-03', uniqueId: '8-103' },
+    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-03', uniqueId: '9-103' },
+    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-04', uniqueId: '10-103' },
+    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-04', uniqueId: '11-103' },
+    // 2 PARTIAL
+    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-05', uniqueId: '12-103' },
+    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-05', uniqueId: '13-103' },
+    // 2 PENDING
     { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '14-103' },
     { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '15-103' }
+];
+
+// Round 401: 20 pax (JP-TYO, Completed) - All PAID, bookedBy K.Boy
+export const MOCK_PAX_IN_ROUND_401 = [
+    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '1-401' },
+    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '2-401' },
+    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '7-401' },
+    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '8-401' },
+    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '9-401' },
+    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '10-401' },
+    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '11-401' },
+    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '12-401' },
+    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '13-401' },
+    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '14-401' },
+    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '15-401' },
+    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '16-401' },
+    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '17-401' },
+    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '18-401' },
+    { ...MOCK_CUSTOMERS_DB[18], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '19-401' },
+    { ...MOCK_CUSTOMERS_DB[19], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '20-401' },
+    { ...MOCK_CUSTOMERS_DB[20], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '21-401' },
+    { ...MOCK_CUSTOMERS_DB[21], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '22-401' },
+    { ...MOCK_CUSTOMERS_DB[22], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '23-401' },
+    { ...MOCK_CUSTOMERS_DB[23], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-10', uniqueId: '24-401' }
+];
+
+// Round 402: 18 pax (KM-LS, Completed) - All PAID, bookedBy K.Anne
+export const MOCK_PAX_IN_ROUND_402 = [
+    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-15', uniqueId: '1-402' },
+    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-15', uniqueId: '2-402' },
+    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-16', uniqueId: '3-402' },
+    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-16', uniqueId: '4-402' },
+    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-17', uniqueId: '5-402' },
+    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-17', uniqueId: '6-402' },
+    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-18', uniqueId: '7-402' },
+    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-18', uniqueId: '8-402' },
+    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-19', uniqueId: '9-402' },
+    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-19', uniqueId: '10-402' },
+    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-20', uniqueId: '11-402' },
+    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-20', uniqueId: '12-402' },
+    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-21', uniqueId: '13-402' },
+    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-21', uniqueId: '14-402' },
+    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-22', uniqueId: '15-402' },
+    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-22', uniqueId: '16-402' },
+    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-23', uniqueId: '17-402' },
+    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-23', uniqueId: '18-402' }
 ];
 
 // === INITIAL PAYMENTS / BOOKINGS ===
@@ -285,14 +381,14 @@ export const INITIAL_PAYMENTS = [
         bookingId: 101,
         routeId: 1,
         roundId: 101,
-        saleId: 2,
+        saleId: 2, // K.Boy
         customerName: 'SOMCHAI JAIDEE GROUP',
         totalAmount: 72700,
-        paidAmount: 30000,
+        paidAmount: 10400,
         status: 'partial',
         createdAt: '2025-09-20',
         transactions: [
-            { id: 1, date: '2025-09-21', amount: 30000, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
+            { id: 1, date: '2025-09-21', amount: 10400, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
         ]
     },
     {
@@ -300,7 +396,7 @@ export const INITIAL_PAYMENTS = [
         bookingId: 201,
         routeId: 2,
         roundId: 201,
-        saleId: 3,
+        saleId: 3, // K.Anne
         customerName: 'CORPORATE BOOKING - ABC CO.',
         totalAmount: 668100,
         paidAmount: 668100,
@@ -308,6 +404,51 @@ export const INITIAL_PAYMENTS = [
         createdAt: '2025-10-15',
         transactions: [
             { id: 2, date: '2025-10-16', amount: 668100, method: 'cheque', receipt: 'cheque_001.jpg', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-17' }
+        ]
+    },
+    {
+        id: 3,
+        bookingId: 102,
+        routeId: 1,
+        roundId: 102,
+        saleId: 4, // K.New
+        customerName: 'WASIN GARNSOMDEE GROUP',
+        totalAmount: 134500,
+        paidAmount: 80700,
+        status: 'partial',
+        createdAt: '2025-10-01',
+        transactions: [
+            { id: 3, date: '2025-10-01', amount: 80700, method: 'transfer', receipt: 'receipt_002.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-02' }
+        ]
+    },
+    {
+        id: 4,
+        bookingId: 401,
+        routeId: 4,
+        roundId: 401,
+        saleId: 2, // K.Boy
+        customerName: 'JAPAN TOUR GROUP',
+        totalAmount: 858000,
+        paidAmount: 858000,
+        status: 'paid',
+        createdAt: '2025-11-01',
+        transactions: [
+            { id: 4, date: '2025-11-01', amount: 858000, method: 'transfer', receipt: 'receipt_003.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-02' }
+        ]
+    },
+    {
+        id: 5,
+        bookingId: 402,
+        routeId: 2,
+        roundId: 402,
+        saleId: 3, // K.Anne
+        customerName: 'CHINA TOUR GROUP',
+        totalAmount: 588200,
+        paidAmount: 588200,
+        status: 'paid',
+        createdAt: '2025-11-15',
+        transactions: [
+            { id: 5, date: '2025-11-15', amount: 588200, method: 'transfer', receipt: 'receipt_004.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-16' }
         ]
     }
 ];

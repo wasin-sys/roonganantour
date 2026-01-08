@@ -54,6 +54,8 @@ import {
   MOCK_PAX_IN_ROUND_201,
   MOCK_PAX_IN_ROUND_301,
   MOCK_PAX_IN_ROUND_103,
+  MOCK_PAX_IN_ROUND_401,
+  MOCK_PAX_IN_ROUND_402,
   INITIAL_PAYMENTS,
   INITIAL_BLACKLIST_DATA,
   INITIAL_CUSTOMER_STATE
@@ -162,6 +164,7 @@ export default function TourSystemApp() {
     else if (roundId === 201) mockPax = MOCK_PAX_IN_ROUND_201;
     else if (roundId === 301) mockPax = MOCK_PAX_IN_ROUND_301;
     else if (roundId === 103) mockPax = MOCK_PAX_IN_ROUND_103;
+    else if (roundId === 401) mockPax = MOCK_PAX_IN_ROUND_401;
 
     // Get unique passengers from actual bookings for this round
     const realPax = bookings
@@ -301,9 +304,11 @@ export default function TourSystemApp() {
 
       setCustomers(prev => [...prev, newCustomer]);
 
-      // If we are in booking step 3, also add to bookingPaxList
-      if (bookingStep === 3) {
-        setBookingPaxList(prev => [...prev, newCustomer]);
+      // If we are in booking step 3, also add to bookingPaxList with roundId
+      if (bookingStep === 3 && selectedRound) {
+        const customerWithRound = { ...newCustomer, roundId: selectedRound.id };
+        setCustomers(prev => prev.map(c => c.id === newId ? customerWithRound : c));
+        setBookingPaxList(prev => [...prev, customerWithRound]);
         setSelectedPaxForBooking(prev => [...prev, newId]);
       }
     } else { setCustomers(customers.map(c => c.id === formData.id ? saveData : c)); }
@@ -514,28 +519,99 @@ export default function TourSystemApp() {
   const renderDashboard = () => {
     // Dynamic Stats Calculation
     const totalSales = payments.reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalRevenue = payments.reduce((sum, p) => sum + p.paidAmount, 0); // Actual cash in (optional stat)
-    // Note: User asked for "Total Sales" to update. We use 'totalAmount' (Booked Value). 
-    // If they want 'Cash Received', we'd use 'paidAmount'. Given context of "Sales", we usually mean Booked Value.
+    const totalRevenue = payments.reduce((sum, p) => sum + p.paidAmount, 0);
+
+    // Count tours by status
+    const ongoingTours = rounds.filter(r => r.status === 'Full').length;
+    const completedTours = rounds.filter(r => r.status === 'Completed').length;
 
     return (
       <div className="space-y-6 animate-fade-in">
-        <header className="flex justify-between items-center mb-6"><div><h1 className="text-2xl font-bold text-gray-800">แผงควบคุมผู้บริหาร</h1><p className="text-gray-500 text-sm">ยินดีต้อนรับ, K.Admin</p></div><button className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg shadow-sm hover:bg-[#0279a9] transition flex items-center gap-2" onClick={() => setActiveTab('booking')}><Plus size={18} /> จองทัวร์ใหม่</button></header>
+        <header className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">แผงควบคุมผู้บริหาร</h1>
+            <p className="text-gray-500 text-sm">ยินดีต้อนรับ, {currentUser.name}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Date Range Filter */}
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+              <Calendar size={16} className="text-gray-400" />
+              <div className="flex items-center gap-2 text-sm">
+                <input
+                  type="date"
+                  className="bg-transparent outline-none text-gray-600 cursor-pointer"
+                  defaultValue="2026-01-01"
+                />
+                <span className="text-gray-400">ถึง</span>
+                <input
+                  type="date"
+                  className="bg-transparent outline-none text-gray-600 cursor-pointer"
+                  defaultValue="2026-12-31"
+                />
+              </div>
+              <button className="ml-2 text-xs bg-[#03b8fa] text-white px-2 py-1 rounded hover:bg-[#0279a9] transition">
+                กรอง
+              </button>
+            </div>
+            <button className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg shadow-sm hover:bg-[#0279a9] transition flex items-center gap-2" onClick={() => setActiveTab('booking')}>
+              <Plus size={18} /> จองทัวร์ใหม่
+            </button>
+          </div>
+        </header>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard title="ยอดขายรวม (Booking Value)" value={`฿${totalSales.toLocaleString()}`} subtext="ยอดรวมจากการจองทั้งหมด" icon={CreditCard} color="green" />
           <StatCard title="ยอดรับชำระแล้ว" value={`฿${totalRevenue.toLocaleString()}`} subtext="เงินสดที่ได้รับแล้ว" icon={Wallet} color="blue" />
-          <StatCard title="ทัวร์ที่กำลังออกเดินทาง" value="8 กรุ๊ป" subtext="อยู่ในระหว่างดำเนินการ" icon={Plane} />
-          <StatCard title="งานที่รอตรวจสอบ" value="14 รายการ" subtext="ต้องการการดำเนินการ" icon={AlertTriangle} color="red" />
+          <StatCard title="ทัวร์ที่กำลังออกเดินทาง" value={`${ongoingTours} กรุ๊ป`} subtext="อยู่ในระหว่างดำเนินการ" icon={Plane} />
+          <StatCard title="ทัวร์ที่เสร็จสิ้นแล้ว" value={`${completedTours} กรุ๊ป`} subtext="เดินทางเสร็จสิ้นแล้ว" icon={CheckCircle} color="green" />
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">สถานะทัวร์เร็วๆนี้</h3><span className="text-xs text-blue-600 cursor-pointer hover:underline">ดูทั้งหมด</span></div>
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              <Clock size={18} className="text-[#fdcf1a]" /> ทัวร์ที่กำลังจะถึง (รอดำเนินการ)
+            </h3>
+            <span className="text-xs text-blue-600 cursor-pointer hover:underline" onClick={() => { setActiveTab('operation'); setOperationTab('upcoming'); }}>ดูทั้งหมด →</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500"><tr><th className="px-6 py-3 font-medium">เส้นทาง</th><th className="px-6 py-3 font-medium">วันที่</th><th className="px-6 py-3 font-medium">ลูกทัวร์</th><th className="px-6 py-3 font-medium">หัวหน้าทัวร์</th><th className="px-6 py-3 font-medium">ความคืบหน้า</th></tr></thead>
-              <tbody className="divide-y divide-gray-100">{rounds.map(round => { const route = routes.find(r => r.id === round.routeId); const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10; return (<tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest"><td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td><td className="px-6 py-4 text-gray-600">{round.date}</td><td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>{round.sold}/{round.seats}</span></td><td className="px-6 py-4 text-gray-600">{round.head}</td><td className="px-6 py-4"><div className="w-24 bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div></div></td></tr>); })}</tbody>
+              <thead className="bg-gray-50 text-gray-500">
+                <tr>
+                  <th className="px-6 py-3 font-medium">เส้นทาง</th>
+                  <th className="px-6 py-3 font-medium">วันที่</th>
+                  <th className="px-6 py-3 font-medium">ลูกทัวร์</th>
+                  <th className="px-6 py-3 font-medium">หัวหน้าทัวร์</th>
+                  <th className="px-6 py-3 font-medium">ความคืบหน้า</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rounds.filter(r => r.status === 'Selling').map(round => {
+                  const route = routes.find(r => r.id === round.routeId);
+                  const progress = round.id === 101 ? 65 : 10;
+                  return (
+                    <tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest">
+                      <td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td>
+                      <td className="px-6 py-4 text-gray-600">{round.date}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-[#0279a9]' : 'bg-green-100 text-green-700'}`}>
+                          {round.sold}/{round.seats}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">{round.head}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div className={`h-2 rounded-full ${progress > 80 ? 'bg-[#37c3a5]' : progress > 50 ? 'bg-[#fdcf1a]' : 'bg-[#0279a9]'}`} style={{ width: `${progress}%` }}></div>
+                          </div>
+                          <span className="text-xs text-gray-500">{progress}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
         </div>
+
 
         {/* Commission Report Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
@@ -959,17 +1035,19 @@ export default function TourSystemApp() {
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Header Row */}
-              <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 bg-gray-100 rounded text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <div className="col-span-1">สายการบิน</div>
-                <div className="col-span-2">วันที่เดินทาง</div>
-                <div className="col-span-2 text-right">ผู้ใหญ่ (พักคู่)</div>
-                <div className="col-span-1 text-right">พักเดี่ยว</div>
-                <div className="col-span-2 text-center">หัวหน้าทัวร์</div>
-                <div className="col-span-1 text-center">ที่นั่งรวม</div>
-                <div className="col-span-1 text-center">จองแล้ว</div>
-                <div className="col-span-2 text-center">สถานะ</div>
+              <div className="hidden md:flex items-center justify-between px-5 py-3 bg-gray-100 rounded-lg text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <div className="flex-1 min-w-[60px]">สายการบิน</div>
+                <div className="flex-1 min-w-[100px]">วันที่เดินทาง</div>
+                <div className="flex-1 min-w-[80px] text-center">ผู้ใหญ่ (คู่)</div>
+                <div className="flex-1 min-w-[70px] text-center">พักเดี่ยว</div>
+                <div className="flex-1 min-w-[80px] text-center">หัวหน้าทัวร์</div>
+                <div className="flex-1 min-w-[50px] text-center">ที่นั่ง</div>
+                <div className="flex-1 min-w-[60px] text-center text-green-600">ชำระแล้ว</div>
+                <div className="flex-1 min-w-[60px] text-center text-orange-500">รอชำระ</div>
+                <div className="flex-1 min-w-[60px] text-center text-yellow-600">บางส่วน</div>
+                <div className="flex-1 min-w-[60px] text-right">สถานะ</div>
               </div>
 
               {rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
@@ -977,28 +1055,45 @@ export default function TourSystemApp() {
                 const prices = round.price || selectedRoute.price || {};
 
                 return (
-                  <div key={round.id} className="border border-gray-200 rounded-lg group hover:border-[#03b8fa] transition">
+                  <div key={round.id} className="border border-gray-200 rounded-lg group hover:border-[#03b8fa] hover:shadow-md transition-all duration-200">
                     {/* Main Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-2 p-4 items-center cursor-pointer" onClick={() => { setSelectedRound({ ...round, price: prices }); setBookingDetails(prev => ({ ...prev, contactName: round.head || '' })); setBookingStep(3); }}>
-                      <div className="col-span-1 font-bold text-[#03b8fa]">{round.airline}</div>
-                      <div className="col-span-2 font-medium text-gray-800 text-xs">{round.date}</div>
-                      <div className="col-span-2 text-right font-mono font-bold text-[#03b8fa]">{prices.adultTwin?.toLocaleString()}</div>
-                      <div className="col-span-1 text-right font-mono text-gray-500 text-xs">{prices.adultSingle?.toLocaleString()}</div>
-                      <div className="col-span-2 text-center text-xs text-gray-600 truncate" title={round.head}>{round.head || '-'}</div>
-                      <div className="col-span-1 text-center text-sm font-bold">{round.seats}</div>
-                      <div className="col-span-1 text-center text-sm text-gray-600">{round.sold}</div>
-                      <div className="col-span-2 text-center">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${isFull ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'}`}>
+                    <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-5 py-4 cursor-pointer" onClick={() => {
+                      setSelectedRound({ ...round, price: prices });
+                      setBookingDetails(prev => ({ ...prev, contactName: round.head || '' }));
+                      // Auto-populate unpaid pax to bookingPaxList
+                      const allPax = getPaxForRound(round.id);
+                      const unpaidPax = allPax.filter(p => p.paymentStatus === 'pending' || p.paymentStatus === 'partial');
+                      setBookingPaxList(unpaidPax);
+                      setSelectedPaxForBooking(unpaidPax.map(p => p.id));
+                      setBookingStep(3);
+                    }}>
+                      <div className="flex-1 min-w-[60px] font-bold text-[#03b8fa] text-lg">{round.airline}</div>
+                      <div className="flex-1 min-w-[100px] font-medium text-gray-800 text-sm">{round.date}</div>
+                      <div className="flex-1 min-w-[80px] text-center font-mono font-bold text-[#03b8fa] text-lg">{prices.adultTwin?.toLocaleString()}</div>
+                      <div className="flex-1 min-w-[70px] text-center font-mono text-gray-400 text-sm">{prices.adultSingle?.toLocaleString()}</div>
+                      <div className="flex-1 min-w-[80px] text-center text-sm text-gray-600 truncate" title={round.head}>{round.head || '-'}</div>
+                      <div className="flex-1 min-w-[50px] text-center text-sm font-bold text-gray-700">{round.seats}</div>
+                      <div className="flex-1 min-w-[60px] text-center">
+                        <span className="inline-block min-w-[28px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{round.paidCount || 0}</span>
+                      </div>
+                      <div className="flex-1 min-w-[60px] text-center">
+                        <span className="inline-block min-w-[28px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded">{round.pendingCount || 0}</span>
+                      </div>
+                      <div className="flex-1 min-w-[60px] text-center">
+                        <span className="inline-block min-w-[28px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">{round.partialCount || 0}</span>
+                      </div>
+                      <div className="flex-1 min-w-[60px] text-right">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${isFull ? 'text-red-600 bg-red-50 border border-red-200' : 'text-green-600 bg-green-50 border border-green-200'}`}>
                           {isFull ? 'เต็ม' : 'ว่าง'}
                         </span>
                       </div>
                     </div>
-                    {/* Expanded Details (Visual Only for now to mimic requesting "Other Prices") */}
-                    <div className="bg-gray-50 p-3 text-xs border-t grid grid-cols-2 md:grid-cols-4 gap-4 text-gray-600">
-                      <div>Adult (Triple): <strong>{formatPrice(prices.adultTriple)}</strong></div>
-                      <div>Child (Bed): <strong>{formatPrice(prices.childBed)}</strong></div>
-                      <div>Child (No Bed): <strong>{formatPrice(prices.childNoBed)}</strong></div>
-                      <div className="text-right text-gray-400 italic">คลิกเพื่อเลือก</div>
+                    {/* Expanded Details */}
+                    <div className="bg-gray-50 px-5 py-3 text-xs border-t border-gray-100 flex flex-wrap md:flex-nowrap items-center gap-6 text-gray-500">
+                      <div>ผู้ใหญ่ (3 ท่าน): <strong className="text-gray-700">{formatPrice(prices.adultTriple)}</strong></div>
+                      <div>เด็ก (มีเตียง): <strong className="text-gray-700">{formatPrice(prices.childBed)}</strong></div>
+                      <div>เด็ก (ไม่มีเตียง): <strong className="text-gray-700">{formatPrice(prices.childNoBed)}</strong></div>
+                      <div className="flex-1 text-right text-[#03b8fa] font-medium cursor-pointer hover:underline">คลิกเพื่อเลือกรอบนี้ →</div>
                     </div>
                   </div>
                 )
@@ -1045,34 +1140,41 @@ export default function TourSystemApp() {
                   {/* Search Dropdown */}
                   {showCustomerSearch && customerSearchTerm && (
                     <div className="absolute top-full mt-1 right-0 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-60 overflow-y-auto">
-                      {MOCK_CUSTOMERS_DB.filter(c =>
-                        c.firstNameEn.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-                        (c.passportNo && c.passportNo.includes(customerSearchTerm))
-                      ).length === 0 ? (
-                        <div className="p-4 text-center text-gray-400 text-xs">ไม่พบข้อมูลลูกค้า</div>
-                      ) : (
-                        <div>
-                          {MOCK_CUSTOMERS_DB.filter(c =>
-                            c.firstNameEn.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-                            (c.passportNo && c.passportNo.includes(customerSearchTerm))
-                          ).map(c => (
-                            <div key={c.id} className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50" onClick={() => {
-                              // Add to bookingPaxList if not already there
-                              if (!bookingPaxList.find(p => p.id === c.id)) {
-                                setBookingPaxList(prev => [...prev, { ...c, paymentStatus: 'pending' }]);
-                              }
-                              if (!selectedPaxForBooking.includes(c.id)) {
-                                setSelectedPaxForBooking(prev => [...prev, c.id]);
-                              }
-                              setShowCustomerSearch(false);
-                              setCustomerSearchTerm('');
-                            }}>
-                              <div className="font-bold text-sm text-gray-800">{c.firstNameEn} {c.lastNameEn}</div>
-                              <div className="text-xs text-gray-500">{c.passportNo}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {/* Filter: Show all customers EXCEPT those already in current booking list */}
+                      {(() => {
+                        const availableCustomers = MOCK_CUSTOMERS_DB.filter(c => {
+                          // Check if already in current booking list - skip if already added
+                          if (bookingPaxList.find(p => p.id === c.id)) return false;
+                          // Search filter
+                          return c.firstNameEn.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                            (c.passportNo && c.passportNo.includes(customerSearchTerm));
+                        });
+
+                        if (availableCustomers.length === 0) {
+                          return <div className="p-4 text-center text-gray-400 text-xs">ไม่พบข้อมูลลูกค้า</div>;
+                        }
+
+                        return (
+                          <div>
+                            {availableCustomers.map(c => (
+                              <div key={c.id} className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50" onClick={() => {
+                                // Add to bookingPaxList for this booking session
+                                if (!bookingPaxList.find(p => p.id === c.id)) {
+                                  setBookingPaxList(prev => [...prev, { ...c, paymentStatus: 'pending' }]);
+                                }
+                                if (!selectedPaxForBooking.includes(c.id)) {
+                                  setSelectedPaxForBooking(prev => [...prev, c.id]);
+                                }
+                                setShowCustomerSearch(false);
+                                setCustomerSearchTerm('');
+                              }}>
+                                <div className="font-bold text-sm text-gray-800">{c.firstNameEn} {c.lastNameEn}</div>
+                                <div className="text-xs text-gray-500">{c.passportNo}</div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   {showCustomerSearch && <div className="fixed inset-0 z-40" onClick={() => setShowCustomerSearch(false)}></div>}
@@ -1084,66 +1186,65 @@ export default function TourSystemApp() {
               </div>
             </div>
 
-            {/* Existing Passengers Section */}
+            {/* Existing Passengers Section - Only show PAID pax */}
             {(() => {
-              const existingPax = getPaxForRound(selectedRound.id);
-              if (existingPax.length > 0) {
-                return (
-                  <div className="mb-8 border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="bg-gray-100 px-4 py-2 text-sm font-bold text-gray-600 flex justify-between">
-                      <span>รายชื่อผู้ที่จองแล้วในรอบนี้ ({existingPax.length} ท่าน)</span>
-                      <span className="text-xs font-normal text-gray-400">จากระบบจัดการทัวร์</span>
+              const allPaxInRound = getPaxForRound(selectedRound.id);
+              const paidPax = allPaxInRound.filter(p => p.paymentStatus === 'paid');
+              const unpaidPax = allPaxInRound.filter(p => p.paymentStatus === 'pending' || p.paymentStatus === 'partial');
+
+              return (
+                <>
+                  {/* PAID Section */}
+                  {paidPax.length > 0 && (
+                    <div className="mb-6 border border-green-200 rounded-xl overflow-hidden">
+                      <div className="bg-green-50 px-4 py-2 text-sm font-bold text-green-700 flex justify-between">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle size={14} /> รายชื่อผู้ที่ชำระเงินแล้ว ({paidPax.length} ท่าน)
+                        </span>
+                        <span className="text-xs font-normal text-green-500">ยืนยันการจองเรียบร้อย</span>
+                      </div>
+                      <div className="bg-green-50/30 max-h-48 overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-green-100 text-green-700 sticky top-0">
+                            <tr>
+                              <th className="px-4 py-2">ชื่อ-นามสกุล</th>
+                              <th className="px-4 py-2">ผู้ขาย</th>
+                              <th className="px-4 py-2">วันที่ชำระเงิน</th>
+                              <th className="px-4 py-2 text-right">ยอดจอง</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-green-100">
+                            {paidPax.map((pax, idx) => {
+                              const seller = appUsers.find(u => u.id === pax.bookedBy);
+                              return (
+                                <tr key={idx} className="hover:bg-green-50">
+                                  <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
+                                  <td className="px-4 py-2">
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
+                                      {seller?.name || '-'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
+                                  <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
+                                    ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {/* Total Row */}
+                            <tr className="bg-green-100 font-bold">
+                              <td className="px-4 py-2 text-green-700" colSpan={3}>รวมยอดชำระแล้ว ({paidPax.length} ท่าน)</td>
+                              <td className="px-4 py-2 text-right font-mono text-green-700">
+                                ฿{paidPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                    <div className="bg-gray-50 max-h-48 overflow-y-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-gray-100 text-gray-500 sticky top-0">
-                          <tr>
-                            <th className="px-4 py-2">ชื่อ-นามสกุล</th>
-                            <th className="px-4 py-2">ผู้ขาย</th>
-                            <th className="px-4 py-2">วันที่ชำระเงิน</th>
-                            <th className="px-4 py-2 text-right">ยอดจอง</th>
-                            <th className="px-4 py-2">สถานะ</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {existingPax.map((pax, idx) => {
-                            const seller = appUsers.find(u => u.id === pax.bookedBy);
-                            return (
-                              <tr key={idx} className="hover:bg-gray-100">
-                                <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
-                                <td className="px-4 py-2">
-                                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
-                                    {seller?.name || '-'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
-                                <td className="px-4 py-2 text-right font-mono font-bold text-[#03b8fa]">
-                                  ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
-                                </td>
-                                <td className="px-4 py-2">
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] border ${pax.paymentStatus === 'paid' ? 'bg-green-100 text-green-700 border-green-200' :
-                                    pax.paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                                      'bg-orange-50 text-orange-600 border-orange-200'
-                                    }`}>{pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}</span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          {/* Total Row */}
-                          <tr className="bg-gray-100 font-bold">
-                            <td className="px-4 py-2 text-gray-600" colSpan={3}>รวมยอดจอง ({existingPax.length} ท่าน)</td>
-                            <td className="px-4 py-2 text-right font-mono text-[#0279a9]">
-                              ฿{existingPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
-                            </td>
-                            <td className="px-4 py-2"></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
+                  )}
+                </>
+              );
             })()}
 
             {/* Booking Customization Area */}
@@ -1245,7 +1346,7 @@ export default function TourSystemApp() {
                           pax.paymentStatus === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-100' :
                             'bg-gray-100 text-gray-500 border-gray-200'
                         }`}>
-                        {pax.paymentStatus || 'Draft'}
+                        {pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : pax.paymentStatus === 'pending' ? 'รอชำระ' : pax.paymentStatus === 'deposit' ? 'มัดจำ' : 'ร่าง'}
                       </span>
                     </div>
                   </div>
@@ -1429,7 +1530,7 @@ export default function TourSystemApp() {
                           setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status } : c));
                           setBookingPaxList(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status } : c));
                           setIsBookingConfirmationModalOpen(false);
-                          alert(`Booking Confirmed! Payment Status: ${status.toUpperCase()} (Paid: ฿${paidAmount.toLocaleString()})`);
+                          alert(`ยืนยันการจองสำเร็จ! สถานะ: ${status === 'paid' ? 'ชำระแล้ว' : status === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'} (จ่ายแล้ว: ฿${paidAmount.toLocaleString()})`);
                         }}
                         className="w-full bg-[#37c3a5] text-white py-3 rounded-lg font-bold hover:bg-[#2da188] shadow-lg transition"
                       >
@@ -1515,15 +1616,15 @@ export default function TourSystemApp() {
                 key={tab.key}
                 onClick={() => setOperationTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${operationTab === tab.key
-                    ? 'bg-[#03b8fa] text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-[#03b8fa] text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 <tab.icon size={16} />
                 <span>{tab.label}</span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${operationTab === tab.key
-                    ? 'bg-white/20 text-white'
-                    : 'bg-gray-200 text-gray-600'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-200 text-gray-600'
                   }`}>
                   {tab.count}
                 </span>
@@ -1554,7 +1655,8 @@ export default function TourSystemApp() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRounds.map(round => {
                 const route = routes.find(r => r.id === round.routeId);
-                const progress = round.id === 101 ? 65 : round.id === 201 ? 90 : 10;
+                // Progress: ongoing (Full) and completed rounds should be 100%
+                const progress = (round.status === 'Full' || round.status === 'Completed') ? 100 : (round.id === 101 ? 65 : 10);
                 const isFull = round.sold === round.seats;
                 return (
                   <div
@@ -1882,7 +1984,7 @@ export default function TourSystemApp() {
                       <td className="px-4 py-3 text-right font-bold text-red-600">฿{balance.toLocaleString()}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${payment.status === 'paid' ? 'bg-green-100 text-green-700' : payment.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                          {payment.status === 'paid' ? 'Paid' : payment.status === 'partial' ? 'Partial' : 'Pending'}
+                          {payment.status === 'paid' ? 'ชำระแล้ว' : payment.status === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-gray-500 text-xs">
