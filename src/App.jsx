@@ -188,6 +188,22 @@ export default function TourSystemApp() {
     return [...mockPax, ...realPax];
   };
 
+  const calculateEstimatedProgress = (roundId) => {
+    const paxList = getPaxForRound(roundId);
+    if (!paxList || paxList.length === 0) return 0;
+
+    let totalScore = 0;
+    const maxScore = paxList.length * 5; // 5 tasks per pax (Passport, Visa, Ticket, Insurance, Payment)
+
+    paxList.forEach(pax => {
+      totalScore += 1; // Passport (Default True)
+      if (pax.nationality === 'THAI') totalScore += 1; // Visa (Auto for Thai)
+      if (pax.paymentStatus === 'paid') totalScore += 1; // Payment
+    });
+
+    return Math.round((totalScore / maxScore) * 100);
+  };
+
   useEffect(() => {
     if (selectedOpRound) {
       setPaxTaskStatus(prev => {
@@ -593,7 +609,7 @@ export default function TourSystemApp() {
               <tbody className="divide-y divide-gray-100">
                 {rounds.filter(r => r.status === 'Selling').map(round => {
                   const route = routes.find(r => r.id === round.routeId);
-                  const progress = Math.round((round.sold / round.seats) * 100);
+                  const progress = round.status === 'Completed' ? 100 : calculateEstimatedProgress(round.id);
                   return (
                     <tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest">
                       <td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td>
@@ -1507,7 +1523,7 @@ export default function TourSystemApp() {
               {filteredRounds.map(round => {
                 const route = routes.find(r => r.id === round.routeId);
                 // Progress: ongoing (Full) and completed rounds should be 100%
-                const progress = (round.status === 'Full' || round.status === 'Completed') ? 100 : (round.id === 101 ? 65 : 10);
+                const progress = round.status === 'Completed' ? 100 : calculateEstimatedProgress(round.id);
                 const isFull = round.sold === round.seats;
                 return (
                   <div
