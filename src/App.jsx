@@ -593,7 +593,7 @@ export default function TourSystemApp() {
               <tbody className="divide-y divide-gray-100">
                 {rounds.filter(r => r.status === 'Selling').map(round => {
                   const route = routes.find(r => r.id === round.routeId);
-                  const progress = round.id === 101 ? 65 : 10;
+                  const progress = Math.round((round.sold / round.seats) * 100);
                   return (
                     <tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest">
                       <td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td>
