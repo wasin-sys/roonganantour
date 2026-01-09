@@ -3,11 +3,11 @@
 
 // === USERS (Staff) ===
 export const MOCK_USERS = [
-    { id: 1, name: 'K.Admin', role: 'MANAGER', commission: 0, avatar: 'https://i.pravatar.cc/150?u=1', email: 'admin@tour.com' },
-    { id: 2, name: 'K.Boy', role: 'SALE', commission: 3, avatar: 'https://i.pravatar.cc/150?u=2', email: 'boy@tour.com' },
-    { id: 3, name: 'K.Anne', role: 'SALE', commission: 5, avatar: 'https://i.pravatar.cc/150?u=3', email: 'anne@tour.com' },
-    { id: 4, name: 'K.New', role: 'SALE', commission: 2, avatar: 'https://i.pravatar.cc/150?u=4', email: 'new@tour.com' },
-    { id: 5, name: 'K.Guide1', role: 'GUIDE', commission: 0, avatar: 'https://i.pravatar.cc/150?u=5', email: 'guide1@tour.com' }
+    { id: 1, name: 'K.Admin', role: 'MANAGER', commissionRank: null, avatar: 'https://i.pravatar.cc/150?u=1', email: 'admin@tour.com' },
+    { id: 2, name: 'K.Boy', role: 'SALE', commissionRank: 1, avatar: 'https://i.pravatar.cc/150?u=2', email: 'boy@tour.com' },
+    { id: 3, name: 'K.Anne', role: 'SALE', commissionRank: 1, avatar: 'https://i.pravatar.cc/150?u=3', email: 'anne@tour.com' },
+    { id: 4, name: 'K.New', role: 'SALE', commissionRank: 2, avatar: 'https://i.pravatar.cc/150?u=4', email: 'new@tour.com' },
+    { id: 5, name: 'K.Guide1', role: 'GUIDE', commissionRank: null, avatar: 'https://i.pravatar.cc/150?u=5', email: 'guide1@tour.com' }
 ];
 
 // === ROUTES ===
@@ -19,7 +19,10 @@ export const MOCK_ROUTES = [
         price: 25900,
         duration: '5D4N',
         image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=80&w=300&h=200',
-        description: 'Explore the wonders of Beijing including the Great Wall, Forbidden City, and the magical Universal Studios.'
+        description: 'Explore the wonders of Beijing including the Great Wall, Forbidden City, and the magical Universal Studios.',
+        attachment: 'BJ-US_Program_Full.pdf',
+        rank1Com: 500,
+        rank2Com: 300
     },
     {
         id: 2,
@@ -28,7 +31,10 @@ export const MOCK_ROUTES = [
         price: 32900,
         duration: '6D5N',
         image: 'https://images.chinahighlights.com/allpicture/2024/08/d09f58648bf547418c54ce3e6790c0af_cut_2560x800_296_1722698401.jpg',
-        description: 'A breathtaking journey through the landscapes of Yunnan, visiting ancient towns and snow-capped mountains.'
+        description: 'A breathtaking journey through the landscapes of Yunnan, visiting ancient towns and snow-capped mountains.',
+        attachment: 'KM-LS_Program_Full.pdf',
+        rank1Com: 600,
+        rank2Com: 400
     },
     {
         id: 3,
@@ -37,7 +43,10 @@ export const MOCK_ROUTES = [
         price: 28900,
         duration: '5D4N',
         image: 'https://www.asiaodysseytravel.com/images/china-tours/banner/fcd009-chengdu-jiuzhaigou-zhangjiajie-tour.jpg',
-        description: 'Visit the home of giant pandas and the crystal clear waters of Jiuzhaigou National Park.'
+        description: 'Visit the home of giant pandas and the crystal clear waters of Jiuzhaigou National Park.',
+        attachment: 'CD-JH_Program_Full.pdf',
+        rank1Com: 550,
+        rank2Com: 350
     },
     {
         id: 4,
@@ -46,7 +55,10 @@ export const MOCK_ROUTES = [
         price: 42900,
         duration: '6D4N',
         image: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&q=80&w=300&h=200',
-        description: 'Experience the perfect blend of modern Tokyo and traditional Japan with breathtaking views of Mt. Fuji.'
+        description: 'Experience the perfect blend of modern Tokyo and traditional Japan with breathtaking views of Mt. Fuji.',
+        attachment: 'JP-TYO_Program_Full.pdf',
+        rank1Com: 800,
+        rank2Com: 500
     }
 ];
 
@@ -66,6 +78,8 @@ export const MOCK_ROUNDS = [
         status: 'Selling',
         headId: 2,
         head: 'K.Boy',
+        guideId: 5,
+        guide: 'K.Guide1',
         price: { adultTwin: 25900, adultSingle: 30900, adultTriple: 24900, childBed: 23900, childNoBed: 20900 }
     },
     {
@@ -82,6 +96,8 @@ export const MOCK_ROUNDS = [
         status: 'Selling',
         headId: 4,
         head: 'K.New',
+        guideId: null,
+        guide: 'ยังไม่กำหนด',
         price: { adultTwin: 26900, adultSingle: 31900, adultTriple: 25900, childBed: 24900, childNoBed: 21900 }
     },
     {
@@ -98,6 +114,8 @@ export const MOCK_ROUNDS = [
         status: 'Full',
         headId: 3,
         head: 'K.Anne',
+        guideId: 5,
+        guide: 'K.Guide1',
         price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 }
     },
     {
@@ -114,6 +132,8 @@ export const MOCK_ROUNDS = [
         status: 'Full',
         headId: 2,
         head: 'K.Boy',
+        guideId: 5,
+        guide: 'K.Guide1',
         price: { adultTwin: 28900, adultSingle: 34900, adultTriple: 26900, childBed: 24900, childNoBed: 21000 }
     },
     {
@@ -130,6 +150,8 @@ export const MOCK_ROUNDS = [
         status: 'Selling',
         headId: 3,
         head: 'K.Anne',
+        guideId: null,
+        guide: 'ยังไม่กำหนด',
         price: { adultTwin: 29900, adultSingle: 35900, adultTriple: 28900, childBed: 27900, childNoBed: 24900 }
     },
     {
@@ -146,6 +168,8 @@ export const MOCK_ROUNDS = [
         status: 'Completed',
         headId: 2,
         head: 'K.Boy',
+        guideId: 5,
+        guide: 'K.Guide1',
         price: { adultTwin: 42900, adultSingle: 48900, adultTriple: 40900, childBed: 38900, childNoBed: 35000 }
     },
     {
@@ -162,6 +186,8 @@ export const MOCK_ROUNDS = [
         status: 'Completed',
         headId: 3,
         head: 'K.Anne',
+        guideId: 5,
+        guide: 'K.Guide1',
         price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 }
     }
 ];
@@ -387,6 +413,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 10400,
         status: 'partial',
         createdAt: '2025-09-20',
+        paxIds: [1, 2, 3],
         transactions: [
             { id: 1, date: '2025-09-21', amount: 10400, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
         ]
@@ -402,6 +429,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 668100,
         status: 'paid',
         createdAt: '2025-10-15',
+        paxIds: [1, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
         transactions: [
             { id: 2, date: '2025-10-16', amount: 668100, method: 'cheque', receipt: 'cheque_001.jpg', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-17' }
         ]
@@ -417,6 +445,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 80700,
         status: 'partial',
         createdAt: '2025-10-01',
+        paxIds: [4, 5, 6, 7, 8],
         transactions: [
             { id: 3, date: '2025-10-01', amount: 80700, method: 'transfer', receipt: 'receipt_002.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-02' }
         ]
@@ -432,6 +461,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 858000,
         status: 'paid',
         createdAt: '2025-11-01',
+        paxIds: [1, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
         transactions: [
             { id: 4, date: '2025-11-01', amount: 858000, method: 'transfer', receipt: 'receipt_003.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-02' }
         ]
@@ -447,6 +477,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 588200,
         status: 'paid',
         createdAt: '2025-11-15',
+        paxIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
         transactions: [
             { id: 5, date: '2025-11-15', amount: 588200, method: 'transfer', receipt: 'receipt_004.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-16' }
         ]
