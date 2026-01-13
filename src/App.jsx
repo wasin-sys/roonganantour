@@ -42,7 +42,8 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  Gift
+  Gift,
+  Bed
 } from 'lucide-react';
 
 import {
@@ -140,6 +141,7 @@ export default function TourSystemApp() {
   const [selectedOpRound, setSelectedOpRound] = useState(null);
   const [showTagPreview, setShowTagPreview] = useState(false);
   const [paxTaskStatus, setPaxTaskStatus] = useState({});
+  const [guideTaskStatus, setGuideTaskStatus] = useState({}); // { [roundId]: { ticket: boolean, hotel: boolean } }
 
   // Payment Confirmation State
   const [billingInfo, setBillingInfo] = useState({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
@@ -250,14 +252,24 @@ export default function TourSystemApp() {
     });
   };
 
+  const toggleGuideTask = (roundId, key) => {
+    setGuideTaskStatus(prev => ({
+      ...prev,
+      [roundId]: {
+        ...prev[roundId],
+        [key]: !prev[roundId]?.[key]
+      }
+    }));
+  };
+
   const operationProgress = useMemo(() => {
     // Default safe return
-    const safeBreakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, payment: 0 };
+    const safeBreakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, prepDoc: 0, payment: 0 };
     if (!selectedOpRound || Object.keys(paxTaskStatus).length === 0) {
       return { total: 0, completed: 0, percent: 0, breakdown: safeBreakdown, paxCount: 0 };
     }
     let totalTasks = 0, completedTasks = 0;
-    const breakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, payment: 0 };
+    const breakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, prepDoc: 0, payment: 0 };
     const paxCount = Object.keys(paxTaskStatus).length;
     Object.values(paxTaskStatus).forEach(tasks => {
       Object.entries(tasks).forEach(([key, task]) => { totalTasks++; if (task.checked) { completedTasks++; breakdown[key]++; } });
@@ -423,13 +435,11 @@ export default function TourSystemApp() {
 
                     // Include birthCert if under 15
                     const docTypes = isUnder15
-                      ? ['passport', 'birthCert', 'visa', 'ticket', 'insurance']
-                      : ['passport', 'visa', 'ticket', 'insurance'];
+                      ? ['passport', 'birthCert', 'visa']
+                      : ['passport', 'visa'];
                     const docLabels = {
                       passport: 'หน้าพาสปอร์ต',
                       visa: 'วีซ่า',
-                      ticket: 'ตั๋วเครื่องบิน',
-                      insurance: 'ประกันเดินทาง',
                       birthCert: 'สูติบัตร'
                     };
 
@@ -465,10 +475,28 @@ export default function TourSystemApp() {
 
               <div className="col-span-1 md:col-span-2 space-y-4">
                 <h4 className="font-bold text-gray-800 border-b pb-2">ข้อมูลการติดต่อ</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div><label className="text-xs text-gray-500 font-medium">เบอร์โทรศัพท์</label><input type="tel" className="w-full border rounded p-2 text-sm" placeholder="08X-XXX-XXXX" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)} /></div>
                   <div><label className="text-xs text-gray-500 font-medium">อีเมล</label><input type="email" className="w-full border rounded p-2 text-sm" placeholder="user@example.com" value={formData.email} onChange={e => handleFormChange('email', e.target.value)} /></div>
                   <div><label className="text-xs text-gray-500 font-medium">ไลน์ (Line ID)</label><input type="text" className="w-full border rounded p-2 text-sm" placeholder="@lineid" value={formData.lineId} onChange={e => handleFormChange('lineId', e.target.value)} /></div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">พนักงานผู้ดูแล</label>
+                    {isManager ? (
+                      <select
+                        className="w-full border rounded p-2 text-sm bg-blue-50 font-bold text-[#0279a9]"
+                        value={formData.ownerId || ''}
+                        onChange={e => handleFormChange('ownerId', Number(e.target.value))}
+                      >
+                        {appUsers.filter(u => u.role !== 'GUIDE').map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="p-2 bg-gray-50 rounded border border-gray-100 text-sm font-bold text-gray-600">
+                        {appUsers.find(u => u.id === (formData.ownerId || currentUser.id))?.name || 'Unknown'}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div><label className="text-xs text-gray-500 font-medium">หมายเหตุ (แพ้อาหาร, วีลแชร์, ฯลฯ)</label><textarea className="w-full border rounded p-2 text-sm h-20" placeholder="e.g. ไม่ทานเนื้อ, ขอนั่งริมทางเดิน" value={formData.remark} onChange={e => handleFormChange('remark', e.target.value)}></textarea></div>
               </div>
@@ -500,17 +528,36 @@ export default function TourSystemApp() {
           </div>
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">ชื่อ-นามสกุล</th><th className="px-6 py-3 font-medium">ข้อมูลพาสปอร์ต</th><th className="px-6 py-3 font-medium">ส่วนตัว</th><th className="px-6 py-3 font-medium">ติดต่อ / หมายเหตุ</th><th className="px-6 py-3 font-medium text-right">จัดการ</th></tr></thead>
+              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">ชื่อ-นามสกุล</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">ข้อมูลพาสปอร์ต</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">ส่วนตัว</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">ติดต่อ</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">หมายเหตุ</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider">ผู้ดูแล</th><th className="px-6 py-3 font-medium text-[12px] uppercase tracking-wider text-right">จัดการ</th></tr></thead>
               <tbody className="divide-y divide-gray-100">
-                {customers.map(customer => (
-                  <tr key={customer.id} className="hover:bg-gray-50 group">
-                    <td className="px-6 py-4"><div className="font-bold text-gray-800">{customer.title} {customer.firstNameEn} {customer.lastNameEn}</div><div className="text-gray-500 text-xs">{customer.firstNameTh} {customer.lastNameTh}</div></td>
-                    <td className="px-6 py-4"><div className="font-mono text-gray-700">{customer.passportNo}</div><div className="text-xs text-gray-500">Exp: <span className={new Date(customer.passportExpire) < new Date('2025-06-01') ? 'text-[#03b8fa] font-bold' : ''}>{customer.passportExpire}</span></div>{customer.nationality !== 'THAI' && <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded">{customer.nationality}</span>}</td>
-                    <td className="px-6 py-4"><div className="text-gray-600">{customer.gender === 'M' ? 'Male' : 'Female'}, Age: {new Date().getFullYear() - new Date(customer.dob).getFullYear()}</div><div className="text-xs text-gray-400">DOB: {customer.dob}</div></td>
-                    <td className="px-6 py-4"><div className="text-gray-600">{customer.phone}</div>{customer.remark && <div className="text-xs text-[#03b8fa] truncate max-w-[150px]">{customer.remark}</div>}</td>
-                    <td className="px-6 py-4 text-right"><div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => openCustomerForm(customer)} className="p-2 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={16} /></button><button onClick={() => deleteCustomer(customer.id)} className="p-2 text-[#03b8fa] hover:bg-[#d9edf4] rounded"><Trash2 size={16} /></button></div></td>
-                  </tr>
-                ))}
+                {customers.map(customer => {
+                  const owner = appUsers.find(u => u.id === customer.ownerId);
+                  return (
+                    <tr key={customer.id} className="hover:bg-gray-50 group">
+                      <td className="px-6 py-4"><div className="font-bold text-gray-800">{customer.title} {customer.firstNameEn} {customer.lastNameEn}</div><div className="text-gray-500 text-xs">{customer.firstNameTh} {customer.lastNameTh}</div></td>
+                      <td className="px-6 py-4"><div className="font-mono text-gray-700">{customer.passportNo}</div><div className="text-xs text-gray-500">Exp: <span className={new Date(customer.passportExpire) < new Date('2025-06-01') ? 'text-[#03b8fa] font-bold' : ''}>{customer.passportExpire}</span></div>{customer.nationality !== 'THAI' && <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded">{customer.nationality}</span>}</td>
+                      <td className="px-6 py-4"><div className="text-gray-600">{customer.gender === 'M' ? 'Male' : 'Female'}, Age: {new Date().getFullYear() - new Date(customer.dob).getFullYear()}</div><div className="text-xs text-gray-400">DOB: {customer.dob}</div></td>
+                      <td className="px-6 py-4"><div className="text-gray-600">{customer.phone}</div></td>
+                      <td className="px-6 py-4">
+                        {customer.remark ? (
+                          <div className="text-xs text-[#03b8fa] truncate max-w-[120px]" title={customer.remark}>{customer.remark}</div>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {owner ? (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#0279a9] text-[10px] font-bold border border-blue-100">
+                            {owner.name}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right"><div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => openCustomerForm(customer)} className="p-2 text-blue-600 hover:bg-blue-50 rounded"><Edit2 size={16} /></button><button onClick={() => deleteCustomer(customer.id)} className="p-2 text-[#03b8fa] hover:bg-[#d9edf4] rounded"><Trash2 size={16} /></button></div></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1436,11 +1483,11 @@ export default function TourSystemApp() {
                     </div>
 
                     {/* Price Tier & Payment Status */}
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-1 min-w-[180px]">
                       {/* Room/Price Selector */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <select
-                          className="text-xs font-bold border rounded px-2 py-1 outline-none bg-white text-gray-700"
+                          className="text-[11px] font-bold border rounded px-1.5 py-0.5 outline-none bg-white text-gray-700 h-7"
                           value={pax.roomType || 'adultTwin'}
                           onChange={(e) => {
                             setBookingPaxList(prev => prev.map(c => c.id === pax.id ? { ...c, roomType: e.target.value } : c));
@@ -1452,20 +1499,44 @@ export default function TourSystemApp() {
                           <option value="childBed">เด็ก (มีเตียง)</option>
                           <option value="childNoBed">เด็ก (ไม่มีเตียง)</option>
                         </select>
-                        <span className="font-mono font-bold text-[#03b8fa] w-16 text-right">
+                        <span className="font-mono font-bold text-[#03b8fa] text-sm">
                           ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
                         </span>
                       </div>
 
-                      {/* Payment Status Indicator (restored) */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold">Status:</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${pax.paymentStatus === 'paid' ? 'bg-green-100 text-green-700 border-green-200' :
-                          pax.paymentStatus === 'deposit' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                            pax.paymentStatus === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-100' :
-                              'bg-gray-100 text-gray-500 border-gray-200'
+                      {/* Payment Details */}
+                      {(() => {
+                        const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                        const paid = pax.paymentStatus === 'paid' ? total : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
+                        const balance = total - paid;
+
+                        return (
+                          <div className="text-[10px] space-y-0.5 text-right w-full">
+                            <div className="flex justify-between items-center text-gray-400">
+                              <span>ชำระแล้ว:</span>
+                              <span className="font-bold text-gray-600">฿{paid.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400">ค้างชำระ:</span>
+                              <span className={`font-bold ${balance > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                ฿{balance.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Status Badge */}
+                      <div className="mt-1">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black border uppercase tracking-wider ${pax.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                          pax.paymentStatus === 'partial' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                            pax.paymentStatus === 'pending' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                              'bg-gray-50 text-gray-400 border-gray-200'
                           }`}>
-                          {pax.paymentStatus === 'paid' ? 'ชำระแล้ว' : pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' : pax.paymentStatus === 'pending' ? 'รอชำระ' : pax.paymentStatus === 'deposit' ? 'มัดจำ' : 'ร่าง'}
+                          {pax.paymentStatus === 'paid' ? 'ชำระครบแล้ว' :
+                            pax.paymentStatus === 'partial' ? 'ชำระบางส่วน' :
+                              pax.paymentStatus === 'pending' ? 'ยังไม่ชำระ' :
+                                pax.paymentStatus === 'deposit' ? 'มัดจำ' : 'ฉบับร่าง'}
                         </span>
                       </div>
                     </div>
@@ -1506,8 +1577,9 @@ export default function TourSystemApp() {
                 <span>฿{(selectedPaxForBooking.reduce((sum, paxId) => {
                   const pax = bookingPaxList.find(c => c.id === paxId);
                   if (!pax) return sum;
-                  const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                  return sum + price;
+                  const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                  const paid = pax.paymentStatus === 'paid' ? total : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
+                  return sum + (total - paid);
                 }, 0)).toLocaleString()}</span>
               </div>
               <button
@@ -1700,7 +1772,37 @@ export default function TourSystemApp() {
 
     return (
       <div className="h-full flex flex-col animate-fade-in">
-        <header className="mb-4 flex justify-between items-center"><div className="flex items-center gap-4"><button onClick={() => setOperationView('list')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 transition"><ArrowLeft size={20} /></button><div><h1 className="text-2xl font-bold text-gray-800">พื้นที่จัดการทัวร์</h1><p className="text-gray-500 text-sm">{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</p></div></div><div className="flex gap-2"><button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><FileDown size={16} /> ดาวน์โหลดรายชื่อ</button><button onClick={() => setShowTagPreview(true)} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"><Tags size={16} /> สร้างป้ายกระเป๋า</button></div></header>
+        <header className="mb-4 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setOperationView('list')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 transition">
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">พื้นที่จัดการทัวร์</h1>
+              <p className="text-gray-500 text-sm">{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
+              onClick={() => {
+                if (selectedOpRound.prepDocument) {
+                  alert(`กำลังดาวน์โหลดใบเตรียมตัว: ${selectedOpRound.prepDocument}\n\n(ระบบจริงจะดาวน์โหลดไฟล์ PDF ที่อัปโหลดไว้)`);
+                } else {
+                  alert("ยังไม่ได้อัปโหลดใบเตรียมตัวการเดินทางสำหรับกรุ๊ปนี้");
+                }
+              }}
+            >
+              <FileText size={16} className="text-orange-500" /> ดาวน์โหลดใบเตรียมตัว
+            </button>
+            <button className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50">
+              <FileDown size={16} /> ดาวน์โหลดรายชื่อ
+            </button>
+            <button onClick={() => setShowTagPreview(true)} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50">
+              <Tags size={16} /> สร้างป้ายกระเป๋า
+            </button>
+          </div>
+        </header>
 
         {/* === PROMINENT ALERT CARDS === */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1709,40 +1811,59 @@ export default function TourSystemApp() {
             const birthdayPax = paxList.filter(p => {
               if (!p.dob) return false;
               const dobMonth = new Date(p.dob).getMonth();
-              const dobDay = new Date(p.dob).getDate();
               // Check if tour date range might include birthday (simplified check)
               const tourMonth = selectedOpRound.date?.split(' ')[1]?.toLowerCase();
               const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
               return dobMonth === monthMap[tourMonth?.slice(0, 3)?.toLowerCase()];
             });
+
+            const getMonthName = (dateStr) => {
+              const d = new Date(dateStr);
+              return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            };
+
             return birthdayPax.length > 0 ? (
-              <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl p-4 text-white shadow-lg animate-pulse-slow">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-2 rounded-full">
+              <div className="bg-pink-50 rounded-xl p-4 border-2 border-pink-200 shadow-sm relative overflow-hidden group">
+                {/* Decorative Icon Background */}
+                <div className="absolute right-[-10px] top-[-10px] opacity-10 rotate-12 group-hover:rotate-45 transition-all duration-700">
+                  <Gift size={80} className="text-pink-400" />
+                </div>
+
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="bg-pink-200/50 p-2 rounded-full text-pink-600">
+                      <Gift size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-pink-800">🎂 วันเกิดลูกทัวร์!</h4>
+                      <p className="text-xs text-pink-600 font-medium">{birthdayPax.length} ท่านมีวันเกิดในทริปนี้</p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 max-h-[85px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+                    <div className="flex flex-wrap gap-1.5">
+                      {birthdayPax.map((p, idx) => (
+                        <div key={`${p.id}-${idx}`} className="bg-white/90 border border-pink-100 px-2 py-1 rounded shadow-sm flex items-center gap-1.5 transition-transform hover:scale-105">
+                          <span className="text-[10px] font-bold text-pink-700">{p.firstNameEn}</span>
+                          <span className="text-[9px] bg-pink-100 text-pink-500 px-1 rounded-full font-bold">{getMonthName(p.dob)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[10px] mt-3 text-pink-400 flex items-center gap-1">
+                    <AlertTriangle size={10} /> แนะนำ: เตรียมเค้กหรือเซอร์ไพรส์พิเศษ
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="flex items-center gap-3 text-gray-400 opacity-60">
+                  <div className="bg-gray-100 p-2 rounded-full">
                     <Gift size={24} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">🎂 วันเกิดลูกทัวร์!</h4>
-                    <p className="text-sm opacity-90">{birthdayPax.length} ท่านมีวันเกิดในทริปนี้</p>
-                  </div>
-                </div>
-                <div className="mt-3 bg-white/10 rounded-lg p-2 text-xs">
-                  {birthdayPax.slice(0, 3).map(p => (
-                    <span key={p.id} className="inline-block bg-white/20 px-2 py-1 rounded mr-1 mb-1">
-                      {p.firstNameEn} ({new Date(p.dob).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})
-                    </span>
-                  ))}
-                  {birthdayPax.length > 3 && <span className="text-white/70">+{birthdayPax.length - 3} ท่าน</span>}
-                </div>
-                <p className="text-xs mt-2 opacity-75">💡 เตรียมบริการพิเศษ: เค้ก, การ์ด, ของขวัญ</p>
-              </div>
-            ) : (
-              <div className="bg-gray-100 rounded-xl p-4 border border-gray-200">
-                <div className="flex items-center gap-3 text-gray-400">
-                  <Gift size={24} />
-                  <div>
-                    <h4 className="font-bold">วันเกิดลูกทัวร์</h4>
-                    <p className="text-sm">ไม่มีวันเกิดในทริปนี้</p>
+                    <h4 className="font-bold text-sm">วันเกิดลูกทัวร์</h4>
+                    <p className="text-xs">ไม่มีวันเกิดในช่วงทริปนี้</p>
                   </div>
                 </div>
               </div>
@@ -1756,25 +1877,25 @@ export default function TourSystemApp() {
             const percent = totalPax > 0 ? Math.round((prepDocCount / totalPax) * 100) : 0;
             const isComplete = prepDocCount === totalPax && totalPax > 0;
             return (
-              <div className={`rounded-xl p-4 border-2 transition-all ${isComplete ? 'bg-green-50 border-green-300' : percent > 0 ? 'bg-yellow-50 border-yellow-300' : 'bg-orange-50 border-orange-300 animate-pulse'}`}>
+              <div className={`rounded-xl p-4 border transition-all shadow-sm ${isComplete ? 'bg-emerald-50 border-emerald-200' : percent > 0 ? 'bg-amber-50 border-amber-200' : 'bg-orange-50/50 border-orange-200'}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-full ${isComplete ? 'bg-green-200 text-green-700' : 'bg-orange-200 text-orange-700'}`}>
+                  <div className={`p-2 rounded-full ${isComplete ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
                     {isComplete ? <CheckCircle size={24} /> : <FileIcon size={24} />}
                   </div>
                   <div className="flex-1">
-                    <h4 className={`font-bold ${isComplete ? 'text-green-800' : 'text-orange-800'}`}>
+                    <h4 className={`font-bold text-sm ${isComplete ? 'text-emerald-800' : 'text-orange-800'}`}>
                       ใบเตรียมตัวเดินทาง
                     </h4>
-                    <p className={`text-sm ${isComplete ? 'text-green-600' : 'text-orange-600'}`}>
-                      {isComplete ? '✅ ส่งให้ลูกทัวร์ครบแล้ว' : `⚠️ ส่งแล้ว ${prepDocCount}/${totalPax} คน`}
+                    <p className={`text-[11px] font-medium ${isComplete ? 'text-emerald-600' : 'text-orange-600'}`}>
+                      {isComplete ? '✅ ส่งครบทุกคนแล้ว' : `⚠️ ส่งแล้ว ${prepDocCount}/${totalPax} ท่าน`}
                     </p>
                   </div>
-                  <span className={`text-2xl font-bold ${isComplete ? 'text-green-600' : 'text-orange-600'}`}>{percent}%</span>
+                  <span className={`text-xl font-black ${isComplete ? 'text-emerald-500' : 'text-orange-500'}`}>{percent}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className={`h-2 rounded-full transition-all ${isComplete ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: `${percent}%` }}></div>
+                <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-emerald-500' : 'bg-orange-400'}`} style={{ width: `${percent}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">📋 กดที่คอลัมน์ "ใบเตรียมตัว" ในตารางด้านล่างเพื่อติ๊กรายคน</p>
+                <p className="text-[10px] text-gray-400 mt-3 italic italic opacity-80">คลิกที่คอลัมน์ "ใบเตรียมตัว" เพื่อบันทึกผล</p>
               </div>
             );
           })()}
@@ -1786,28 +1907,29 @@ export default function TourSystemApp() {
             const percent = totalPax > 0 ? Math.round((ticketCount / totalPax) * 100) : 0;
             const isComplete = ticketCount === totalPax && totalPax > 0;
             return (
-              <div className={`rounded-xl p-4 border-2 transition-all ${isComplete ? 'bg-blue-50 border-blue-300' : percent > 0 ? 'bg-purple-50 border-purple-300' : 'bg-red-50 border-red-300 animate-pulse'}`}>
+              <div className={`rounded-xl p-4 border transition-all shadow-sm ${isComplete ? 'bg-sky-50 border-sky-200' : percent > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-rose-50 border-rose-200'}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-full ${isComplete ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>
+                  <div className={`p-2 rounded-full ${isComplete ? 'bg-sky-100 text-sky-600' : 'bg-rose-100 text-rose-600'}`}>
                     {isComplete ? <CheckCircle size={24} /> : <Plane size={24} />}
                   </div>
                   <div className="flex-1">
-                    <h4 className={`font-bold ${isComplete ? 'text-blue-800' : 'text-red-800'}`}>
+                    <h4 className={`font-bold text-sm ${isComplete ? 'text-sky-800' : 'text-rose-800'}`}>
                       ตั๋วเครื่องบิน
                     </h4>
-                    <p className={`text-sm ${isComplete ? 'text-blue-600' : 'text-red-600'}`}>
-                      {isComplete ? '✅ แนบตั๋วครบทุกคนแล้ว' : `❌ แนบแล้ว ${ticketCount}/${totalPax} คน`}
+                    <p className={`text-[11px] font-medium ${isComplete ? 'text-sky-600' : 'text-rose-600'}`}>
+                      {isComplete ? '✅ แนบตั๋วครบทุกคนแล้ว' : `❌ แนบแล้ว ${ticketCount}/${totalPax} ท่าน`}
                     </p>
                   </div>
-                  <span className={`text-2xl font-bold ${isComplete ? 'text-blue-600' : 'text-red-600'}`}>{percent}%</span>
+                  <span className={`text-xl font-black ${isComplete ? 'text-sky-500' : 'text-rose-500'}`}>{percent}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className={`h-2 rounded-full transition-all ${isComplete ? 'bg-blue-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }}></div>
+                <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-sky-500' : 'bg-rose-400'}`} style={{ width: `${percent}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">✈️ กดที่คอลัมน์ "ตั๋วบิน" ในตารางด้านล่างเพื่อติ๊กรายคน</p>
+                <p className="text-[10px] text-gray-400 mt-3 italic opacity-80">คลิกที่คอลัมน์ "ตั๋วบิน" เพื่ออัปโหลดไฟล์</p>
               </div>
             );
           })()}
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
@@ -1869,6 +1991,32 @@ export default function TourSystemApp() {
                     <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                   ))}
                 </select>
+              )}
+
+              {/* Guide Checkboxes */}
+              {selectedOpRound.guideId && (
+                <div className="mt-4 pt-4 border-t border-[#6bc8e9] space-y-3">
+                  <div className="flex items-center justify-between group cursor-pointer"
+                    onClick={() => toggleGuideTask(selectedOpRound.id, 'ticket')}>
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded transition-colors ${guideTaskStatus[selectedOpRound.id]?.ticket ? 'bg-green-100 text-green-600' : 'bg-white/50 text-[#03b8fa]'}`}>
+                        <Plane size={14} />
+                      </div>
+                      <span className="text-sm font-medium text-[#0279a9]">ตั๋วเครื่องบิน</span>
+                    </div>
+                    {guideTaskStatus[selectedOpRound.id]?.ticket ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-[#03b8fa]" />}
+                  </div>
+                  <div className="flex items-center justify-between group cursor-pointer"
+                    onClick={() => toggleGuideTask(selectedOpRound.id, 'hotel')}>
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded transition-colors ${guideTaskStatus[selectedOpRound.id]?.hotel ? 'bg-green-100 text-green-600' : 'bg-white/50 text-[#03b8fa]'}`}>
+                        <Bed size={14} />
+                      </div>
+                      <span className="text-sm font-medium text-[#0279a9]">ที่พัก / โรงแรม</span>
+                    </div>
+                    {guideTaskStatus[selectedOpRound.id]?.hotel ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-[#03b8fa]" />}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -1956,80 +2104,102 @@ export default function TourSystemApp() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">รายชื่อลูกทัวร์ & สถานะเอกสาร ({paxList.length} ท่าน)</h3><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search pax..." className="pl-9 pr-4 py-1 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" /></div></div>
             <div className="overflow-auto flex-1 p-2">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th className="px-4 py-2 w-16">ห้อง</th><th className="px-4 py-2">ชื่อ-นามสกุล / พาสปอร์ต</th>{INDIVIDUAL_TASKS.map(task => (<th key={task.key} className="px-2 py-2 text-center w-20">{task.label}</th>))}<th className="px-4 py-2 text-right">จัดการ</th></tr></thead>
-                <tbody className="divide-y divide-gray-100">{paxList.map(pax => (
-                  <tr key={pax.uniqueId || pax.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-500">{pax.room}</td>
+                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th className="px-3 py-2 w-12 text-center">#</th><th className="px-4 py-2 min-w-[200px]">ชื่อ-นามสกุล / พาสปอร์ต</th><th className="px-4 py-2 min-w-[150px]">หมายเหตุ</th>{INDIVIDUAL_TASKS.map(task => (<th key={task.key} className="px-2 py-2 text-center w-20">{task.label}</th>))}<th className="px-4 py-2 text-center w-20">จัดการ</th></tr></thead>
+                <tbody className="divide-y divide-gray-100">{paxList.map((pax, index) => (
+                  <tr key={pax.uniqueId || pax.id} className={`hover:bg-gray-50 ${pax.nationality !== 'THAI' ? 'bg-orange-50/30 border-l-4 border-orange-400' : ''}`}>
+                    <td className="px-3 py-3 text-center font-bold text-gray-600">{index + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium text-gray-800 cursor-pointer hover:text-[#03b8fa] flex items-center gap-2" onClick={() => openCustomerForm(pax)}>
                             {pax.firstNameEn} {pax.lastNameEn}
+                            {pax.nationality !== 'THAI' && (
+                              <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-orange-300">
+                                <Globe size={10} />
+                                {pax.nationality}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-500 font-mono">{pax.passportNo} ({pax.nationality})</div>
+                          <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
+                            {pax.passportNo}
+                            {pax.nationality !== 'THAI' && (
+                              <span className="text-orange-600 font-bold">⚠️ ต่างชาติ</span>
+                            )}
+                          </div>
                         </div>
-                        <button onClick={() => openCustomerForm(pax)} className="text-gray-400 hover:text-blue-600" title="View Full Details">
-                          <Search size={14} />
-                        </button>
                       </div>
                     </td>
-                    {INDIVIDUAL_TASKS.map(task => {
-                      const status = paxTaskStatus[pax.id]?.[task.key] || { checked: false, file: null };
-                      const isChildPax = isChild(pax.dob);
+                    <td className="px-4 py-3">
+                      <div className="text-xs text-gray-600 max-w-[200px] truncate" title={pax.remark || ''}>
+                        {pax.remark ? (
+                          <span className="flex items-center gap-1">
+                            <FileText size={12} className="text-blue-500 flex-shrink-0" />
+                            {pax.remark}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 italic">-</span>
+                        )}
+                      </div>
+                    </td>
+                    {
+                      INDIVIDUAL_TASKS.map(task => {
+                        const status = paxTaskStatus[pax.id]?.[task.key] || { checked: false, file: null };
+                        const isChildPax = isChild(pax.dob);
 
-                      // Render Child Cert Button for passport column if child
-                      if (task.key === 'passport' && isChildPax) {
+                        // Render Child Cert Button for passport column if child
+                        if (task.key === 'passport' && isChildPax) {
+                          return (
+                            <td key={task.key} className="px-2 py-3 text-center">
+                              <button onClick={() => togglePaxTask(pax.id, task.key)} className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors group relative ${status.checked ? 'text-green-600 bg-green-50' : 'text-gray-400'}`}>
+                                {status.checked ? <CheckSquare size={20} /> : <Square size={20} />}
+                                <span className="text-[10px] uppercase font-bold mt-0.5">Birth Cert</span>
+                                {status.file && <div className="absolute top-0 right-0 bg-blue-500 w-2 h-2 rounded-full border border-white"></div>}
+                              </button>
+                            </td>
+                          );
+                        }
+
+                        // Render Payment Status - Auto-check if paid
+                        if (task.key === 'payment') {
+                          const paymentStatus = pax.paymentStatus || 'pending';
+                          const isPaid = paymentStatus === 'paid';
+                          const isPartial = paymentStatus === 'partial';
+                          return (
+                            <td key={task.key} className="px-2 py-3 text-center">
+                              <div className={`px-2 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${isPaid ? 'bg-green-100 text-green-700' : isPartial ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                {isPaid ? <CheckCircle size={12} /> : isPartial ? <Clock size={12} /> : <XCircle size={12} />}
+                                {isPaid ? 'Paid' : isPartial ? 'Partial' : 'Pending'}
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        // Standard Task Button
                         return (
-                          <td key={task.key} className="px-2 py-3 text-center">
-                            <button onClick={() => togglePaxTask(pax.id, task.key)} className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors group relative ${status.checked ? 'text-green-600 bg-green-50' : 'text-gray-400'}`}>
-                              {status.checked ? <CheckSquare size={20} /> : <Square size={20} />}
-                              <span className="text-[10px] uppercase font-bold mt-0.5">Birth Cert</span>
-                              {status.file && <div className="absolute top-0 right-0 bg-blue-500 w-2 h-2 rounded-full border border-white"></div>}
-                            </button>
-                          </td>
-                        );
-                      }
-
-                      // Render Payment Status - Auto-check if paid
-                      if (task.key === 'payment') {
-                        const paymentStatus = pax.paymentStatus || 'pending';
-                        const isPaid = paymentStatus === 'paid';
-                        const isPartial = paymentStatus === 'partial';
-                        return (
-                          <td key={task.key} className="px-2 py-3 text-center">
-                            <div className={`px-2 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${isPaid ? 'bg-green-100 text-green-700' : isPartial ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                              {isPaid ? <CheckCircle size={12} /> : isPartial ? <Clock size={12} /> : <XCircle size={12} />}
-                              {isPaid ? 'Paid' : isPartial ? 'Partial' : 'Pending'}
-                            </div>
-                          </td>
-                        );
-                      }
-
-                      // Standard Task Button
-                      return (
-                        <td key={task.key} className="px-2 py-3 text-center relative">
-                          <button
-                            onClick={() => togglePaxTask(pax.id, task.key)}
-                            className={`p-1.5 rounded transition-colors relative group ${status.checked ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-300 hover:text-gray-400'}`}
-                          >
-                            {status.checked ? <CheckSquare size={20} /> : <Square size={20} />}
-                          </button>
-                          {(status.file || pax.attachments?.[task.key]) && (
+                          <td key={task.key} className="px-2 py-3 text-center relative">
                             <button
-                              onClick={(e) => { e.stopPropagation(); window.alert("Opening Attachment: " + (pax.attachments?.[task.key] || status.file)); }}
-                              className="absolute top-1 right-2 w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center shadow hover:bg-blue-600"
-                              title="View Attached Doc"
+                              onClick={() => togglePaxTask(pax.id, task.key)}
+                              className={`p-1.5 rounded transition-colors relative group ${status.checked ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-300 hover:text-gray-400'}`}
                             >
-                              <FileText size={8} />
+                              {status.checked ? <CheckSquare size={20} /> : <Square size={20} />}
                             </button>
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="px-4 py-3 text-right text-gray-400 cursor-pointer hover:text-gray-600">
+                            {(status.file || pax.attachments?.[task.key]) && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); window.alert("Opening Attachment: " + (pax.attachments?.[task.key] || status.file)); }}
+                                className="absolute top-1 right-2 w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center shadow hover:bg-blue-600"
+                                title="View Attached Doc"
+                              >
+                                <FileText size={8} />
+                              </button>
+                            )}
+                          </td>
+                        );
+                      })
+                    }
+                    <td className="px-4 py-3 text-center text-gray-400 cursor-pointer hover:text-gray-600">
                       {/* Edit Button: Manager, Head, or Owner */}
                       {(canManageAll || pax.ownerId === currentUser.id) ? (
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-center gap-2">
                           {/* Delete Button: ONLY Manager or Head */}
                           {canManageAll ? (
                             <button onClick={() => window.confirm(`Remove ${pax.firstNameEn} from this tour?`) && alert("Removed (Mock)")} className="hover:text-[#03b8fa]"><Trash2 size={16} /></button>
@@ -2138,19 +2308,22 @@ export default function TourSystemApp() {
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      className={`border rounded px-2 py-1 text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-50 text-green-700 border-green-200' : user.commissionRank === 2 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}
-                      value={user.commissionRank || ''}
-                      onChange={(e) => {
-                        const newRank = e.target.value === '' ? null : Number(e.target.value);
-                        const newUsers = appUsers.map(u => u.id === user.id ? { ...u, commissionRank: newRank } : u);
-                        setAppUsers(newUsers);
-                      }}
-                    >
-                      <option value="">N/A</option>
-                      <option value="1">Rank 1</option>
-                      <option value="2">Rank 2</option>
-                    </select>
+                    {user.role === 'SALE' ? (
+                      <select
+                        className={`border rounded px-2 py-1 text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
+                        value={user.commissionRank || 2}
+                        onChange={(e) => {
+                          const newRank = Number(e.target.value);
+                          const newUsers = appUsers.map(u => u.id === user.id ? { ...u, commissionRank: newRank } : u);
+                          setAppUsers(newUsers);
+                        }}
+                      >
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                      </select>
+                    ) : (
+                      <span className="text-gray-400 text-xs italic">ไม่มีค่าคอมมิชชั่น</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-400"><button className="hover:text-[#03b8fa]"><Trash2 size={16} /></button></td>
                 </tr>
@@ -2162,7 +2335,6 @@ export default function TourSystemApp() {
             <ul className="list-disc pl-4 mt-1 space-y-1">
               <li><strong>Rank 1:</strong> พนักงานขายอาวุโส - ได้รับค่าคอมมิชชั่นสูงกว่า (กำหนดที่หน้าเส้นทาง)</li>
               <li><strong>Rank 2:</strong> พนักงานขายทั่วไป - ได้รับค่าคอมมิชชั่นตามมาตรฐาน</li>
-              <li><strong>N/A:</strong> ไม่มีค่าคอมมิชชั่น (Manager, Guide)</li>
             </ul>
           </div>
         </div>

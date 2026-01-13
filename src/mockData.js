@@ -217,13 +217,13 @@ export const INITIAL_CUSTOMER_STATE = {
 
 // Extended customer list for realistic data
 const CUSTOMER_TEMPLATES = [
-    { id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี', gender: 'M', dob: '1980-04-15', passportNo: 'AA1234567', nationality: 'THAI', phone: '081-234-5678', ownerId: 2 },
+    { id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี', gender: 'M', dob: '1980-01-16', passportNo: 'AA1234567', nationality: 'THAI', phone: '081-234-5678', ownerId: 2 },
     { id: 2, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี', gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', nationality: 'THAI', phone: '089-999-8888', ownerId: 2 },
     { id: 3, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว', gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', nationality: 'USA', phone: '+1-555-0199', ownerId: 3 },
-    { id: 4, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี', gender: 'M', dob: '1990-08-25', passportNo: 'AA84684645', nationality: 'THAI', phone: '092-123-4567', ownerId: 1 },
+    { id: 4, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี', gender: 'M', dob: '1990-01-23', passportNo: 'AA84684645', nationality: 'THAI', phone: '092-123-4567', ownerId: 1 },
     { id: 5, title: 'MR', firstNameEn: 'JOHN', lastNameEn: 'DOE', firstNameTh: 'จอห์น', lastNameTh: 'โด', gender: 'M', dob: '1985-06-10', passportNo: 'UK1234567', nationality: 'UK', phone: '+44-20-1234-5678', ownerId: 3 },
     { id: 6, title: 'MRS', firstNameEn: 'JANE', lastNameEn: 'DOE', firstNameTh: 'เจน', lastNameTh: 'โด', gender: 'F', dob: '1987-03-22', passportNo: 'UK1234568', nationality: 'UK', phone: '+44-20-1234-5679', ownerId: 3 },
-    { id: 7, title: 'MR', firstNameEn: 'TANAKORN', lastNameEn: 'SRISUK', firstNameTh: 'ธนากร', lastNameTh: 'ศรีสุข', gender: 'M', dob: '1975-11-08', passportNo: 'AA5678901', nationality: 'THAI', phone: '086-111-2222', ownerId: 2 },
+    { id: 7, title: 'MR', firstNameEn: 'TANAKORN', lastNameEn: 'SRISUK', firstNameTh: 'ธนากร', lastNameTh: 'ศรีสุข', gender: 'M', dob: '1975-02-14', passportNo: 'AA5678901', nationality: 'THAI', phone: '086-111-2222', ownerId: 2 },
     { id: 8, title: 'MRS', firstNameEn: 'NATTAYA', lastNameEn: 'SRISUK', firstNameTh: 'ณัฐญา', lastNameTh: 'ศรีสุข', gender: 'F', dob: '1978-09-14', passportNo: 'AA5678902', nationality: 'THAI', phone: '086-111-2223', ownerId: 2 },
     { id: 9, title: 'MR', firstNameEn: 'PRASERT', lastNameEn: 'WONG', firstNameTh: 'ประเสริฐ', lastNameTh: 'วงศ์', gender: 'M', dob: '1965-01-30', passportNo: 'AA7890123', nationality: 'THAI', phone: '081-555-6666', ownerId: 3 },
     { id: 10, title: 'MRS', firstNameEn: 'SUWANNA', lastNameEn: 'WONG', firstNameTh: 'สุวรรณา', lastNameTh: 'วงศ์', gender: 'F', dob: '1968-07-19', passportNo: 'AA7890124', nationality: 'THAI', phone: '081-555-6667', ownerId: 3 },
