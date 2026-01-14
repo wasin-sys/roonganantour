@@ -60,7 +60,8 @@ import {
   MOCK_PAX_IN_ROUND_402,
   INITIAL_PAYMENTS,
   INITIAL_BLACKLIST_DATA,
-  INITIAL_CUSTOMER_STATE
+  INITIAL_CUSTOMER_STATE,
+  MOCK_BANK_ACCOUNTS
 } from './mockData';
 
 const INDIVIDUAL_TASKS = [
@@ -144,6 +145,13 @@ export default function TourSystemApp() {
   const [guideTaskStatus, setGuideTaskStatus] = useState({}); // { [roundId]: { ticket: boolean, hotel: boolean } }
   const [blacklistSearchTerm, setBlacklistSearchTerm] = useState('');
   const [showBlacklistSearch, setShowBlacklistSearch] = useState(false);
+
+  // Bank Accounts State
+  const [bankAccounts, setBankAccounts] = useState(MOCK_BANK_ACCOUNTS);
+  const [isBankFormOpen, setIsBankFormOpen] = useState(false);
+  const [bankFormData, setBankFormData] = useState({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600' });
+  const [selectedBankForTransfer, setSelectedBankForTransfer] = useState(''); // For payment modal
+  const [settingsTab, setSettingsTab] = useState('bank'); // 'users' or 'bank'
 
   // Payment Confirmation State
   const [billingInfo, setBillingInfo] = useState({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
@@ -2384,71 +2392,260 @@ export default function TourSystemApp() {
   );
 
   const renderSettings = () => (
-    <div className="space-y-6 flex flex-col h-full animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <header className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-800">ตั้งค่าระบบ</h1>
-        <p className="text-gray-500 text-sm">Manage users, roles, and permissions</p>
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <Settings className="text-[#03b8fa]" />
+          {settingsTab === 'users' ? 'จัดการผู้ใช้งาน และ ค่าคอมมิชชั่น' : 'บัญชีธนาคารรับเงิน'}
+        </h1>
+        <p className="text-gray-500 text-sm">
+          {settingsTab === 'users' ? 'Manage staff roles and commission ranks' : 'Manage company bank accounts for customer transfers'}
+        </p>
       </header>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-          <h3 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> จัดการผู้ใช้งาน & Rank Commission</h3>
-          <button onClick={() => { setUserFormData({ name: '', role: 'SALE', commissionRank: 2, avatar: `https://i.pravatar.cc/150?u=${Date.now()}` }); setIsUserFormModalOpen(true); }} className="bg-[#03b8fa] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#0279a9] flex items-center gap-1 shadow-sm"><UserPlus size={14} /> เพิ่มพนักงาน</button>
-        </div>
-        <div className="overflow-auto flex-1 p-4">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-              <tr><th className="px-4 py-3">ผู้ใช้งาน</th><th className="px-4 py-3">ตำแหน่ง</th><th className="px-4 py-3">Rank Commission</th><th className="px-4 py-3 text-right">จัดการ</th></tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {appUsers.map(user => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 flex items-center gap-3">
-                    <img src={user.avatar} alt="avatar" className="w-8 h-8 rounded-full bg-gray-200" />
-                    <div><div className="font-bold text-gray-800">{user.name}</div><div className="text-xs text-gray-400">ID: {user.id}</div></div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <select className="border rounded p-1 text-xs" value={user.role} onChange={(e) => {
-                      const newUsers = appUsers.map(u => u.id === user.id ? { ...u, role: e.target.value } : u);
-                      setAppUsers(newUsers);
-                    }}>
-                      <option value="MANAGER">Manager</option>
-                      <option value="SALE">Sale</option>
-                      <option value="GUIDE">Guide</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    {user.role === 'SALE' ? (
-                      <select
-                        className={`border rounded px-2 py-1 text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
-                        value={user.commissionRank || 2}
-                        onChange={(e) => {
-                          const newRank = Number(e.target.value);
-                          const newUsers = appUsers.map(u => u.id === user.id ? { ...u, commissionRank: newRank } : u);
-                          setAppUsers(newUsers);
-                        }}
-                      >
-                        <option value="1">Rank 1</option>
-                        <option value="2">Rank 2</option>
-                      </select>
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">ไม่มีค่าคอมมิชชั่น</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-400"><button className="hover:text-[#03b8fa]"><Trash2 size={16} /></button></td>
-                </tr>
+      <div className="space-y-6">
+        {/* Users Management Section */}
+        {settingsTab === 'users' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">รายชื่อผู้ใช้งานทั้งหมด</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setUserFormData({ name: '', role: 'SALE', commission: 0, avatar: 'https://i.pravatar.cc/150?u=99', id: null });
+                  setIsUserFormModalOpen(true);
+                }}
+                className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#029bc4]"
+              >
+                <UserPlus size={16} /> เพิ่มผู้ใช้งาน
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
+                    <th className="p-3 rounded-tl-lg">User</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Commission Class</th>
+                    <th className="p-3 text-right rounded-tr-lg">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {appUsers.map(user => (
+                    <tr key={user.id} className="group hover:bg-gray-50 transition">
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img src={user.avatar} alt="" className="w-8 h-8 rounded-full border border-gray-200" />
+                          <div>
+                            <p className="font-bold text-gray-800">{user.name}</p>
+                            <p className="text-xs text-gray-400">{user.email || 'user@tour.com'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'MANAGER' ? 'bg-purple-100 text-purple-700' :
+                          user.role === 'GUIDE' ? 'bg-orange-100 text-orange-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        {user.role === 'SALE' ? (
+                          <select
+                            className={`border rounded px-2 py-1 text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
+                            value={user.commissionRank || 2}
+                            onChange={(e) => {
+                              const newRank = Number(e.target.value);
+                              setAppUsers(users => users.map(u => u.id === user.id ? { ...u, commissionRank: newRank } : u));
+                            }}
+                          >
+                            <option value="1">Rank 1</option>
+                            <option value="2">Rank 2</option>
+                          </select>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setUserFormData(user);
+                              setIsUserFormModalOpen(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-[#03b8fa] hover:bg-blue-50 rounded"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Delete user?')) {
+                                setAppUsers(users => users.filter(u => u.id !== user.id));
+                              }
+                            }}
+                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 p-4 bg-blue-50 text-blue-800 text-xs rounded-lg border border-blue-100">
+              <strong>Note on Commission Ranks:</strong>
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li><strong>Rank 1:</strong> พนักงานขายอาวุโส - ได้รับค่าคอมมิชชั่นสูงกว่า (กำหนดที่หน้าเส้นทาง)</li>
+                <li><strong>Rank 2:</strong> พนักงานขายทั่วไป - ได้รับค่าคอมมิชชั่นตามมาตรฐาน</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Bank Accounts Section */}
+        {settingsTab === 'bank' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">บัญชีธนาคารรับเงิน</h3>
+                <p className="text-gray-500 text-sm">Manage company bank accounts for customer transfers</p>
+              </div>
+              <button
+                onClick={() => {
+                  setBankFormData({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600', id: null });
+                  setIsBankFormOpen(true);
+                }}
+                className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#029bc4]"
+              >
+                <Plus size={16} /> เพิ่มบัญชี
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {bankAccounts.map(acc => (
+                <div key={acc.id} className="border border-gray-200 rounded-xl p-4 flex items-start justify-between bg-gray-50 hover:border-[#03b8fa] transition group">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold shadow-sm ${acc.color || 'bg-gray-400'}`}>
+                      {acc.bank.substring(0, 2)}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                        {acc.bank}
+                        <span className="text-xs font-normal text-gray-500 bg-white border px-1.5 rounded">{acc.branch}</span>
+                      </h4>
+                      <p className="font-mono font-bold text-[#0279a9] my-1 text-lg">{acc.accountNumber}</p>
+                      <p className="text-xs text-gray-500">{acc.accountName}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => {
+                        setBankFormData(acc);
+                        setIsBankFormOpen(true);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-[#03b8fa] hover:bg-white rounded-full transition"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Delete this account?')) {
+                          setBankAccounts(prev => prev.filter(a => a.id !== acc.id));
+                        }
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-full transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-          <div className="mt-4 p-4 bg-blue-50 text-blue-800 text-xs rounded-lg border border-blue-100">
-            <strong>Note on Commission Ranks:</strong>
-            <ul className="list-disc pl-4 mt-1 space-y-1">
-              <li><strong>Rank 1:</strong> พนักงานขายอาวุโส - ได้รับค่าคอมมิชชั่นสูงกว่า (กำหนดที่หน้าเส้นทาง)</li>
-              <li><strong>Rank 2:</strong> พนักงานขายทั่วไป - ได้รับค่าคอมมิชชั่นตามมาตรฐาน</li>
-            </ul>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Bank Form Modal */}
+      {isBankFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="font-bold text-lg mb-4">{bankFormData.id ? 'แก้ไขข้อมูลบัญชี' : 'เพิ่มบัญชีใหม่'}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">ธนาคาร</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={bankFormData.bank}
+                  onChange={e => setBankFormData({ ...bankFormData, bank: e.target.value })}
+                  placeholder="เช่น KBANK, SCB"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">เลขที่บัญชี</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm font-mono"
+                  value={bankFormData.accountNumber}
+                  onChange={e => setBankFormData({ ...bankFormData, accountNumber: e.target.value })}
+                  placeholder="XXX-X-XXXXX-X"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">ชื่อบัญชี</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={bankFormData.accountName}
+                  onChange={e => setBankFormData({ ...bankFormData, accountName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">สาขา</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={bankFormData.branch}
+                  onChange={e => setBankFormData({ ...bankFormData, branch: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">สีธนาคาร</label>
+                <div className="flex gap-2 mt-1">
+                  {['bg-[#138f2d]', 'bg-[#4e2e7f]', 'bg-[#1e4598]', 'bg-[#f4a01e]', 'bg-[#00a9e0]'].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setBankFormData({ ...bankFormData, color: c })}
+                      className={`w-8 h-8 rounded-full ${c} ${bankFormData.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                    ></button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6 justify-end">
+              <button
+                onClick={() => setIsBankFormOpen(false)}
+                className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg text-sm"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => {
+                  if (bankFormData.id) {
+                    setBankAccounts(prev => prev.map(a => a.id === bankFormData.id ? bankFormData : a));
+                  } else {
+                    setBankAccounts(prev => [...prev, { ...bankFormData, id: Date.now() }]);
+                  }
+                  setIsBankFormOpen(false);
+                }}
+                className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg text-sm font-bold"
+              >
+                บันทึก
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -2634,77 +2831,129 @@ export default function TourSystemApp() {
                           ยอดค้างชำระ: <strong className="text-red-600">฿{((payment?.totalAmount || 0) - (payment?.paidAmount || 0)).toLocaleString()}</strong>
                         </p>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase block mb-1">ช่องทางการชำระ</label>
-                            <select className="w-full border rounded px-3 py-2 text-sm bg-white">
-                              <option value="transfer">โอนเงิน</option>
-                              <option value="cash">เงินสด</option>
-                              <option value="cheque">เช็ค</option>
-                              <option value="credit">บัตรเครดิต</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase block mb-1">จำนวนเงินที่ชำระ</label>
-                            <input
-                              type="number"
-                              className="w-full border rounded px-3 py-2 text-sm font-mono"
-                              placeholder="0.00"
-                              defaultValue={(payment?.totalAmount || 0) - (payment?.paidAmount || 0)}
-                            />
-                          </div>
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase block mb-1">แนบหลักฐานการชำระ (สลิป)</label>
-                          <div className="flex items-center gap-3">
-                            <label className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#03b8fa] hover:bg-blue-50 transition">
-                              <Upload size={24} className="mx-auto text-gray-400 mb-2" />
-                              <span className="text-sm text-gray-500">คลิกเพื่ออัปโหลดสลิป</span>
-                              <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => {
-                                if (e.target.files[0]) {
-                                  alert(`ไฟล์ที่เลือก: ${e.target.files[0].name}`);
-                                }
-                              }} />
-                            </label>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase block mb-1">หมายเหตุ (ถ้ามี)</label>
-                          <input type="text" className="w-full border rounded px-3 py-2 text-sm" placeholder="เช่น ชำระผ่านธนาคาร xxx เวลา xx:xx" />
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            className="px-4 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 transition flex items-center gap-2"
-                            onClick={() => {
-                              // Update payment status
-                              setPayments(prev => prev.map(p =>
-                                p.id === payment.id
-                                  ? {
-                                    ...p,
-                                    status: 'paid',
-                                    paidAmount: p.totalAmount,
-                                    transactions: [
-                                      ...(p.transactions || []),
-                                      {
-                                        id: Date.now(),
-                                        date: new Date().toISOString().split('T')[0],
-                                        amount: p.totalAmount - p.paidAmount,
-                                        method: 'transfer',
-                                        receipt: 'slip_uploaded.jpg',
-                                        status: 'verified',
-                                        verifiedBy: currentUser.id,
-                                        verifiedAt: new Date().toISOString().split('T')[0]
-                                      }
-                                    ]
-                                  }
-                                  : p
-                              ));
-                              alert('บันทึกการชำระเงินเรียบร้อย! สถานะเปลี่ยนเป็น "ชำระแล้ว"');
-                              setViewingPaymentId(null);
+                          <label className="text-xs font-bold text-gray-500 uppercase block mb-1">ช่องทางการชำระ</label>
+                          <select
+                            className="w-full border rounded px-3 py-2 text-sm bg-white"
+                            value={paymentFormData.method || 'transfer'} // Use temp state if available, but here we modify directly? Ideally use a state.
+                            // Since this is inline, let's assume valid change handler or controlled component logic if extended.
+                            // NOTE: The previous code was uncontrolled select. Let's make it controlled if possible,
+                            // but for minimal diff, let's just insert the logic.
+                            // Actually, the user wants bank selection for "Transfer".
+                            // We need to capture the selected method to conditionally show bank dropdown.
+                            onChange={(e) => {
+                              // Assuming we have state management for this form section now...
+                              // But wait, the original code didn't use state for these inputs! It was just a static view.
+                              // We need to add state to make this interactive as requested.
+                              // Let's use `paymentFormData` state which already exists in line 157 but wasn't seemingly used here.
+                              setPaymentFormData(prev => ({ ...prev, method: e.target.value }));
                             }}
                           >
-                            <CheckCircle size={16} /> ยืนยันการชำระเงิน
-                          </button>
+                            <option value="transfer">โอนเงิน</option>
+                            <option value="cash">เงินสด</option>
+                            <option value="cheque">เช็ค</option>
+                            <option value="credit">บัตรเครดิต</option>
+                          </select>
+                          {/* Conditional Bank Selection for Transfer */}
+                          {paymentFormData.method === 'transfer' && (
+                            <div className="mt-2 animate-fade-in">
+                              <label className="text-xs font-bold text-gray-400 uppercase block mb-1">โอนเข้าบัญชี</label>
+                              <select
+                                className="w-full border rounded px-3 py-2 text-sm bg-gray-50 text-gray-700"
+                                value={selectedBankForTransfer}
+                                onChange={(e) => setSelectedBankForTransfer(e.target.value)}
+                              >
+                                <option value="">-- เลือกบัญชีธนาคาร --</option>
+                                {bankAccounts.map(acc => (
+                                  <option key={acc.id} value={acc.id}>
+                                    {acc.bank} - {acc.accountNumber} ({acc.accountName})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
+                        <div>
+                          <label className="text-xs font-bold text-gray-500 uppercase block mb-1">จำนวนเงินที่ชำระ</label>
+                          <input
+                            type="number"
+                            className="w-full border rounded px-3 py-2 text-sm font-mono"
+                            placeholder="0.00"
+                            value={paymentFormData.amount || ''}
+                            onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase block mb-1">แนบหลักฐานการชำระ (สลิป)</label>
+                        <div className="flex items-center gap-3">
+                          <label className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#03b8fa] hover:bg-blue-50 transition">
+                            <Upload size={24} className="mx-auto text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-500">คลิกเพื่ออัปโหลดสลิป</span>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => {
+                              if (e.target.files[0]) {
+                                alert(`ไฟล์ที่เลือก: ${e.target.files[0].name}`);
+                              }
+                            }} />
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase block mb-1">หมายเหตุ (ถ้ามี)</label>
+                        <input
+                          type="text"
+                          className="w-full border rounded px-3 py-2 text-sm"
+                          placeholder="เช่น ชำระผ่านธนาคาร xxx เวลา xx:xx"
+                          value={paymentFormData.note || ''}
+                          onChange={(e) => setPaymentFormData({ ...paymentFormData, note: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          className="px-4 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 transition flex items-center gap-2"
+                          onClick={() => {
+                            const newPaidAmount = (payment.paidAmount || 0) + (paymentFormData.amount || 0);
+                            const isFullyPaid = newPaidAmount >= payment.totalAmount;
+
+                            // Bank Info
+                            const bankInfo = paymentFormData.method === 'transfer' && selectedBankForTransfer
+                              ? bankAccounts.find(b => b.id === Number(selectedBankForTransfer))
+                              : null;
+
+                            // Update payment status
+                            setPayments(prev => prev.map(p =>
+                              p.id === payment.id
+                                ? {
+                                  ...p,
+                                  status: isFullyPaid ? 'paid' : 'partial',
+                                  paidAmount: newPaidAmount,
+                                  transactions: [
+                                    ...(p.transactions || []),
+                                    {
+                                      id: Date.now(),
+                                      date: new Date().toISOString().split('T')[0],
+                                      amount: paymentFormData.amount,
+                                      method: paymentFormData.method || 'transfer',
+                                      bankId: bankInfo?.id,
+                                      bankName: bankInfo?.bank,
+                                      note: paymentFormData.note,
+                                      receipt: 'slip_uploaded.jpg',
+                                      status: 'verified',
+                                      verifiedBy: currentUser.id,
+                                      verifiedAt: new Date().toISOString().split('T')[0]
+                                    }
+                                  ]
+                                }
+                                : p
+                            ));
+
+                            alert('บันทึกการชำระเงินเรียบร้อย!');
+                            setViewingPaymentId(null);
+                          }}
+                        >
+                          <CheckCircle size={16} /> ยืนยันการชำระเงิน
+                        </button>
                       </div>
                     </div>
                   )}
@@ -2743,7 +2992,34 @@ export default function TourSystemApp() {
           </div>
         )}
 
-        <nav className="flex-1 py-4 space-y-1 overflow-y-auto"><SidebarItem icon={Users} label={isSidebarOpen ? "ระบบจัดการลูกค้า" : ""} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} /><SidebarItem icon={LayoutDashboard} label={isSidebarOpen ? "ภาพรวม" : ""} active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} /><SidebarItem icon={Calendar} label={isSidebarOpen ? "จองทัวร์" : ""} active={activeTab === 'booking'} onClick={() => setActiveTab('booking')} /><SidebarItem icon={FileText} label={isSidebarOpen ? "ระบบจัดการทัวร์" : ""} active={activeTab === 'operation'} onClick={() => setActiveTab('operation')} /><SidebarItem icon={Wallet} label={isSidebarOpen ? "ประวัติการชำระเงิน" : ""} active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} /><SidebarItem icon={Settings} label={isSidebarOpen ? "ตั้งค่าระบบ" : ""} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} /></nav>
+        <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
+          <SidebarItem icon={Users} label={isSidebarOpen ? "ระบบจัดการลูกค้า" : ""} active={activeTab === 'crm'} onClick={() => setActiveTab('crm')} />
+          <SidebarItem icon={LayoutDashboard} label={isSidebarOpen ? "ภาพรวม" : ""} active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <SidebarItem icon={Calendar} label={isSidebarOpen ? "จองทัวร์" : ""} active={activeTab === 'booking'} onClick={() => setActiveTab('booking')} />
+          <SidebarItem icon={FileText} label={isSidebarOpen ? "ระบบจัดการทัวร์" : ""} active={activeTab === 'operation'} onClick={() => setActiveTab('operation')} />
+          <SidebarItem icon={Wallet} label={isSidebarOpen ? "ประวัติการชำระเงิน" : ""} active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} />
+
+          {/* Settings with Sub-menu */}
+          <div>
+            <SidebarItem icon={Settings} label={isSidebarOpen ? "ตั้งค่าระบบ" : ""} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+            {activeTab === 'settings' && isSidebarOpen && (
+              <div className="ml-8 mt-1 space-y-1 animate-fade-in">
+                <button
+                  onClick={() => setSettingsTab('users')}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${settingsTab === 'users' ? 'bg-[#d9edf4] text-[#03b8fa] font-bold' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  ผู้ใช้งาน & คอมมิชชั่น
+                </button>
+                <button
+                  onClick={() => setSettingsTab('bank')}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${settingsTab === 'bank' ? 'bg-[#d9edf4] text-[#03b8fa] font-bold' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  บัญชีธนาคาร
+                </button>
+              </div>
+            )}
+          </div>
+        </nav>
         <div className="p-4 border-t border-gray-100"><SidebarItem icon={LogOut} label={isSidebarOpen ? "ออกจากระบบ" : ""} active={false} onClick={() => alert("Logged out")} /></div>
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden relative">

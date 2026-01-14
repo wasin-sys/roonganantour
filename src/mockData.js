@@ -205,7 +205,7 @@ export const INITIAL_CUSTOMER_STATE = {
     passportNo: '',
     passportIssue: '',
     passportExpire: '',
-    birthplace: '',
+    birthplace: 'BANGKOK',
     nationality: 'THAI',
     phone: '',
     email: '',
@@ -266,22 +266,6 @@ export const INITIAL_BLACKLIST_DATA = [
 ];
 
 // === BOOKING / PAX IN ROUNDS ===
-// Round 101: 3 pax (Sold: 3)
-export const MOCK_PAX_IN_ROUND_101 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101' },
-    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101' }
-];
-
-// Round 102: 5 pax (Sold: 5)
-export const MOCK_PAX_IN_ROUND_102 = [
-    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
-    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
-    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
-];
-
 // Round 201: 20 pax (Sold: 20) - Full Group
 export const MOCK_PAX_IN_ROUND_201 = [
     { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-10', uniqueId: '1-201' },
@@ -334,6 +318,23 @@ export const MOCK_PAX_IN_ROUND_301 = [
     { ...MOCK_CUSTOMERS_DB[27], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '28-301' },
     { ...MOCK_CUSTOMERS_DB[28], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '29-301' }
 ].map(p => ({ ...p, attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: p.nationality !== 'THAI' ? 'visa.pdf' : null } }));
+
+// Round 101: 3 pax (Sold: 3)
+export const MOCK_PAX_IN_ROUND_101 = [
+    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101' },
+    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101' },
+    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101' }
+];
+
+// Round 102: 5 pax (Sold: 5)
+export const MOCK_PAX_IN_ROUND_102 = [
+    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
+    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
+    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
+    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
+    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
+];
+
 
 // Round 103: 12 pax (Sold: 12) - 8 paid, 2 pending, 2 partial
 export const MOCK_PAX_IN_ROUND_103 = [
@@ -482,4 +483,10 @@ export const INITIAL_PAYMENTS = [
             { id: 5, date: '2025-11-15', amount: 588200, method: 'transfer', receipt: 'receipt_004.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-16' }
         ]
     }
+];
+
+// === BANK ACCOUNTS ===
+export const MOCK_BANK_ACCOUNTS = [
+    { id: 1, bank: 'KBANK', accountName: 'บจก. รุ่งอนันต์ ทัวร์', accountNumber: '012-3-45678-9', branch: 'สำนักพหลโยธิน', color: 'bg-[#138f2d]' },
+    { id: 2, bank: 'SCB', accountName: 'บจก. รุ่งอนันต์ ทัวร์', accountNumber: '987-6-54321-0', branch: 'เซ็นทรัลลาดพร้าว', color: 'bg-[#4e2e7f]' }
 ];
