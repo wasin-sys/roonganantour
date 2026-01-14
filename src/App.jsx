@@ -43,7 +43,10 @@ import {
   Clock,
   XCircle,
   Gift,
-  Bed
+  Bed,
+  ShoppingBag,
+  FileCheck,
+  ShieldCheck
 } from 'lucide-react';
 
 import {
@@ -61,7 +64,8 @@ import {
   INITIAL_PAYMENTS,
   INITIAL_BLACKLIST_DATA,
   INITIAL_CUSTOMER_STATE,
-  MOCK_BANK_ACCOUNTS
+  MOCK_BANK_ACCOUNTS,
+  MOCK_BOOKINGS
 } from './mockData';
 
 const INDIVIDUAL_TASKS = [
@@ -121,7 +125,7 @@ export default function TourSystemApp() {
   const [routes, setRoutes] = useState(MOCK_ROUTES);
   const [rounds, setRounds] = useState(MOCK_ROUNDS);
 
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
   const [bookingDetails, setBookingDetails] = useState({ contactName: '', specialRequest: '', discount: 0, tourCode: '' });
   const [activeTab, setActiveTab] = useState('operation');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -163,6 +167,7 @@ export default function TourSystemApp() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const [paymentFormData, setPaymentFormData] = useState({ method: '', amount: 0, receipt: null, note: '' });
+  const [paymentSubTab, setPaymentSubTab] = useState('billing'); // 'billing', 'receipt', 'tax'
 
   // New States for Booking Improvements
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -190,7 +195,7 @@ export default function TourSystemApp() {
 
     // Get unique passengers from actual bookings for this round
     const realPax = bookings
-      .filter(b => b.round.id === roundId) // Match round ID
+      .filter(b => (b.round?.id || b.roundId) === roundId) // Match round ID
       .flatMap(b => b.pax.map(p => ({
         ...p,
         room: p.room || 'Unassigned',
@@ -663,6 +668,181 @@ export default function TourSystemApp() {
   );
 
   const renderDashboard = () => {
+    // === SALE DASHBOARD ===
+    if (currentUser.role === 'SALE') {
+      // 1. Calculate Stats
+      const myPayments = payments.filter(p => p.saleId === currentUser.id);
+      const myTotalSales = myPayments.reduce((sum, p) => sum + p.totalAmount, 0);
+
+      let myTotalCommission = 0;
+      let myTotalPax = 0;
+
+      myPayments.filter(p => p.status === 'paid').forEach(p => {
+        const route = routes.find(r => r.id === p.routeId);
+        const paxCount = p.paxIds?.length || 1;
+        myTotalPax += paxCount;
+        if (currentUser.commissionRank === 1) {
+          myTotalCommission += (route?.rank1Com || 0) * paxCount;
+        } else if (currentUser.commissionRank === 2) {
+          myTotalCommission += (route?.rank2Com || 0) * paxCount;
+        }
+      });
+
+      // 2. Identify Active Rounds for this Sale
+      // Keep track of rounds where I have passengers
+      const myRoundsMap = new Map();
+      bookings.filter(b => b.saleId === currentUser.id).forEach(b => {
+        if (!myRoundsMap.has(b.roundId)) {
+          const round = rounds.find(r => r.id === b.roundId);
+          if (round) myRoundsMap.set(b.roundId, { round, paxCount: 0, customers: [] });
+        }
+        if (myRoundsMap.has(b.roundId)) {
+          const entry = myRoundsMap.get(b.roundId);
+          entry.paxCount += b.pax.length;
+          entry.customers.push(...b.pax);
+        }
+      });
+
+      const myActiveRounds = Array.from(myRoundsMap.values()).sort((a, b) => new Date(a.round.date) - new Date(b.round.date));
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <header className="flex justify-between items-center mb-2">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">ภาพรวมงานขาย (My Performance)</h1>
+              <p className="text-gray-500 text-sm">ติดตามสถานะลูกค้า, เอกสาร, และค่าคอมมิชชั่น</p>
+            </div>
+            <div className="flex gap-2">
+              <div className="px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-600 shadow-sm">
+                Rank: <span className="text-[#03b8fa] font-bold">Level {currentUser.commissionRank || '-'}</span>
+              </div>
+              <button
+                onClick={() => setActiveTab('booking')}
+                className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg hover:bg-[#0279a9] shadow-sm flex items-center gap-2"
+              >
+                <Plus size={18} /> จองทัวร์ใหม่
+              </button>
+            </div>
+          </header>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Wallet size={24} /></div>
+              <div>
+                <p className="text-sm text-gray-500">ค่าคอมมิชชั่นสะสม</p>
+                <h3 className="text-2xl font-bold text-green-600">฿{myTotalCommission.toLocaleString()}</h3>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><ShoppingBag size={24} /></div>
+              <div>
+                <p className="text-sm text-gray-500">ยอดขายรวม</p>
+                <h3 className="text-2xl font-bold text-blue-600">฿{myTotalSales.toLocaleString()}</h3>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><Users size={24} /></div>
+              <div>
+                <p className="text-sm text-gray-500">ลูกค้าที่ดูแล (Pax)</p>
+                <h3 className="text-2xl font-bold text-gray-800">{myTotalPax} ท่าน</h3>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Job Tracking */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <FileText size={18} className="text-[#03b8fa]" /> รายการที่ต้องติดตาม (Job Tracking)
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white border-b border-gray-200 text-gray-500">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">เส้นทาง / วันที่</th>
+                    <th className="px-6 py-3 font-medium text-center">ลูกค้าของคุณ</th>
+                    <th className="px-6 py-3 font-medium text-center">สถานะทัวร์</th>
+                    <th className="px-6 py-3 font-medium">ติดตามเอกสาร & การจ่ายเงิน</th>
+                    <th className="px-6 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {myActiveRounds.map((item) => {
+                    const { round, paxCount, customers } = item;
+                    const route = routes.find(r => r.id === round.routeId);
+
+                    // Simple Doc Check Logic
+                    let missingDocs = 0;
+                    let unpaidPax = 0;
+                    customers.forEach(c => {
+                      // Check Passport (Basic)
+                      if (!c.passportNo) missingDocs++;
+                      // Check Payment (Basic from Pax Object directly if linked, otherwise mostly mock)
+                      // Ideally we check linked Payment records, but for this summary using a mock logic is okay or checking updated pax list
+                      // Note: Our mock 'customers' don't always update paymentStatus in real-time unless linked.
+                      // Let's assume 'c' has up-to-date info if we merged properly.
+                      if (c.paymentStatus !== 'paid') unpaidPax++;
+                    });
+
+                    return (
+                      <tr key={round.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-[#03b8fa]">{route?.code}</div>
+                          <div className="text-xs text-gray-500">{round.date}</div>
+                        </td>
+                        <td className="px-6 py-4 text-center font-bold text-gray-700">
+                          {paxCount} ท่าน
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs border ${round.status === 'Full' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}`}>
+                            {round.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            {/* Payment Status */}
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">การชำระเงิน:</span>
+                              {unpaidPax === 0 ?
+                                <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle size={10} /> ครบถ้วน</span> :
+                                <span className="text-red-500 font-bold">{unpaidPax} ค้างชำระ</span>
+                              }
+                            </div>
+                            {/* Doc Status (Mock check) */}
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">เอกสาร:</span>
+                              {missingDocs === 0 ?
+                                <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle size={10} /> ครบถ้วน</span> :
+                                <span className="text-orange-500 font-bold">{missingDocs} ไม่ครบ</span>
+                              }
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }}
+                            className="text-[#03b8fa] hover:bg-blue-50 px-3 py-1 rounded text-xs font-medium border border-blue-200"
+                          >
+                            จัดการ
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {myActiveRounds.length === 0 && (
+                    <tr><td colSpan={5} className="text-center py-8 text-gray-400">ยังไม่มีงานขายที่กำลังดำเนินการ</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    } // End Sale Dashboard
+
+    // === EXECUTIVE DASHBOARD (Original) ===
     // Dynamic Stats Calculation
     const totalSales = payments.reduce((sum, p) => sum + p.totalAmount, 0);
     const totalRevenue = payments.reduce((sum, p) => sum + p.paidAmount, 0);
@@ -2653,79 +2833,136 @@ export default function TourSystemApp() {
   // === Payment Management ===
 
   const renderPayment = () => {
+    // Filter Data based on Tab
+    let displayedItems = [];
+    if (paymentSubTab === 'billing') {
+      displayedItems = payments.filter(p => (p.totalAmount - p.paidAmount) > 0);
+    } else if (paymentSubTab === 'receipt') {
+      // Items that have some payment made
+      displayedItems = payments.filter(p => p.paidAmount > 0);
+    } else { // tax
+      // Items that are fully paid (eligible for Tax Invoice)
+      displayedItems = payments.filter(p => p.status === 'paid');
+    }
+
+    const totalBalance = displayedItems.reduce((sum, p) => sum + (p.totalAmount - p.paidAmount), 0);
+    const totalPaid = displayedItems.reduce((sum, p) => sum + p.paidAmount, 0);
+
     return (
       <div className="space-y-6 h-full flex flex-col animate-fade-in">
-        <header className="mb-2">
-          <h1 className="text-2xl font-bold text-gray-800">ประวัติการชำระเงิน</h1>
-          <p className="text-gray-500 text-sm">View all payment records and transactions</p>
+        <header className="mb-1 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">ระบบการเงินและใบเสร็จ (Payments & Documents)</h1>
+            <p className="text-sm text-gray-500">จัดการใบวางบิล, ใบเสร็จรับเงิน, และใบกำกับภาษี</p>
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">ยอดคงค้างรวม</p>
-            <p className="text-2xl font-bold text-red-600">฿{payments.reduce((sum, p) => sum + (p.totalAmount - p.paidAmount), 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">ยอดรับเดือนนี้</p>
-            <p className="text-2xl font-bold text-[#37c3a5]">฿{payments.reduce((sum, p) => sum + p.paidAmount, 0).toLocaleString()}</p>
+        {/* System Blue Theme Tabs */}
+        <div className="flex gap-3 mb-2 border-b border-gray-100 pb-2">
+          <button
+            onClick={() => setPaymentSubTab('billing')}
+            className={`px-6 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${paymentSubTab === 'billing' ? 'bg-[#d9edf4] text-[#03b8fa]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <FileText size={18} />
+            1. ใบวางบิล (Billing Note)
+          </button>
+          <button
+            onClick={() => setPaymentSubTab('receipt')}
+            className={`px-6 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${paymentSubTab === 'receipt' ? 'bg-[#d9edf4] text-[#03b8fa]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <FileCheck size={18} />
+            2. ใบรับเงิน (Receipt)
+          </button>
+          <button
+            onClick={() => setPaymentSubTab('tax')}
+            className={`px-6 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${paymentSubTab === 'tax' ? 'bg-[#d9edf4] text-[#03b8fa]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <ShieldCheck size={18} />
+            3. ใบกำกับภาษี (Tax Invoice)
+          </button>
+        </div>
+
+        {/* Filter Box */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex gap-4">
+            <div className="flex-[2] relative">
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+              <input type="text" placeholder="Search by Booking ID, Customer Name..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-[#03b8fa] focus:ring-1 focus:ring-[#03b8fa]" />
+            </div>
+            <div className="flex-1">
+              <select className="w-full border rounded-lg px-4 py-2 outline-none text-gray-600 bg-white hover:border-[#03b8fa] transition">
+                <option>All Routes</option>
+                {routes.map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
+              </select>
+            </div>
+            <button className="px-8 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#029bc4] shadow-sm transition flex items-center gap-2">
+              <Search size={18} /> ค้นหา
+            </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2"><Wallet size={18} /> รายการธุรกรรมทั้งหมด</h3>
+        {/* Stats Row */}
+        <div className="flex gap-6">
+          <div className="flex-1 bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+            <div>
+              <span className="block font-bold text-gray-700">รายการ{paymentSubTab === 'billing' ? 'รอวางบิล' : paymentSubTab === 'receipt' ? 'ที่รับเงินแล้ว' : 'ที่ออกใบกำกับภาษีได้'}</span>
+              <span className="text-gray-400 text-xs uppercase">Total Items</span>
+            </div>
+            <span className="text-3xl font-bold text-gray-800">{displayedItems.length}</span>
           </div>
-          <div className="overflow-auto flex-1">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10">
-                <tr>
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Booking ID</th>
-                  <th className="px-4 py-3">เส้นทาง</th>
-                  <th className="px-4 py-3 text-right">ยอดรวม</th>
-                  <th className="px-4 py-3 text-right">จ่ายแล้ว</th>
-                  <th className="px-4 py-3 text-right">คงค้าง</th>
-                  <th className="px-4 py-3 text-center">สถานะ</th>
-                  <th className="px-4 py-3 text-center">วันที่</th>
-                  <th className="px-4 py-3 text-center">ดูรายการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {payments.map(payment => {
-                  const route = routes.find(r => r.id === payment.routeId);
-                  const balance = payment.totalAmount - payment.paidAmount;
-                  return (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-gray-500">#{payment.id}</td>
-                      <td className="px-4 py-3 font-mono font-bold text-gray-700">#{payment.bookingId}</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-[#d9edf4] text-[#0279a9] px-2 py-1 rounded text-xs font-bold">{route?.code || 'N/A'}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-800">฿{payment.totalAmount.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right text-[#37c3a5] font-bold">฿{payment.paidAmount.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-bold text-red-600">฿{balance.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${payment.status === 'paid' ? 'bg-green-100 text-green-700' : payment.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                          {payment.status === 'paid' ? 'ชำระแล้ว' : payment.status === 'partial' ? 'ชำระบางส่วน' : 'รอชำระ'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-500 text-xs">
-                        {new Date(payment.id).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button onClick={() => setViewingPaymentId(payment.id)} className="p-2 text-gray-400 hover:text-[#03b8fa] hover:bg-blue-50 rounded-full transition" title="ดูรายละเอียด">
-                          <Search size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex-1 bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+            <div>
+              <span className="block font-bold text-gray-700">{paymentSubTab === 'billing' ? 'ยอดรอชำระ (Balance)' : 'ยอดรับชำระแล้ว (Paid)'}</span>
+              <span className="text-gray-400 text-xs uppercase">Total Amount</span>
+            </div>
+            <span className="text-3xl font-bold text-[#03b8fa]">฿{(paymentSubTab === 'billing' ? totalBalance : totalPaid).toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Payment Detail Modal */}
+        {/* Data Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-600 border-b border-gray-200 font-bold uppercase text-xs">
+              <tr>
+                <th className="px-6 py-4">Booking ID</th>
+                <th className="px-6 py-4">Customer Name</th>
+                <th className="px-6 py-4 text-center">Route</th>
+                <th className="px-6 py-4 text-right">Total Amount</th>
+                <th className="px-6 py-4 text-right">Paid Amount</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {displayedItems.map(p => {
+                const route = routes.find(r => r.id === p.routeId);
+                return (
+                  <tr key={p.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 font-mono font-bold text-gray-700">#{p.bookingId}</td>
+                    <td className="px-6 py-4 font-bold text-gray-800">{p.customerName || 'Group'}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-bold">{route?.code}</span>
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-gray-600">฿{p.totalAmount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right font-mono text-[#37c3a5] font-bold">฿{p.paidAmount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.status === 'paid' ? 'bg-green-100 text-green-700' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                        {p.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button onClick={() => setViewingPaymentId(p.id)} className="text-[#03b8fa] hover:bg-[#d9edf4] px-4 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 mx-auto transition">
+                        <Printer size={16} />
+                        {paymentSubTab === 'billing' ? 'ออกใบวางบิล' : paymentSubTab === 'receipt' ? 'ออกใบรับเงิน' : 'ออกใบกำกับภาษี'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {displayedItems.length === 0 && <tr><td colSpan={7} className="text-center py-10 text-gray-400">No records found for this section.</td></tr>}
+            </tbody>
+          </table>
+        </div>
         {viewingPaymentId && (() => {
           const payment = payments.find(p => p.id === viewingPaymentId);
           const booking = bookings.find(b => b.id === payment?.bookingId);
@@ -2852,8 +3089,6 @@ export default function TourSystemApp() {
                           >
                             <option value="transfer">โอนเงิน</option>
                             <option value="cash">เงินสด</option>
-                            <option value="cheque">เช็ค</option>
-                            <option value="credit">บัตรเครดิต</option>
                           </select>
                           {/* Conditional Bank Selection for Transfer */}
                           {paymentFormData.method === 'transfer' && (
@@ -3135,7 +3370,9 @@ export default function TourSystemApp() {
                           const pax = bookingPaxList.find(c => c.id === paxId);
                           if (!pax) return sum;
                           const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                          return sum + price;
+                          // Use simplified logic consistent with Bottom Bar
+                          const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
+                          return sum + Math.max(0, price - paid);
                         }, 0)).toLocaleString()}
                       </div>
                     </div>
@@ -3146,7 +3383,10 @@ export default function TourSystemApp() {
                           const amount = selectedPaxForBooking.reduce((sum, paxId) => {
                             const pax = bookingPaxList.find(c => c.id === paxId);
                             if (!pax) return sum;
-                            return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                            const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                            // Use simplified logic
+                            const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
+                            return sum + Math.max(0, price - paid);
                           }, 0);
 
                           // Create Booking
@@ -3208,7 +3448,10 @@ export default function TourSystemApp() {
                             defaultValue={selectedPaxForBooking.reduce((sum, paxId) => {
                               const pax = bookingPaxList.find(c => c.id === paxId);
                               if (!pax) return sum;
-                              return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                              const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                              // Use simplified logic
+                              const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
+                              return sum + Math.max(0, price - paid);
                             }, 0)}
                             id="manualPaidAmountInput"
                           />

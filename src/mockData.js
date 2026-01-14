@@ -490,3 +490,73 @@ export const MOCK_BANK_ACCOUNTS = [
     { id: 1, bank: 'KBANK', accountName: 'บจก. รุ่งอนันต์ ทัวร์', accountNumber: '012-3-45678-9', branch: 'สำนักพหลโยธิน', color: 'bg-[#138f2d]' },
     { id: 2, bank: 'SCB', accountName: 'บจก. รุ่งอนันต์ ทัวร์', accountNumber: '987-6-54321-0', branch: 'เซ็นทรัลลาดพร้าว', color: 'bg-[#4e2e7f]' }
 ];
+
+// === MOCK BOOKINGS ===
+export const MOCK_BOOKINGS = [
+    {
+        id: 101,
+        roundId: 101,
+        saleId: 2, // K.Boy
+        status: 'partial',
+        pax: MOCK_PAX_IN_ROUND_101,
+        customerName: 'SOMCHAI JAIDEE GROUP',
+        contactName: 'SOMCHAI JAIDEE',
+        contactPhone: '081-234-5678',
+        saleName: 'K.Boy'
+    },
+    {
+        id: 201,
+        roundId: 201,
+        saleId: 3, // K.Anne
+        status: 'paid',
+        pax: MOCK_PAX_IN_ROUND_201,
+        customerName: 'CORPORATE BOOKING - ABC CO.',
+        contactName: 'MR. ANCHOR',
+        contactPhone: '02-999-9999',
+        saleName: 'K.Anne'
+    },
+    {
+        id: 102,
+        roundId: 102,
+        saleId: 4, // K.New
+        status: 'partial',
+        pax: MOCK_PAX_IN_ROUND_102,
+        customerName: 'WASIN GARNSOMDEE GROUP',
+        contactName: 'WASIN GARNSOMDEE',
+        contactPhone: '092-123-4567',
+        saleName: 'K.New'
+    },
+    {
+        id: 401,
+        roundId: 401,
+        saleId: 2, // K.Boy
+        status: 'paid',
+        pax: MOCK_PAX_IN_ROUND_401,
+        customerName: 'JAPAN TOUR GROUP',
+        contactName: 'SOMCHAI JAIDEE',
+        contactPhone: '081-234-5678',
+        saleName: 'K.Boy'
+    },
+    {
+        id: 402,
+        roundId: 402,
+        saleId: 3, // K.Anne
+        status: 'paid',
+        pax: MOCK_PAX_IN_ROUND_402,
+        customerName: 'CHINA TOUR GROUP',
+        contactName: 'PRASERT WONG',
+        contactPhone: '081-555-6666',
+        saleName: 'K.Anne'
+    },
+    {
+        id: 103,
+        roundId: 103,
+        saleId: 3, // K.Anne
+        status: 'partial',
+        pax: MOCK_PAX_IN_ROUND_103,
+        customerName: 'MIX GROUP 103',
+        contactName: 'SUWANNA WONG',
+        contactPhone: '081-555-6667',
+        saleName: 'K.Anne'
+    }
+];
