@@ -304,7 +304,7 @@ export const MOCK_PAX_IN_ROUND_201 = [
     { ...MOCK_CUSTOMERS_DB[21], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-18', uniqueId: '22-201' },
     { ...MOCK_CUSTOMERS_DB[22], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-18', uniqueId: '23-201' },
     { ...MOCK_CUSTOMERS_DB[23], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-19', uniqueId: '24-201' }
-];
+].map(p => ({ ...p, attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: p.nationality !== 'THAI' ? 'visa.pdf' : null } }));
 
 // Round 301: 25 pax (Sold: 25) - Full Group
 export const MOCK_PAX_IN_ROUND_301 = [
@@ -333,7 +333,7 @@ export const MOCK_PAX_IN_ROUND_301 = [
     { ...MOCK_CUSTOMERS_DB[26], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-11', uniqueId: '27-301' },
     { ...MOCK_CUSTOMERS_DB[27], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '28-301' },
     { ...MOCK_CUSTOMERS_DB[28], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '29-301' }
-];
+].map(p => ({ ...p, attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: p.nationality !== 'THAI' ? 'visa.pdf' : null } }));
 
 // Round 103: 12 pax (Sold: 12) - 8 paid, 2 pending, 2 partial
 export const MOCK_PAX_IN_ROUND_103 = [

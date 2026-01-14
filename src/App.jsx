@@ -142,6 +142,8 @@ export default function TourSystemApp() {
   const [showTagPreview, setShowTagPreview] = useState(false);
   const [paxTaskStatus, setPaxTaskStatus] = useState({});
   const [guideTaskStatus, setGuideTaskStatus] = useState({}); // { [roundId]: { ticket: boolean, hotel: boolean } }
+  const [blacklistSearchTerm, setBlacklistSearchTerm] = useState('');
+  const [showBlacklistSearch, setShowBlacklistSearch] = useState(false);
 
   // Payment Confirmation State
   const [billingInfo, setBillingInfo] = useState({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
@@ -197,12 +199,22 @@ export default function TourSystemApp() {
     if (!paxList || paxList.length === 0) return 0;
 
     let totalScore = 0;
-    const maxScore = paxList.length * 5; // 5 tasks per pax (Passport, Visa, Ticket, Insurance, Payment)
+    // 6 Tasks: Passport, Visa, Ticket, Insurance, PrepDoc, Payment
+    const maxScore = paxList.length * 6;
 
     paxList.forEach(pax => {
-      totalScore += 1; // Passport (Default True)
-      if (pax.nationality === 'THAI') totalScore += 1; // Visa (Auto for Thai)
-      if (pax.paymentStatus === 'paid') totalScore += 1; // Payment
+      // 1. Passport (Assumed true if passportNo exists)
+      if (pax.passportNo) totalScore += 1;
+      // 2. Visa (Auto for THAI, or check attachment)
+      if (pax.nationality === 'THAI' || pax.attachments?.visa) totalScore += 1;
+      // 3. Ticket (Check attachment)
+      if (pax.attachments?.ticket) totalScore += 1;
+      // 4. Insurance (Check attachment)
+      if (pax.attachments?.insurance) totalScore += 1;
+      // 5. Prep Doc (Check attachment)
+      if (pax.attachments?.prepDoc) totalScore += 1;
+      // 6. Payment (Check status)
+      if (pax.paymentStatus === 'paid') totalScore += 1;
     });
 
     return Math.round((totalScore / maxScore) * 100);
@@ -517,7 +529,7 @@ export default function TourSystemApp() {
         <div><h1 className="text-2xl font-bold text-gray-800">ฐานข้อมูลลูกค้า</h1><p className="text-gray-500 text-sm">Customer Database and Security Management</p></div>
         <div className="flex bg-gray-100 p-1 rounded-lg">
           <button onClick={() => setCrmSubTab('customers')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${crmSubTab === 'customers' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>รายชื่อลูกค้า</button>
-          <button onClick={() => setCrmSubTab('blacklist')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${crmSubTab === 'blacklist' ? 'bg-[#03b8fa] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ShieldAlert size={14} /> บัญชีดำ</button>
+          <button onClick={() => setCrmSubTab('blacklist')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${crmSubTab === 'blacklist' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ShieldAlert size={14} /> บัญชีดำ</button>
         </div>
       </header>
       {crmSubTab === 'customers' ? (
@@ -564,25 +576,77 @@ export default function TourSystemApp() {
           <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 text-xs text-gray-500 flex justify-between"><span>แสดงบัญชี: {customers.length} รายการ</span><span>Database v1.0.2</span></div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-primary-200 flex-1 overflow-hidden flex flex-col animate-fade-in relative">
+        <div className="bg-white rounded-xl shadow-sm border border-red-200 flex-1 overflow-hidden flex flex-col animate-fade-in relative">
           {isBlacklistFormOpen && (
             <div className="absolute inset-0 bg-white/95 z-20 flex items-center justify-center p-8">
-              <div className="w-full max-w-md bg-white border border-gray-200 shadow-xl rounded-xl p-6">
-                <h3 className="text-lg font-bold text-[#0279a9] mb-4 flex items-center gap-2"><Ban /> เพิ่มรายชื่อบัญชีดำ</h3>
+              <div className="w-full max-w-md bg-white border border-red-100 shadow-xl rounded-xl p-6 relative">
+                <button onClick={() => setIsBlacklistFormOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center gap-2"><Ban size={24} /> เพิ่มรายชื่อบัญชีดำ</h3>
                 <div className="space-y-4">
-                  <div><label className="text-sm font-medium text-gray-700">ชื่อ-นามสกุล (อังกฤษ)</label><input type="text" className="w-full border p-2 rounded uppercase" placeholder="SOMCHAI BADGUY" value={blacklistFormData.name} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, name: e.target.value.toUpperCase() })} /></div>
-                  <div><label className="text-sm font-medium text-gray-700">เลขพาสปอร์ต / บัตรประชาชน</label><input type="text" className="w-full border p-2 rounded uppercase font-mono" placeholder="A1234567" value={blacklistFormData.passport} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, passport: e.target.value.toUpperCase() })} /></div>
-                  <div><label className="text-sm font-medium text-gray-700">สาเหตุที่โดนแบน</label><textarea className="w-full border p-2 rounded" placeholder="ระบุสาเหตุ..." value={blacklistFormData.reason} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, reason: e.target.value })}></textarea></div>
-                  <div className="flex justify-end gap-3 pt-2"><button onClick={() => setIsBlacklistFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button><button onClick={handleBlacklistSubmit} className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg hover:bg-[#0279a9]">ยืนยันเพิ่ม Blacklist</button></div>
+                  <div className="relative">
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">ค้นหาจากฐานข้อมูลลูกค้า (ระบุชื่อ หรือ Passport)</label>
+                    <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden focus-within:border-red-500 transition">
+                      <div className="pl-3 text-gray-400"><Search size={16} /></div>
+                      <input
+                        type="text"
+                        className="px-3 py-2 text-sm outline-none w-full"
+                        placeholder="พิมพ์ชื่อ หรือ เลขพาสปอร์ต..."
+                        value={blacklistSearchTerm}
+                        onChange={(e) => {
+                          setBlacklistSearchTerm(e.target.value);
+                          setShowBlacklistSearch(true);
+                        }}
+                        onFocus={() => setShowBlacklistSearch(true)}
+                      />
+                      {blacklistSearchTerm && <button onClick={() => setBlacklistSearchTerm('')} className="pr-2 text-gray-400 hover:text-gray-600"><X size={14} /></button>}
+                    </div>
+                    {showBlacklistSearch && blacklistSearchTerm && (
+                      <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-48 overflow-y-auto">
+                        {customers.filter(c =>
+                          c.firstNameEn.toLowerCase().includes(blacklistSearchTerm.toLowerCase()) ||
+                          c.passportNo.includes(blacklistSearchTerm.toUpperCase())
+                        ).map(c => (
+                          <div key={c.id} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => {
+                            setBlacklistFormData({
+                              ...blacklistFormData,
+                              name: `${c.firstNameEn} ${c.lastNameEn}`.toUpperCase(),
+                              passport: c.passportNo
+                            });
+                            setBlacklistSearchTerm('');
+                            setShowBlacklistSearch(false);
+                          }}>
+                            <div className="font-bold text-sm text-gray-800">{c.firstNameEn} {c.lastNameEn}</div>
+                            <div className="text-xs text-gray-500">{c.passportNo} | {c.nationality}</div>
+                          </div>
+                        ))}
+                        {customers.filter(c => c.firstNameEn.toLowerCase().includes(blacklistSearchTerm.toLowerCase())).length === 0 && (
+                          <div className="p-3 text-center text-gray-400 text-sm">ไม่พบข้อมูลลูกค้า</div>
+                        )}
+                      </div>
+                    )}
+                    {showBlacklistSearch && <div className="fixed inset-0 z-40" onClick={() => setShowBlacklistSearch(false)}></div>}
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div className="mb-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase">ชื่อ-นามสกุล (Auto)</label>
+                      <input type="text" className="w-full bg-transparent border-b border-gray-300 py-1 text-sm font-bold text-gray-800 outline-none" placeholder="-" value={blacklistFormData.name} readOnly />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase">Passport / ID (Auto)</label>
+                      <input type="text" className="w-full bg-transparent border-b border-gray-300 py-1 text-sm font-mono text-gray-600 outline-none" placeholder="-" value={blacklistFormData.passport} readOnly />
+                    </div>
+                  </div>
+                  <div><label className="text-sm font-medium text-gray-700">สาเหตุที่โดนแบน</label><textarea className="w-full border p-2 rounded focus:border-red-500 outline-none" placeholder="ระบุสาเหตุ..." value={blacklistFormData.reason} onChange={(e) => setBlacklistFormData({ ...blacklistFormData, reason: e.target.value })}></textarea></div>
+                  <div className="flex justify-end gap-3 pt-2"><button onClick={() => setIsBlacklistFormOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button><button onClick={handleBlacklistSubmit} disabled={!blacklistFormData.name} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed">ยืนยัน Blacklist</button></div>
                 </div>
               </div>
             </div>
           )}
-          <div className="p-4 bg-[#d9edf4] border-b border-red-100 flex justify-between items-center"><div className="flex items-center gap-2 text-red-800 font-bold"><ShieldAlert size={20} /> รายชื่อบุคคลเฝ้าระวัง ({blacklist.length})</div><button onClick={() => setIsBlacklistFormOpen(true)} className="bg-white border border-primary-200 text-[#0279a9] px-3 py-2 rounded-lg text-sm hover:bg-[#d9edf4] flex items-center gap-2"><Plus size={16} /> เพิ่ม Blacklist</button></div>
+          <div className="p-4 bg-red-50 border-b border-red-100 flex justify-between items-center"><div className="flex items-center gap-2 text-red-800 font-bold"><ShieldAlert size={20} /> รายชื่อบุคคลเฝ้าระวัง ({blacklist.length})</div><button onClick={() => setIsBlacklistFormOpen(true)} className="bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm hover:bg-red-50 flex items-center gap-2"><Plus size={16} /> เพิ่ม Blacklist</button></div>
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-600 border-b border-gray-200"><tr><th className="px-6 py-3 font-medium">ชื่อ-นามสกุล</th><th className="px-6 py-3 font-medium">ID / Passport</th><th className="px-6 py-3 font-medium">สาเหตุ</th><th className="px-6 py-3 font-medium text-right">ลบ</th></tr></thead>
-              <tbody className="divide-y divide-gray-100">{blacklist.map(person => (<tr key={person.id} className="hover:bg-[#d9edf4] group transition-colors"><td className="px-6 py-4 font-bold text-gray-800">{person.name}</td><td className="px-6 py-4 font-mono text-gray-600">{person.passport}</td><td className="px-6 py-4 text-[#03b8fa]">{person.reason}</td><td className="px-6 py-4 text-right"><button onClick={() => deleteBlacklist(person.id)} className="text-gray-400 hover:text-[#03b8fa] p-2"><Trash2 size={16} /></button></td></tr>))}</tbody>
+              <tbody className="divide-y divide-gray-100">{blacklist.map(person => (<tr key={person.id} className="hover:bg-red-50 group transition-colors"><td className="px-6 py-4 font-bold text-gray-800">{person.name}</td><td className="px-6 py-4 font-mono text-gray-600">{person.passport}</td><td className="px-6 py-4 text-red-600">{person.reason}</td><td className="px-6 py-4 text-right"><button onClick={() => deleteBlacklist(person.id)} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={16} /></button></td></tr>))}</tbody>
             </table>
           </div>
         </div>
@@ -1627,8 +1691,8 @@ export default function TourSystemApp() {
             // Rounds that are still selling (not full yet)
             return rounds.filter(r => r.status === 'Selling');
           case 'ongoing':
-            // Rounds that are full (ready to travel / in operation)
-            return rounds.filter(r => r.status === 'Full');
+            // Rounds that are full AND 100% ready (passed all checklists)
+            return rounds.filter(r => r.status === 'Full' && calculateEstimatedProgress(r.id) === 100);
           case 'completed':
             // For demo: no completed rounds yet (could add a 'Completed' status in future)
             return rounds.filter(r => r.status === 'Completed');
@@ -1641,7 +1705,7 @@ export default function TourSystemApp() {
 
       const tabs = [
         { key: 'upcoming', label: 'ทัวร์ที่กำลังจะถึง', icon: Calendar, count: rounds.filter(r => r.status === 'Selling').length },
-        { key: 'ongoing', label: 'กำลังออกเดินทาง', icon: Plane, count: rounds.filter(r => r.status === 'Full').length },
+        { key: 'ongoing', label: 'กำลังออกเดินทาง', icon: Plane, count: rounds.filter(r => r.status === 'Full' && calculateEstimatedProgress(r.id) === 100).length },
         { key: 'completed', label: 'เสร็จสิ้นแล้ว', icon: CheckCircle, count: rounds.filter(r => r.status === 'Completed').length }
       ];
 
@@ -1769,6 +1833,23 @@ export default function TourSystemApp() {
 
     const currentRoute = routes.find(r => r.id === selectedOpRound.routeId);
     const paxList = getPaxForRound(selectedOpRound.id) || [];
+
+    const toggleAllTask = (taskKey) => {
+      const allChecked = paxList.every(pax => paxTaskStatus[pax.id]?.[taskKey]?.checked);
+      const newStatus = { ...paxTaskStatus };
+
+      paxList.forEach(pax => {
+        if (!newStatus[pax.id]) newStatus[pax.id] = {};
+        // Preserve existing file if any, or init
+        const currentFile = newStatus[pax.id][taskKey]?.file || null;
+        newStatus[pax.id][taskKey] = {
+          checked: !allChecked,
+          file: currentFile
+        };
+      });
+
+      setPaxTaskStatus(newStatus);
+    };
 
     return (
       <div className="h-full flex flex-col animate-fade-in">
@@ -2104,7 +2185,36 @@ export default function TourSystemApp() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">รายชื่อลูกทัวร์ & สถานะเอกสาร ({paxList.length} ท่าน)</h3><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search pax..." className="pl-9 pr-4 py-1 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" /></div></div>
             <div className="overflow-auto flex-1 p-2">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th className="px-3 py-2 w-12 text-center">#</th><th className="px-4 py-2 min-w-[200px]">ชื่อ-นามสกุล / พาสปอร์ต</th><th className="px-4 py-2 min-w-[150px]">หมายเหตุ</th>{INDIVIDUAL_TASKS.map(task => (<th key={task.key} className="px-2 py-2 text-center w-20">{task.label}</th>))}<th className="px-4 py-2 text-center w-20">จัดการ</th></tr></thead>
+                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-3 py-3 w-12 text-center align-bottom border-b-2 border-gray-100">#</th>
+                    <th className="px-4 py-3 min-w-[200px] align-bottom border-b-2 border-gray-100 text-left">ชื่อ-นามสกุล / พาสปอร์ต</th>
+                    <th className="px-4 py-3 min-w-[150px] align-bottom border-b-2 border-gray-100 text-left">หมายเหตุ</th>
+                    {INDIVIDUAL_TASKS.map((task, idx) => (
+                      <th
+                        key={task.key}
+                        className={`px-2 py-3 text-center w-24 align-bottom border-b-2 border-gray-100 ${idx === 0 ? 'border-l-2 border-gray-200' : ''}`}
+                      >
+                        <div className="flex flex-col items-center justify-end gap-1 h-full min-h-[30px]">
+                          <span className={`${task.key === 'insurance' ? 'mb-0' : 'mb-1'}`}>{task.label}</span>
+                          {task.key === 'insurance' && (
+                            <button
+                              onClick={() => toggleAllTask('insurance')}
+                              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all transform active:scale-95 ${paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked)
+                                ? 'bg-green-100 text-green-700 border-green-200 shadow-sm'
+                                : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                                }`}
+                              title={paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked) ? "Uncheck All" : "Check All"}
+                            >
+                              {paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked) ? 'ALL ✓' : 'ALL'}
+                            </button>
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-center w-20 align-bottom border-b-2 border-gray-100 border-l border-gray-200">จัดการ</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-gray-100">{paxList.map((pax, index) => (
                   <tr key={pax.uniqueId || pax.id} className={`hover:bg-gray-50 ${pax.nationality !== 'THAI' ? 'bg-orange-50/30 border-l-4 border-orange-400' : ''}`}>
                     <td className="px-3 py-3 text-center font-bold text-gray-600">{index + 1}</td>
