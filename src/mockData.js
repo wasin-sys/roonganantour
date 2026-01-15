@@ -215,39 +215,52 @@ export const INITIAL_CUSTOMER_STATE = {
     ownerId: null
 };
 
-// Extended customer list for realistic data
-const CUSTOMER_TEMPLATES = [
-    { id: 1, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี', gender: 'M', dob: '1980-01-16', passportNo: 'AA1234567', nationality: 'THAI', phone: '081-234-5678', ownerId: 2 },
-    { id: 2, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี', gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', nationality: 'THAI', phone: '089-999-8888', ownerId: 2 },
-    { id: 3, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว', gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', nationality: 'USA', phone: '+1-555-0199', ownerId: 3 },
-    { id: 4, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี', gender: 'M', dob: '1990-01-23', passportNo: 'AA84684645', nationality: 'THAI', phone: '092-123-4567', ownerId: 1 },
-    { id: 5, title: 'MR', firstNameEn: 'JOHN', lastNameEn: 'DOE', firstNameTh: 'จอห์น', lastNameTh: 'โด', gender: 'M', dob: '1985-06-10', passportNo: 'UK1234567', nationality: 'UK', phone: '+44-20-1234-5678', ownerId: 3 },
-    { id: 6, title: 'MRS', firstNameEn: 'JANE', lastNameEn: 'DOE', firstNameTh: 'เจน', lastNameTh: 'โด', gender: 'F', dob: '1987-03-22', passportNo: 'UK1234568', nationality: 'UK', phone: '+44-20-1234-5679', ownerId: 3 },
-    { id: 7, title: 'MR', firstNameEn: 'TANAKORN', lastNameEn: 'SRISUK', firstNameTh: 'ธนากร', lastNameTh: 'ศรีสุข', gender: 'M', dob: '1975-02-14', passportNo: 'AA5678901', nationality: 'THAI', phone: '086-111-2222', ownerId: 2 },
-    { id: 8, title: 'MRS', firstNameEn: 'NATTAYA', lastNameEn: 'SRISUK', firstNameTh: 'ณัฐญา', lastNameTh: 'ศรีสุข', gender: 'F', dob: '1978-09-14', passportNo: 'AA5678902', nationality: 'THAI', phone: '086-111-2223', ownerId: 2 },
-    { id: 9, title: 'MR', firstNameEn: 'PRASERT', lastNameEn: 'WONG', firstNameTh: 'ประเสริฐ', lastNameTh: 'วงศ์', gender: 'M', dob: '1965-01-30', passportNo: 'AA7890123', nationality: 'THAI', phone: '081-555-6666', ownerId: 3 },
-    { id: 10, title: 'MRS', firstNameEn: 'SUWANNA', lastNameEn: 'WONG', firstNameTh: 'สุวรรณา', lastNameTh: 'วงศ์', gender: 'F', dob: '1968-07-19', passportNo: 'AA7890124', nationality: 'THAI', phone: '081-555-6667', ownerId: 3 },
-    { id: 11, title: 'MR', firstNameEn: 'KITTIPONG', lastNameEn: 'CHAI', firstNameTh: 'กิตติพงศ์', lastNameTh: 'ไชย', gender: 'M', dob: '1992-12-05', passportNo: 'AA2345678', nationality: 'THAI', phone: '095-999-8888', ownerId: 4 },
-    { id: 12, title: 'MS', firstNameEn: 'PIMCHANOK', lastNameEn: 'SUWAN', firstNameTh: 'พิมพ์ชนก', lastNameTh: 'สุวรรณ', gender: 'F', dob: '1995-04-18', passportNo: 'AA2345679', nationality: 'THAI', phone: '095-999-8889', ownerId: 4 },
-    { id: 13, title: 'MR', firstNameEn: 'ANUWAT', lastNameEn: 'PHAN', firstNameTh: 'อนุวัฒน์', lastNameTh: 'พันธุ์', gender: 'M', dob: '1988-06-22', passportNo: 'AA3456789', nationality: 'THAI', phone: '089-123-4567', ownerId: 2 },
-    { id: 14, title: 'MRS', firstNameEn: 'PORNPIMOL', lastNameEn: 'PHAN', firstNameTh: 'พรพิมล', lastNameTh: 'พันธุ์', gender: 'F', dob: '1990-08-10', passportNo: 'AA3456790', nationality: 'THAI', phone: '089-123-4568', ownerId: 2 },
-    { id: 15, title: 'MSTR', firstNameEn: 'PAKIN', lastNameEn: 'PHAN', firstNameTh: 'ภากิน', lastNameTh: 'พันธุ์', gender: 'M', dob: '2016-03-15', passportNo: 'AA3456791', nationality: 'THAI', phone: '', ownerId: 2 },
-    { id: 16, title: 'MR', firstNameEn: 'WEERACHAI', lastNameEn: 'KHAM', firstNameTh: 'วีระชัย', lastNameTh: 'คำ', gender: 'M', dob: '1970-10-25', passportNo: 'AA4567890', nationality: 'THAI', phone: '084-222-3333', ownerId: 3 },
-    { id: 17, title: 'MRS', firstNameEn: 'SUNISA', lastNameEn: 'KHAM', firstNameTh: 'สุนิสา', lastNameTh: 'คำ', gender: 'F', dob: '1973-02-14', passportNo: 'AA4567891', nationality: 'THAI', phone: '084-222-3334', ownerId: 3 },
-    { id: 18, title: 'MR', firstNameEn: 'CHEN', lastNameEn: 'WEI', firstNameTh: 'เฉิน', lastNameTh: 'เวย', gender: 'M', dob: '1983-09-08', passportNo: 'CN1234567', nationality: 'CHINA', phone: '+86-138-0000-1111', ownerId: 3 },
-    { id: 19, title: 'MRS', firstNameEn: 'LI', lastNameEn: 'NA', firstNameTh: 'หลี่', lastNameTh: 'นา', gender: 'F', dob: '1985-11-20', passportNo: 'CN1234568', nationality: 'CHINA', phone: '+86-138-0000-1112', ownerId: 3 },
-    { id: 20, title: 'MR', firstNameEn: 'THAWATCHAI', lastNameEn: 'BOON', firstNameTh: 'ธวัชชัย', lastNameTh: 'บุญ', gender: 'M', dob: '1979-05-30', passportNo: 'AA5678903', nationality: 'THAI', phone: '087-444-5555', ownerId: 2 },
-    { id: 21, title: 'MRS', firstNameEn: 'RATCHANEE', lastNameEn: 'BOON', firstNameTh: 'รัชนี', lastNameTh: 'บุญ', gender: 'F', dob: '1981-12-01', passportNo: 'AA5678904', nationality: 'THAI', phone: '087-444-5556', ownerId: 2 },
-    { id: 22, title: 'MR', firstNameEn: 'SOMSAK', lastNameEn: 'THONG', firstNameTh: 'สมศักดิ์', lastNameTh: 'ทอง', gender: 'M', dob: '1960-08-15', passportNo: 'AA6789012', nationality: 'THAI', phone: '081-666-7777', ownerId: 3 },
-    { id: 23, title: 'MRS', firstNameEn: 'BOONMA', lastNameEn: 'THONG', firstNameTh: 'บุญมา', lastNameTh: 'ทอง', gender: 'F', dob: '1962-04-22', passportNo: 'AA6789013', nationality: 'THAI', phone: '081-666-7778', ownerId: 3 },
-    { id: 24, title: 'MR', firstNameEn: 'NARONG', lastNameEn: 'SIRI', firstNameTh: 'ณรงค์', lastNameTh: 'ศิริ', gender: 'M', dob: '1977-07-07', passportNo: 'AA7890125', nationality: 'THAI', phone: '089-888-9999', ownerId: 2 },
-    { id: 25, title: 'MRS', firstNameEn: 'WILAI', lastNameEn: 'SIRI', firstNameTh: 'วิไล', lastNameTh: 'ศิริ', gender: 'F', dob: '1980-01-25', passportNo: 'AA7890126', nationality: 'THAI', phone: '089-888-9998', ownerId: 2 },
-    { id: 26, title: 'MR', firstNameEn: 'PIYAWAT', lastNameEn: 'KEO', firstNameTh: 'ปิยวัฒน์', lastNameTh: 'แก้ว', gender: 'M', dob: '1993-03-12', passportNo: 'AA8901234', nationality: 'THAI', phone: '096-111-2222', ownerId: 4 },
-    { id: 27, title: 'MS', firstNameEn: 'NATTHIDA', lastNameEn: 'DAN', firstNameTh: 'ณัฐธิดา', lastNameTh: 'แดน', gender: 'F', dob: '1996-06-28', passportNo: 'AA8901235', nationality: 'THAI', phone: '096-111-2223', ownerId: 4 },
-    { id: 28, title: 'MR', firstNameEn: 'SAKCHAI', lastNameEn: 'MONG', firstNameTh: 'ศักดิ์ชัย', lastNameTh: 'มง', gender: 'M', dob: '1972-09-18', passportNo: 'AA9012345', nationality: 'THAI', phone: '083-333-4444', ownerId: 2 },
-    { id: 29, title: 'MRS', firstNameEn: 'CHANTRA', lastNameEn: 'MONG', firstNameTh: 'จันทรา', lastNameTh: 'มง', gender: 'F', dob: '1975-11-30', passportNo: 'AA9012346', nationality: 'THAI', phone: '083-333-4445', ownerId: 2 },
-    { id: 30, title: 'MR', firstNameEn: 'WISIT', lastNameEn: 'PHON', firstNameTh: 'วิศิษฐ์', lastNameTh: 'พล', gender: 'M', dob: '1968-02-28', passportNo: 'AA0123456', nationality: 'THAI', phone: '082-444-5555', ownerId: 3 }
-];
+// Extended customer list for realistic data (100+ items generated roughly)
+const generateCustomers = () => {
+    const firstNames = ['Somchai', 'Suda', 'Somsak', 'Malee', 'Prasert', 'Wichai', 'Nattaya', 'Sunisa', 'Kittipong', 'Anuwat', 'Pornpimol', 'Pakin', 'Weerachai', 'Chantra', 'Wisit', 'Thawatchai', 'Ratchanee', 'Narong', 'Wilai', 'Piyawat', 'Natthida', 'Sakchai', 'Siriporn', 'Thongchai', 'Udom', 'Wanida', 'Yupa', 'Sopon', 'Kanya', 'Jiraporn'];
+    const lastNames = ['Jaidee', 'Wong', 'Srisuk', 'Phan', 'Kham', 'Boon', 'Thong', 'Siri', 'Keo', 'Dan', 'Mong', 'Phon', 'Rat', 'Petch', 'Chan', 'Saeng', 'Mee', 'Jai', 'Rak', 'Suk'];
+
+    const customers = [];
+    let id = 1;
+
+    // Hardcoded Key Figures (indices 0-9)
+    customers.push(
+        { id: id++, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี', gender: 'M', dob: '1980-01-16', passportNo: 'AA1234567', nationality: 'THAI', phone: '081-234-5678', ownerId: 2 }, // 0
+        { id: id++, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี', gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', nationality: 'THAI', phone: '089-999-8888', ownerId: 2 }, // 1
+        { id: id++, title: 'MS', firstNameEn: 'LUCY', lastNameEn: 'LIU', firstNameTh: 'ลูซี่', lastNameTh: 'หลิว', gender: 'F', dob: '2015-02-12', passportNo: 'US987654321', nationality: 'USA', phone: '+1-555-0199', ownerId: 3 }, // 2
+        { id: id++, title: 'MR', firstNameEn: 'WASIN', lastNameEn: 'GARNSOMDEE', firstNameTh: 'วศิน', lastNameTh: 'การสมดี', gender: 'M', dob: '1990-01-23', passportNo: 'AA84684645', nationality: 'THAI', phone: '092-123-4567', ownerId: 4 }, // 3
+        { id: id++, title: 'MR', firstNameEn: 'JOHN', lastNameEn: 'DOE', firstNameTh: 'จอห์น', lastNameTh: 'โด', gender: 'M', dob: '1985-06-10', passportNo: 'UK1234567', nationality: 'UK', phone: '+44-20-1234-5678', ownerId: 3 }, // 4
+        { id: id++, title: 'MRS', firstNameEn: 'JANE', lastNameEn: 'DOE', firstNameTh: 'เจน', lastNameTh: 'โด', gender: 'F', dob: '1987-03-22', passportNo: 'UK1234568', nationality: 'UK', phone: '+44-20-1234-5679', ownerId: 3 }, // 5
+        { id: id++, title: 'MR', firstNameEn: 'TANAKORN', lastNameEn: 'SRISUK', firstNameTh: 'ธนากร', lastNameTh: 'ศรีสุข', gender: 'M', dob: '1975-02-14', passportNo: 'AA5678901', nationality: 'THAI', phone: '086-111-2222', ownerId: 2 }, // 6
+        { id: id++, title: 'MRS', firstNameEn: 'NATTAYA', lastNameEn: 'SRISUK', firstNameTh: 'ณัฐญา', lastNameTh: 'ศรีสุข', gender: 'F', dob: '1978-09-14', passportNo: 'AA5678902', nationality: 'THAI', phone: '086-111-2223', ownerId: 2 }, // 7
+        { id: id++, title: 'MR', firstNameEn: 'PRASERT', lastNameEn: 'WONG', firstNameTh: 'ประเสริฐ', lastNameTh: 'วงศ์', gender: 'M', dob: '1965-01-30', passportNo: 'AA7890123', nationality: 'THAI', phone: '081-555-6666', ownerId: 3 }, // 8
+        { id: id++, title: 'MRS', firstNameEn: 'SUWANNA', lastNameEn: 'WONG', firstNameTh: 'สุวรรณา', lastNameTh: 'วงศ์', gender: 'F', dob: '1968-07-19', passportNo: 'AA7890124', nationality: 'THAI', phone: '081-555-6667', ownerId: 3 } // 9
+    );
+
+    // Generate others
+    for (let i = 0; i < 110; i++) {
+        const fn = firstNames[i % firstNames.length];
+        const ln = lastNames[i % lastNames.length];
+        const gender = ['Somchai', 'Somsak', 'Prasert', 'Wichai', 'Kittipong', 'Anuwat', 'Pakin', 'Weerachai', 'Wisit', 'Thawatchai', 'Narong', 'Piyawat', 'Sakchai', 'Thongchai', 'Udom', 'Sopon'].includes(fn) ? 'M' : 'F';
+        customers.push({
+            id: id++,
+            title: gender === 'M' ? 'MR' : 'MRS',
+            firstNameEn: fn.toUpperCase(),
+            lastNameEn: ln.toUpperCase(),
+            firstNameTh: fn,
+            lastNameTh: ln,
+            gender: gender,
+            dob: `19${70 + (i % 30)}-${('0' + (1 + (i % 12))).slice(-2)}-${('0' + (1 + (i % 28))).slice(-2)}`,
+            passportNo: `AA${1000000 + i}`,
+            nationality: 'THAI',
+            phone: `08${(i % 10)}-${1000 + i}-${2000 + i}`,
+            ownerId: (i % 3) + 2 // Cycle sales IDs
+        });
+    }
+    return customers;
+};
+
+const CUSTOMER_TEMPLATES = generateCustomers();
 
 export const MOCK_CUSTOMERS_DB = CUSTOMER_TEMPLATES.map(c => ({
     ...c,
@@ -266,140 +279,86 @@ export const INITIAL_BLACKLIST_DATA = [
 ];
 
 // === BOOKING / PAX IN ROUNDS ===
-// Round 201: 20 pax (Sold: 20) - Full Group
-export const MOCK_PAX_IN_ROUND_201 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-10', uniqueId: '1-201' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-10', uniqueId: '2-201' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-11', uniqueId: '7-201' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-11', uniqueId: '8-201' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-12', uniqueId: '9-201' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-12', uniqueId: '10-201' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-13', uniqueId: '11-201' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-13', uniqueId: '12-201' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-14', uniqueId: '13-201' },
-    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-14', uniqueId: '14-201' },
-    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-14', uniqueId: '15-201' },
-    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-15', uniqueId: '16-201' },
-    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-15', uniqueId: '17-201' },
-    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-16', uniqueId: '18-201' },
-    { ...MOCK_CUSTOMERS_DB[18], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-16', uniqueId: '19-201' },
-    { ...MOCK_CUSTOMERS_DB[19], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-17', uniqueId: '20-201' },
-    { ...MOCK_CUSTOMERS_DB[20], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-17', uniqueId: '21-201' },
-    { ...MOCK_CUSTOMERS_DB[21], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-18', uniqueId: '22-201' },
-    { ...MOCK_CUSTOMERS_DB[22], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-18', uniqueId: '23-201' },
-    { ...MOCK_CUSTOMERS_DB[23], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-10-19', uniqueId: '24-201' }
-].map(p => ({ ...p, attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: p.nationality !== 'THAI' ? 'visa.pdf' : null } }));
 
-// Round 301: 25 pax (Sold: 25) - Full Group
-export const MOCK_PAX_IN_ROUND_301 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '1-301' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '2-301' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '7-301' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '8-301' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '9-301' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '10-301' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '11-301' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '12-301' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '13-301' },
-    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '14-301' },
-    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '15-301' },
-    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '16-301' },
-    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '17-301' },
-    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '18-301' },
-    { ...MOCK_CUSTOMERS_DB[18], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '19-301' },
-    { ...MOCK_CUSTOMERS_DB[19], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '20-301' },
-    { ...MOCK_CUSTOMERS_DB[20], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '21-301' },
-    { ...MOCK_CUSTOMERS_DB[21], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '22-301' },
-    { ...MOCK_CUSTOMERS_DB[22], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '23-301' },
-    { ...MOCK_CUSTOMERS_DB[23], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-10', uniqueId: '24-301' },
-    { ...MOCK_CUSTOMERS_DB[24], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-10', uniqueId: '25-301' },
-    { ...MOCK_CUSTOMERS_DB[25], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-11', uniqueId: '26-301' },
-    { ...MOCK_CUSTOMERS_DB[26], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-11', uniqueId: '27-301' },
-    { ...MOCK_CUSTOMERS_DB[27], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '28-301' },
-    { ...MOCK_CUSTOMERS_DB[28], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-12', uniqueId: '29-301' }
-].map(p => ({ ...p, attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: p.nationality !== 'THAI' ? 'visa.pdf' : null } }));
+// Helper to get pax range safely
+const getPax = (start, count) => MOCK_CUSTOMERS_DB.slice(start, start + count);
 
-// Round 101: 3 pax (Sold: 3)
+// Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group)
 export const MOCK_PAX_IN_ROUND_101 = [
     { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101' },
     { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101' },
     { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101' }
 ];
 
-// Round 102: 5 pax (Sold: 5)
+// Round 102: 5 pax (Sold: 5) - Indices 3-7 (Wasin + Tanakorn group)
 export const MOCK_PAX_IN_ROUND_102 = [
     { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
-    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
-    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
+    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
+    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
+    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
+    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
 ];
 
+// Round 201: 20 pax (Sold: 20) - Indices 10-29 (Corporate Group)
+export const MOCK_PAX_IN_ROUND_201 = getPax(15, 20).map((c, i) => ({
+    ...c,
+    roomType: i % 3 === 0 ? 'adultSingle' : 'adultTwin',
+    bookedBy: 3,
+    paymentStatus: 'paid',
+    paymentDate: '2025-10-15',
+    uniqueId: `${c.id}-201`,
+    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: c.nationality !== 'THAI' ? 'visa.pdf' : null }
+}));
 
-// Round 103: 12 pax (Sold: 12) - 8 paid, 2 pending, 2 partial
-export const MOCK_PAX_IN_ROUND_103 = [
-    // 8 PAID
-    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-01', uniqueId: '4-103' },
-    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-01', uniqueId: '5-103' },
-    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-02', uniqueId: '6-103' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-02', uniqueId: '7-103' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-03', uniqueId: '8-103' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-03', uniqueId: '9-103' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-04', uniqueId: '10-103' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-12-04', uniqueId: '11-103' },
-    // 2 PARTIAL
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-05', uniqueId: '12-103' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'partial', paymentDate: '2025-12-05', uniqueId: '13-103' },
-    // 2 PENDING
-    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '14-103' },
-    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '15-103' }
-];
+// Round 301: 25 pax (Sold: 25) - Indices 35-59 (Large Group)
+export const MOCK_PAX_IN_ROUND_301 = getPax(35, 25).map((c, i) => ({
+    ...c,
+    roomType: i % 4 === 0 ? 'adultSingle' : 'adultTwin',
+    bookedBy: 2,
+    paymentStatus: 'paid',
+    paymentDate: '2025-11-01',
+    uniqueId: `${c.id}-301`,
+    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: c.nationality !== 'THAI' ? 'visa.pdf' : null }
+}));
 
-// Round 401: 20 pax (JP-TYO, Completed) - All PAID, bookedBy K.Boy
-export const MOCK_PAX_IN_ROUND_401 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '1-401' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-01', uniqueId: '2-401' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '7-401' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-02', uniqueId: '8-401' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '9-401' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-03', uniqueId: '10-401' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '11-401' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-04', uniqueId: '12-401' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '13-401' },
-    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '14-401' },
-    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-05', uniqueId: '15-401' },
-    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '16-401' },
-    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-06', uniqueId: '17-401' },
-    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '18-401' },
-    { ...MOCK_CUSTOMERS_DB[18], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-07', uniqueId: '19-401' },
-    { ...MOCK_CUSTOMERS_DB[19], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '20-401' },
-    { ...MOCK_CUSTOMERS_DB[20], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-08', uniqueId: '21-401' },
-    { ...MOCK_CUSTOMERS_DB[21], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '22-401' },
-    { ...MOCK_CUSTOMERS_DB[22], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-09', uniqueId: '23-401' },
-    { ...MOCK_CUSTOMERS_DB[23], roomType: 'adultSingle', bookedBy: 2, paymentStatus: 'paid', paymentDate: '2025-11-10', uniqueId: '24-401' }
-];
+// Round 103: 12 pax (Sold: 12) - Indices 60-71 (Mix Group)
+export const MOCK_PAX_IN_ROUND_103 = getPax(60, 12).map((c, i) => {
+    let status = 'paid';
+    if (i >= 8 && i < 10) status = 'partial';
+    if (i >= 10) status = 'pending';
+    return {
+        ...c,
+        roomType: 'adultTwin',
+        bookedBy: 3,
+        paymentStatus: status,
+        paymentDate: status === 'pending' ? null : '2025-12-01',
+        uniqueId: `${c.id}-103`,
+        attachments: { passport: i < 8 ? 'pass.pdf' : null, visa: null }
+    };
+});
 
-// Round 402: 18 pax (KM-LS, Completed) - All PAID, bookedBy K.Anne
-export const MOCK_PAX_IN_ROUND_402 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-15', uniqueId: '1-402' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-15', uniqueId: '2-402' },
-    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-16', uniqueId: '3-402' },
-    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-16', uniqueId: '4-402' },
-    { ...MOCK_CUSTOMERS_DB[4], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-17', uniqueId: '5-402' },
-    { ...MOCK_CUSTOMERS_DB[5], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-17', uniqueId: '6-402' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-18', uniqueId: '7-402' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-18', uniqueId: '8-402' },
-    { ...MOCK_CUSTOMERS_DB[8], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-19', uniqueId: '9-402' },
-    { ...MOCK_CUSTOMERS_DB[9], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-19', uniqueId: '10-402' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-20', uniqueId: '11-402' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultSingle', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-20', uniqueId: '12-402' },
-    { ...MOCK_CUSTOMERS_DB[12], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-21', uniqueId: '13-402' },
-    { ...MOCK_CUSTOMERS_DB[13], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-21', uniqueId: '14-402' },
-    { ...MOCK_CUSTOMERS_DB[14], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-22', uniqueId: '15-402' },
-    { ...MOCK_CUSTOMERS_DB[15], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-22', uniqueId: '16-402' },
-    { ...MOCK_CUSTOMERS_DB[16], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-23', uniqueId: '17-402' },
-    { ...MOCK_CUSTOMERS_DB[17], roomType: 'adultTwin', bookedBy: 3, paymentStatus: 'paid', paymentDate: '2025-11-23', uniqueId: '18-402' }
-];
+// Round 401: 20 pax (JP-TYO) - Indices 72-91
+export const MOCK_PAX_IN_ROUND_401 = getPax(72, 20).map((c, i) => ({
+    ...c,
+    roomType: i % 2 === 0 ? 'adultTwin' : 'adultTwin',
+    bookedBy: 2,
+    paymentStatus: 'paid',
+    paymentDate: '2025-11-01',
+    uniqueId: `${c.id}-401`,
+    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf' }
+}));
+
+// Round 402: 18 pax (KM-LS) - Indices 92-109
+export const MOCK_PAX_IN_ROUND_402 = getPax(92, 18).map((c, i) => ({
+    ...c,
+    roomType: 'adultTwin',
+    bookedBy: 3,
+    paymentStatus: 'paid',
+    paymentDate: '2025-11-15',
+    uniqueId: `${c.id}-402`,
+    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf' }
+}));
+
 
 // === INITIAL PAYMENTS / BOOKINGS ===
 export const INITIAL_PAYMENTS = [
@@ -414,7 +373,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 10400,
         status: 'partial',
         createdAt: '2025-09-20',
-        paxIds: [1, 2, 3],
+        paxIds: MOCK_PAX_IN_ROUND_101.map(p => p.id),
         transactions: [
             { id: 1, date: '2025-09-21', amount: 10400, method: 'transfer', receipt: 'receipt_001.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-09-21' }
         ]
@@ -430,7 +389,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 668100,
         status: 'paid',
         createdAt: '2025-10-15',
-        paxIds: [1, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        paxIds: MOCK_PAX_IN_ROUND_201.map(p => p.id),
         transactions: [
             { id: 2, date: '2025-10-16', amount: 668100, method: 'cheque', receipt: 'cheque_001.jpg', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-17' }
         ]
@@ -446,7 +405,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 80700,
         status: 'partial',
         createdAt: '2025-10-01',
-        paxIds: [4, 5, 6, 7, 8],
+        paxIds: MOCK_PAX_IN_ROUND_102.map(p => p.id),
         transactions: [
             { id: 3, date: '2025-10-01', amount: 80700, method: 'transfer', receipt: 'receipt_002.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-10-02' }
         ]
@@ -462,7 +421,7 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 858000,
         status: 'paid',
         createdAt: '2025-11-01',
-        paxIds: [1, 2, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        paxIds: MOCK_PAX_IN_ROUND_401.map(p => p.id),
         transactions: [
             { id: 4, date: '2025-11-01', amount: 858000, method: 'transfer', receipt: 'receipt_003.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-02' }
         ]
@@ -478,9 +437,26 @@ export const INITIAL_PAYMENTS = [
         paidAmount: 588200,
         status: 'paid',
         createdAt: '2025-11-15',
-        paxIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+        paxIds: MOCK_PAX_IN_ROUND_402.map(p => p.id),
         transactions: [
             { id: 5, date: '2025-11-15', amount: 588200, method: 'transfer', receipt: 'receipt_004.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-11-16' }
+        ]
+    },
+    // Added Missing Payment for Round 103
+    {
+        id: 6,
+        bookingId: 103,
+        routeId: 1,
+        roundId: 103,
+        saleId: 3, // K.Anne
+        customerName: 'MIX GROUP 103',
+        totalAmount: 360000,
+        paidAmount: 240000, // 8 paid * 30k approx
+        status: 'partial',
+        createdAt: '2025-12-01',
+        paxIds: MOCK_PAX_IN_ROUND_103.map(p => p.id),
+        transactions: [
+            { id: 6, date: '2025-12-01', amount: 240000, method: 'transfer', receipt: 'receipt_005.pdf', status: 'verified', verifiedBy: 1, verifiedAt: '2025-12-02' }
         ]
     }
 ];
@@ -533,8 +509,8 @@ export const MOCK_BOOKINGS = [
         status: 'paid',
         pax: MOCK_PAX_IN_ROUND_401,
         customerName: 'JAPAN TOUR GROUP',
-        contactName: 'SOMCHAI JAIDEE',
-        contactPhone: '081-234-5678',
+        contactName: 'KENJI SATO',
+        contactPhone: '081-222-3333',
         saleName: 'K.Boy'
     },
     {
@@ -544,8 +520,8 @@ export const MOCK_BOOKINGS = [
         status: 'paid',
         pax: MOCK_PAX_IN_ROUND_402,
         customerName: 'CHINA TOUR GROUP',
-        contactName: 'PRASERT WONG',
-        contactPhone: '081-555-6666',
+        contactName: 'WEI CHEN',
+        contactPhone: '081-444-5555',
         saleName: 'K.Anne'
     },
     {
