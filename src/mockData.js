@@ -336,11 +336,12 @@ export const MOCK_BOOKING_GROUPS = [
     { groupId: 'GRP-102-001', name: 'WASIN GARNSOMDEE GROUP', roundId: 102, totalAmount: 134500, paidAmount: 80700, balance: 53800, bookingType: 'group' }
 ];
 
-// Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group)
+// Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group + Lucy individual)
+// Note: No billing notes yet, so all should show "จองแล้ว" (gray) status
 export const MOCK_PAX_IN_ROUND_101 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group' },
-    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
+    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
+    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
+    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
 ];
 
 // Round 102: 5 pax (Sold: 5) - Indices 3-7 (Wasin + Tanakorn group)
