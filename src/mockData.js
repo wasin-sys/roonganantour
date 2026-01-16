@@ -217,13 +217,28 @@ export const INITIAL_CUSTOMER_STATE = {
 
 // Extended customer list for realistic data (100+ items generated roughly)
 const generateCustomers = () => {
-    const firstNames = ['Somchai', 'Suda', 'Somsak', 'Malee', 'Prasert', 'Wichai', 'Nattaya', 'Sunisa', 'Kittipong', 'Anuwat', 'Pornpimol', 'Pakin', 'Weerachai', 'Chantra', 'Wisit', 'Thawatchai', 'Ratchanee', 'Narong', 'Wilai', 'Piyawat', 'Natthida', 'Sakchai', 'Siriporn', 'Thongchai', 'Udom', 'Wanida', 'Yupa', 'Sopon', 'Kanya', 'Jiraporn'];
-    const lastNames = ['Jaidee', 'Wong', 'Srisuk', 'Phan', 'Kham', 'Boon', 'Thong', 'Siri', 'Keo', 'Dan', 'Mong', 'Phon', 'Rat', 'Petch', 'Chan', 'Saeng', 'Mee', 'Jai', 'Rak', 'Suk'];
+    // Expanded name lists for unique combinations (no duplicates with hardcoded names)
+    const firstNames = [
+        'Malee', 'Prasit', 'Wichan', 'Nattawut', 'Sunee', 'Kittichai', 'Anurat',
+        'Pornthip', 'Pakorn', 'Weerayut', 'Chantana', 'Wisuth', 'Thawat', 'Ratchadaporn',
+        'Narongsak', 'Wilawan', 'Piyapong', 'Natthakan', 'Sakda', 'Siriwan',
+        'Thongdee', 'Udomsak', 'Wanpen', 'Yupaporn', 'Sopita', 'Kanyarat', 'Jirawat',
+        'Noppadon', 'Supaporn', 'Chaiwat', 'Nonglak', 'Pramote', 'Sumalee', 'Kamon',
+        'Nuchanart', 'Phisit', 'Rungnapa', 'Somkiat', 'Thidarat', 'Vichai',
+        'Apinya', 'Bundit', 'Chalerm', 'Duangjai', 'Ekachai', 'Fongchan', 'Gantana',
+        'Itsara', 'Jintana', 'Kamol', 'Lalita', 'Manop', 'Nalinee', 'Ongard'
+    ];
+    const lastNames = [
+        'Wongsawat', 'Srisuwan', 'Phanthong', 'Khamkaen', 'Boonlert', 'Thongsri',
+        'Siriphan', 'Keophet', 'Danwong', 'Mongkhon', 'Phonphat', 'Ratmanee',
+        'Petcharat', 'Chansiri', 'Saengthong', 'Meechok', 'Jaiyen', 'Raksri', 'Suksan',
+        'Intaraporn', 'Charoensuk', 'Limwattana', 'Treewit', 'Paisarn', 'Boonma'
+    ];
 
     const customers = [];
     let id = 1;
 
-    // Hardcoded Key Figures (indices 0-9)
+    // Hardcoded Key Figures (indices 0-9) - Unique names, will not be duplicated
     customers.push(
         { id: id++, title: 'MR', firstNameEn: 'SOMCHAI', lastNameEn: 'JAIDEE', firstNameTh: 'สมชาย', lastNameTh: 'ใจดี', gender: 'M', dob: '1980-01-16', passportNo: 'AA1234567', nationality: 'THAI', phone: '081-234-5678', ownerId: 2 }, // 0
         { id: id++, title: 'MRS', firstNameEn: 'SUDA', lastNameEn: 'JAIDEE', firstNameTh: 'สุดา', lastNameTh: 'ใจดี', gender: 'F', dob: '1982-05-20', passportNo: 'AA1234568', nationality: 'THAI', phone: '089-999-8888', ownerId: 2 }, // 1
@@ -237,26 +252,52 @@ const generateCustomers = () => {
         { id: id++, title: 'MRS', firstNameEn: 'SUWANNA', lastNameEn: 'WONG', firstNameTh: 'สุวรรณา', lastNameTh: 'วงศ์', gender: 'F', dob: '1968-07-19', passportNo: 'AA7890124', nationality: 'THAI', phone: '081-555-6667', ownerId: 3 } // 9
     );
 
-    // Generate others (start from index 3 to avoid duplicate names with hardcoded customers)
-    for (let i = 3; i < 113; i++) {
-        const fn = firstNames[i % firstNames.length];
-        const ln = lastNames[(i + 3) % lastNames.length]; // Offset lastname to create unique combinations
-        const gender = ['Somchai', 'Somsak', 'Prasert', 'Wichai', 'Kittipong', 'Anuwat', 'Pakin', 'Weerachai', 'Wisit', 'Thawatchai', 'Narong', 'Piyawat', 'Sakchai', 'Thongchai', 'Udom', 'Sopon'].includes(fn) ? 'M' : 'F';
-        customers.push({
-            id: id++,
-            title: gender === 'M' ? 'MR' : 'MRS',
-            firstNameEn: fn.toUpperCase(),
-            lastNameEn: ln.toUpperCase(),
-            firstNameTh: fn,
-            lastNameTh: ln,
-            gender: gender,
-            dob: `19${70 + (i % 30)}-${('0' + (1 + (i % 12))).slice(-2)}-${('0' + (1 + (i % 28))).slice(-2)}`,
-            passportNo: `AA${1000000 + i}`,
-            nationality: 'THAI',
-            phone: `08${(i % 10)}-${1000 + i}-${2000 + i}`,
-            ownerId: (i % 3) + 2 // Cycle sales IDs
-        });
+    // Track used name combinations to ensure uniqueness
+    const usedCombinations = new Set();
+
+    // Add hardcoded names to used set
+    customers.forEach(c => usedCombinations.add(`${c.firstNameEn}-${c.lastNameEn}`));
+
+    // Generate 110 more unique customers
+    let fnIndex = 0;
+    let lnIndex = 0;
+    let attempts = 0;
+    const maxAttempts = 10000;
+
+    while (customers.length < 120 && attempts < maxAttempts) {
+        const fn = firstNames[fnIndex % firstNames.length];
+        const ln = lastNames[lnIndex % lastNames.length];
+        const combo = `${fn.toUpperCase()}-${ln.toUpperCase()}`;
+
+        if (!usedCombinations.has(combo)) {
+            usedCombinations.add(combo);
+            const gender = ['Malee', 'Sunee', 'Pornthip', 'Chantana', 'Ratchadaporn', 'Wilawan', 'Natthakan', 'Siriwan', 'Wanpen', 'Yupaporn', 'Sopita', 'Kanyarat', 'Nonglak', 'Sumalee', 'Nuchanart', 'Rungnapa', 'Thidarat', 'Apinya', 'Duangjai', 'Fongchan', 'Gantana', 'Jintana', 'Lalita', 'Nalinee', 'Supaporn'].includes(fn) ? 'F' : 'M';
+            const customerIndex = customers.length;
+            customers.push({
+                id: id++,
+                title: gender === 'M' ? 'MR' : 'MRS',
+                firstNameEn: fn.toUpperCase(),
+                lastNameEn: ln.toUpperCase(),
+                firstNameTh: fn,
+                lastNameTh: ln,
+                gender: gender,
+                dob: `19${70 + (customerIndex % 30)}-${('0' + (1 + (customerIndex % 12))).slice(-2)}-${('0' + (1 + (customerIndex % 28))).slice(-2)}`,
+                passportNo: `AA${1000000 + customerIndex}`,
+                nationality: 'THAI',
+                phone: `08${(customerIndex % 10)}-${1000 + customerIndex}-${2000 + customerIndex}`,
+                ownerId: (customerIndex % 3) + 2 // Cycle sales IDs
+            });
+        }
+
+        // Move to next combination
+        lnIndex++;
+        if (lnIndex >= lastNames.length) {
+            lnIndex = 0;
+            fnIndex++;
+        }
+        attempts++;
     }
+
     return customers;
 };
 
@@ -546,6 +587,17 @@ export const MOCK_BOOKINGS = [
         contactName: 'SUWANNA WONG',
         contactPhone: '081-555-6667',
         saleName: 'K.Anne'
+    },
+    {
+        id: 301,
+        roundId: 301,
+        saleId: 2, // K.Boy
+        status: 'paid',
+        pax: MOCK_PAX_IN_ROUND_301,
+        customerName: 'LARGE GROUP 301',
+        contactName: 'SOMCHAI (HEAD)',
+        contactPhone: '081-111-2222',
+        saleName: 'K.Boy'
     }
 ];
 

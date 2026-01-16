@@ -207,6 +207,7 @@ export default function TourSystemApp() {
 
   // Document Preview/Creation Modal
   const [viewingBillingNote, setViewingBillingNote] = useState(null);
+  const [selectedBillingBankId, setSelectedBillingBankId] = useState('');
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [viewingTaxInvoice, setViewingTaxInvoice] = useState(null);
   const [isCreatingBillingNote, setIsCreatingBillingNote] = useState(false);
@@ -218,15 +219,8 @@ export default function TourSystemApp() {
   const [taxInvoiceFormData, setTaxInvoiceFormData] = useState({ customerType: 'individual' });
 
   const getPaxForRound = (roundId) => {
-    let mockPax = [];
-    if (roundId === 101) mockPax = MOCK_PAX_IN_ROUND_101;
-    else if (roundId === 102) mockPax = MOCK_PAX_IN_ROUND_102;
-    else if (roundId === 201) mockPax = MOCK_PAX_IN_ROUND_201;
-    else if (roundId === 301) mockPax = MOCK_PAX_IN_ROUND_301;
-    else if (roundId === 103) mockPax = MOCK_PAX_IN_ROUND_103;
-    else if (roundId === 401) mockPax = MOCK_PAX_IN_ROUND_401;
-
     // Get unique passengers from actual bookings for this round
+    // This serves as the Single Source of Truth, preventing duplicates from mixing raw MOCK data with MOCK_BOOKINGS
     const realPax = bookings
       .filter(b => (b.round?.id || b.roundId) === roundId) // Match round ID
       .flatMap(b => b.pax.map(p => ({
@@ -237,7 +231,7 @@ export default function TourSystemApp() {
         uniqueId: `${p.id}-${b.id}`
       })));
 
-    return [...mockPax, ...realPax];
+    return realPax;
   };
 
   const calculateEstimatedProgress = (roundId) => {
@@ -1607,25 +1601,59 @@ export default function TourSystemApp() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-green-100">
-                            {paidPax.map((pax, idx) => {
-                              const seller = appUsers.find(u => u.id === pax.bookedBy);
-                              return (
-                                <tr key={idx} className="hover:bg-green-50">
-                                  <td className="px-4 py-2 font-medium text-gray-700">{pax.firstNameEn} {pax.lastNameEn}</td>
-                                  <td className="px-4 py-2">
-                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
-                                      {seller?.name || '-'}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
-                                  <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
-                                    ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                            {(() => {
+                              // Group by Booking ID
+                              const groupedPax = paidPax.reduce((groups, pax) => {
+                                const bid = pax.bookingId || 'unknown';
+                                if (!groups[bid]) groups[bid] = [];
+                                groups[bid].push(pax);
+                                return groups;
+                              }, {});
+
+                              return Object.entries(groupedPax).map(([bid, group]) => {
+                                const isGroupBooking = group.some(p => p.bookingType === 'group');
+                                const groupName = group[0].groupName || (isGroupBooking ? 'Group Booking' : 'Booking');
+                                const groupTotal = group.reduce((sum, p) => sum + (selectedRound.price?.[p.roomType || 'adultTwin'] || 0), 0);
+
+                                return (
+                                  <React.Fragment key={bid}>
+                                    {/* Group Header */}
+                                    <tr className="bg-green-50/80 font-bold text-green-800">
+                                      <td colSpan={4} className="px-4 py-1.5 flex items-center gap-2">
+                                        {isGroupBooking ? <Users size={12} /> : <UserIcon size={12} />}
+                                        <span className="uppercase">{groupName}</span>
+                                        <span className="text-xs font-normal text-green-600 bg-white px-1.5 rounded-full border border-green-200">
+                                          {group.length} ท่าน
+                                        </span>
+                                      </td>
+                                    </tr>
+                                    {/* Passengers */}
+                                    {group.map((pax, idx) => {
+                                      const seller = appUsers.find(u => u.id === pax.bookedBy);
+                                      return (
+                                        <tr key={idx} className="hover:bg-green-50">
+                                          <td className="px-4 py-2 pl-8 font-medium text-gray-700 border-l-4 border-l-transparent hover:border-l-green-400">
+                                            {pax.firstNameEn} {pax.lastNameEn}
+                                          </td>
+                                          <td className="px-4 py-2">
+                                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
+                                              {seller?.name || '-'}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
+                                          <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
+                                            ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                    {/* Subtotal used to be here, but might be too cluttered. Let's keep it clean. */}
+                                  </React.Fragment>
+                                );
+                              });
+                            })()}
                             {/* Total Row */}
-                            <tr className="bg-green-100 font-bold">
+                            <tr className="bg-green-100 font-bold border-t-2 border-green-200">
                               <td className="px-4 py-2 text-green-700" colSpan={3}>รวมยอดชำระแล้ว ({paidPax.length} ท่าน)</td>
                               <td className="px-4 py-2 text-right font-mono text-green-700">
                                 ฿{paidPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
@@ -1779,13 +1807,67 @@ export default function TourSystemApp() {
 
               {/* === GROUP BOOKINGS TABLE === */}
               {bookingPaxList.filter(p => p.bookingType === 'group').length > 0 && (
-                <div className="mb-6 border border-purple-200 rounded-xl overflow-hidden">
-                  <div className="bg-purple-50 px-4 py-2 text-sm font-bold text-purple-700 flex justify-between items-center">
-                    <span className="flex items-center gap-2">
-                      <Users size={14} /> กลุ่ม: {currentGroupName || 'ยังไม่ตั้งชื่อ'} ({bookingPaxList.filter(p => p.bookingType === 'group').length} ท่าน)
-                    </span>
-                    <span className="text-xs font-normal text-purple-500">ยอดค้างรวมทั้งกลุ่ม</span>
-                  </div>
+                <div className="mb-6 border-2 border-purple-200 rounded-xl overflow-hidden shadow-sm">
+                  {(() => {
+                    const groupPax = bookingPaxList.filter(p => p.bookingType === 'group');
+                    const groupTotal = groupPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0);
+                    const groupPaid = groupPax.reduce((sum, pax) => sum + (pax.paidAmount || 0), 0);
+                    const groupBalance = groupTotal - groupPaid;
+
+                    let statusText = 'รอชำระ';
+                    let statusColor = 'bg-red-100 text-red-700';
+                    if (groupPaid >= groupTotal && groupTotal > 0) {
+                      statusText = 'ชำระครบ';
+                      statusColor = 'bg-green-100 text-green-700';
+                    } else if (groupPaid > 0) {
+                      statusText = 'บางส่วน';
+                      statusColor = 'bg-yellow-100 text-yellow-700';
+                    }
+
+                    return (
+                      <div className="bg-purple-50 px-4 py-3 text-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-purple-200">
+                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                          <span className="font-bold text-purple-700 flex items-center gap-2">
+                            <Users size={16} />
+                            <span className="whitespace-nowrap">กลุ่ม:</span>
+                          </span>
+
+                          <div className="relative group/edit flex-1 md:flex-none">
+                            <input
+                              type="text"
+                              value={currentGroupName}
+                              onChange={(e) => {
+                                const newName = e.target.value;
+                                setCurrentGroupName(newName);
+                                // Sync to all group passengers
+                                setBookingPaxList(prev => prev.map(p =>
+                                  p.bookingType === 'group' ? { ...p, groupName: newName } : p
+                                ));
+                              }}
+                              className="bg-purple-100/50 hover:bg-white border-b border-dashed border-purple-300 focus:border-purple-500 focus:bg-white outline-none px-2 py-0.5 text-purple-800 font-bold w-full md:w-auto md:min-w-[150px] transition-colors rounded-t"
+                              placeholder="ตั้งชื่อกลุ่ม..."
+                            />
+                            <Edit2 size={10} className="absolute right-1 top-1/2 -translate-y-1/2 text-purple-400 opacity-0 group-hover/edit:opacity-100 transition pointer-events-none" />
+                          </div>
+
+                          <span className="font-bold text-purple-700 whitespace-nowrap">({groupPax.length} ท่าน)</span>
+
+                          <span className={`${statusColor} px-2 py-0.5 ml-2 rounded text-xs font-bold border border-white/50 whitespace-nowrap`}>
+                            {statusText}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs font-medium pl-6 md:pl-0">
+                          <div className="text-gray-600">
+                            ยอดจอง: <span className="font-bold text-gray-800">฿{groupTotal.toLocaleString()}</span>
+                          </div>
+                          <div className="text-red-600 bg-white px-2 py-1 rounded border border-purple-100 shadow-sm">
+                            ค้างชำระ: <span className="font-bold">฿{groupBalance.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="bg-white">
                     <table className="w-full text-left text-sm">
                       <thead className="bg-purple-50 text-purple-700">
@@ -1862,7 +1944,7 @@ export default function TourSystemApp() {
                   <div className="flex justify-between text-lg font-bold mt-3 text-[#03b8fa] mb-4">
                     <span>
                       {selectedPaxForBooking.includes('group')
-                        ? `ยอดกลุ่ม "${currentGroupName}":`
+                        ? 'ยอดกลุ่มที่ต้องชำระ:'
                         : selectedPaxForBooking.length === 1
                           ? 'ยอดที่ต้องชำระ:'
                           : 'กรุณาเลือก 1 รายการเพื่อชำระ'}
@@ -3373,6 +3455,21 @@ export default function TourSystemApp() {
                 <button onClick={() => setViewingBillingNote(null)}><X size={20} /></button>
               </header>
               <div className="p-6">
+                {/* Bank Account Selection (Control Panel) */}
+                <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center gap-3">
+                  <label className="text-sm font-bold text-blue-800 whitespace-nowrap">ระบุบัญชีรับโอน:</label>
+                  <select
+                    className="flex-1 text-sm border-gray-300 rounded px-2 py-1"
+                    value={selectedBillingBankId || (bankAccounts[0]?.id)}
+                    onChange={(e) => setSelectedBillingBankId(e.target.value)}
+                  >
+                    <option value="">-- เลือกบัญชีธนาคาร --</option>
+                    {bankAccounts.map(b => (
+                      <option key={b.id} value={b.id}>{b.bank} - {b.accountNumber} ({b.accountName})</option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* PDF Preview Style */}
                 <div className="border-2 border-gray-200 rounded-lg p-6 bg-gray-50">
                   <div className="flex justify-between mb-6">
@@ -3393,11 +3490,54 @@ export default function TourSystemApp() {
                         <p className="text-xs text-gray-500 uppercase">ลูกค้า / กลุ่ม</p>
                         <p className="font-bold text-gray-800">{viewingBillingNote.customerName}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">กำหนดชำระ</p>
-                        <p className="font-bold text-red-600">{viewingBillingNote.dueDate}</p>
-                      </div>
+                      {/* Due date removed as requested */}
                     </div>
+                  </div>
+
+                  {/* Passenger Detail Table */}
+                  <div className="mb-6">
+                    <p className="text-xs text-gray-500 uppercase mb-2">รายละเอียดรายการ (Passenger Breakdown)</p>
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-200 text-gray-600 text-xs uppercase font-semibold">
+                        <tr>
+                          <th className="px-2 py-1 text-left">#</th>
+                          <th className="px-2 py-1 text-left">ผู้เดินทาง</th>
+                          <th className="px-2 py-1 text-left">ประเภท</th>
+                          <th className="px-2 py-1 text-right">ราคา</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 border-b border-gray-200 bg-white">
+                        {(() => {
+                          // Calculate pax data for the bill
+                          const roundForBill = rounds.find(r => r.id === viewingBillingNote.roundId);
+                          let billPax = [];
+                          if (roundForBill) {
+                            // Try to find from live bookings first
+                            const booking = bookings.find(b => b.id === viewingBillingNote.bookingId);
+                            if (booking && booking.pax) {
+                              billPax = booking.pax;
+                            } else if (viewingBillingNote.paxIds) {
+                              const allPax = getPaxForRound(roundForBill.id) || [];
+                              billPax = allPax.filter(p => viewingBillingNote.paxIds.includes(p.id));
+                            }
+                          }
+
+                          if (billPax.length === 0) return <tr><td colSpan="4" className="text-center py-2 text-gray-400">ไม่พบรายชื่อผู้เดินทาง</td></tr>;
+
+                          return billPax.map((p, idx) => {
+                            const price = roundForBill?.price?.[p.roomType || 'adultTwin'] || 0;
+                            return (
+                              <tr key={p.id}>
+                                <td className="px-2 py-1.5 text-gray-500">{idx + 1}</td>
+                                <td className="px-2 py-1.5 font-medium">{p.firstNameEn} {p.lastNameEn}</td>
+                                <td className="px-2 py-1.5 text-gray-500 text-xs">{p.roomType}</td>
+                                <td className="px-2 py-1.5 text-right font-mono">฿{price.toLocaleString()}</td>
+                              </tr>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
                   </div>
 
                   <div className="space-y-2">
@@ -3414,6 +3554,28 @@ export default function TourSystemApp() {
                       <span className="text-[#03b8fa]">฿{viewingBillingNote.billingAmount.toLocaleString()}</span>
                     </div>
                   </div>
+
+                  {/* Footer: Bank Details */}
+                  {(() => {
+                    const bankToShow = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId)) || bankAccounts[0];
+                    if (bankToShow) {
+                      return (
+                        <div className="mt-8 pt-4 border-t border-dashed border-gray-300">
+                          <p className="text-xs text-gray-500 mb-2 font-bold uppercase">ช่องทางการชำระเงิน (Payment Channel)</p>
+                          <div className="flex items-center gap-3 bg-white p-3 rounded border border-gray-200">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${bankToShow.color || 'bg-gray-500'}`}>
+                              {bankToShow.bank}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-800 text-sm">{bankToShow.bank} - {bankToShow.accountNumber}</p>
+                              <p className="text-xs text-gray-500">{bankToShow.accountName} ({bankToShow.branch})</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   {viewingBillingNote.note && (
                     <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
@@ -3675,7 +3837,12 @@ export default function TourSystemApp() {
                     const newStatus = paidAmount >= viewingBillingNote.billingAmount ? 'paid' : 'partial';
                     setBillingNotes(prev => prev.map(b =>
                       b.id === viewingBillingNote.id
-                        ? { ...b, status: newStatus, paidAt: new Date().toISOString().split('T')[0] }
+                        ? {
+                          ...b,
+                          status: newStatus,
+                          billingAmount: b.billingAmount - paidAmount, // Deduct balance
+                          paidAt: new Date().toISOString().split('T')[0]
+                        }
                         : b
                     ));
 
@@ -3910,7 +4077,11 @@ export default function TourSystemApp() {
                         <p className="text-xs text-blue-500">ลูกค้าแต่ละคนคำนวณยอดค้างแยกกัน</p>
                       </button>
                       <button
-                        onClick={() => setBookingAddMode('group')}
+                        onClick={() => {
+                          setBookingAddMode('group');
+                          // If there's already a group name set (e.g. continuing to add to same group), don't ask again.
+                          // But if it's empty, the new UI block below will handle it.
+                        }}
                         className="p-6 bg-purple-50 border-2 border-purple-200 rounded-xl hover:border-purple-400 transition text-center group"
                       >
                         <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition">
@@ -3924,42 +4095,113 @@ export default function TourSystemApp() {
                 </>
               )}
 
-              {/* Step 1.5: Enter Group Name (if group selected and no name yet) */}
-              {bookingAddMode === 'group' && !currentGroupName.trim() && (
+              {/* Step 1.5: Enter/Select Group Name (Only for Group Mode if name invalid) */}
+              {bookingAddMode === 'group' && !currentGroupName && (
                 <>
                   <header className="bg-purple-600 text-white px-6 py-4 flex justify-between items-center">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><Users size={20} /> ตั้งชื่อกลุ่ม</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2"><Users size={20} /> ระบุชื่อกรุ๊ปทัวร์</h3>
                     <button onClick={() => { setShowBookingTypeModal(false); setBookingAddMode(null); }}><X size={20} /></button>
                   </header>
                   <div className="p-6 space-y-4">
-                    <p className="text-sm text-gray-500">กรุณาระบุชื่อกลุ่มเพื่อใช้ในการจัดการและออกใบเอกสาร</p>
-                    <input
-                      type="text"
-                      className="w-full border rounded-lg px-4 py-3 text-lg"
-                      placeholder="เช่น กลุ่มครอบครัวสุขใจ, บริษัท ABC Co., Ltd."
-                      value={currentGroupName}
-                      onChange={(e) => setCurrentGroupName(e.target.value)}
-                      autoFocus
-                    />
-                    <div className="text-xs text-gray-400">
-                      * ชื่อกลุ่มจะปรากฏในใบวางบิล/ใบรับเงิน
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase block mb-2">เลือกกรุ๊ปที่มีอยู่แล้ว</label>
+                      <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                        {(() => {
+                          // Get unique existing group names from bookingPaxList
+                          const groupPassengers = bookingPaxList.filter(p => p.bookingType === 'group');
+                          const existingGroupNames = [...new Set(groupPassengers.map(p => p.groupName).filter(Boolean))];
+
+                          // Also check if there's a group without a name (from currentGroupName state)
+                          const hasUnnamedGroup = groupPassengers.length > 0 && groupPassengers.some(p => !p.groupName);
+
+                          if (existingGroupNames.length === 0 && !hasUnnamedGroup) {
+                            return <div className="text-sm text-gray-400 text-center py-2">ไม่มีกรุ๊ปที่สร้างไว้</div>;
+                          }
+
+                          return (
+                            <>
+                              {/* Existing named groups */}
+                              {existingGroupNames.map(name => {
+                                const count = groupPassengers.filter(p => p.groupName === name).length;
+                                return (
+                                  <button
+                                    key={name}
+                                    onClick={() => setCurrentGroupName(name)}
+                                    className="w-full text-left px-3 py-2 hover:bg-purple-50 rounded text-purple-700 font-bold text-sm transition flex justify-between items-center"
+                                  >
+                                    <span>{name}</span>
+                                    <span className="bg-purple-100 text-[10px] px-2 py-0.5 rounded-full">{count} ท่าน</span>
+                                  </button>
+                                );
+                              })}
+
+                              {/* Unnamed group (active currentGroupName) */}
+                              {hasUnnamedGroup && (
+                                <button
+                                  onClick={() => {
+                                    // Use existing passengers' implicit group - prompt user to name it
+                                    const existingCount = groupPassengers.filter(p => !p.groupName).length;
+                                    const nameIt = prompt(`กรุ๊ปนี้มี ${existingCount} ท่านแล้ว กรุณาตั้งชื่อกรุ๊ป:`);
+                                    if (nameIt && nameIt.trim()) {
+                                      setCurrentGroupName(nameIt.trim());
+                                      // Also update existing passengers
+                                      setBookingPaxList(prev => prev.map(p =>
+                                        p.bookingType === 'group' && !p.groupName
+                                          ? { ...p, groupName: nameIt.trim() }
+                                          : p
+                                      ));
+                                    }
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-yellow-50 rounded text-yellow-700 font-bold text-sm transition flex justify-between items-center border border-dashed border-yellow-300"
+                                >
+                                  <span>กรุ๊ปที่ยังไม่มีชื่อ ({groupPassengers.filter(p => !p.groupName).length} ท่าน)</span>
+                                  <span className="bg-yellow-100 text-[10px] px-2 py-0.5 rounded-full">ตั้งชื่อ</span>
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
-                  </div>
-                  <div className="bg-gray-50 px-6 py-4 flex justify-between border-t">
-                    <button onClick={() => setBookingAddMode(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">← ย้อนกลับ</button>
-                    <button
-                      onClick={() => { }} // Just re-render, will show Step 2
-                      disabled={!currentGroupName.trim()}
-                      className="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                      ดำเนินการต่อ →
-                    </button>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-gray-500">หรือ สร้างกรุ๊ปใหม่</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase block mb-2">ชื่อกรุ๊ปใหม่ (New Group Name)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          id="newGroupNameInput"
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition"
+                          placeholder="เช่น ครอบครัวตัวอย่าง"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.target.value.trim()) setCurrentGroupName(e.target.value.trim());
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const val = document.getElementById('newGroupNameInput').value;
+                            if (val.trim()) setCurrentGroupName(val.trim());
+                          }}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold"
+                        >
+                          ถัดไป
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
 
-              {/* Step 2: Search or Add Customer (after mode is selected) */}
-              {((bookingAddMode === 'individual') || (bookingAddMode === 'group' && currentGroupName.trim())) && (
+              {/* Step 2: Search or Add Customer (after mode is selected AND group name is set if applicable) */}
+              {bookingAddMode && (bookingAddMode === 'individual' || (bookingAddMode === 'group' && currentGroupName)) && (
                 <>
                   <header className={`${bookingAddMode === 'individual' ? 'bg-blue-500' : 'bg-purple-600'} text-white px-6 py-4 flex justify-between items-center`}>
                     <h3 className="font-bold text-lg flex items-center gap-2">
@@ -4073,269 +4315,230 @@ export default function TourSystemApp() {
           </div>
         )}
 
-        {/* Booking Confirmation & Payment Modal */}
+        {/* Booking Confirmation & Payment Modal (Simplified) */}
         {isBookingConfirmationModalOpen && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
               <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
-                <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} /> เลือกวิธีการชำระเงิน</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} /> ยืนยันยอดชำระเงิน</h3>
                 <button onClick={() => setIsBookingConfirmationModalOpen(false)}><X size={20} /></button>
               </header>
               <div className="p-6">
-                {/* Step 1: Billing Information */}
-                {paymentStep === 1 && (
-                  <div className="space-y-4">
-                    <div className="flex gap-4 p-1 bg-gray-100 rounded-lg select-none">
-                      <label className={`flex-1 py-2 text-center rounded-md cursor-pointer transition text-sm font-bold ${billingInfo.type === 'individual' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <input type="radio" name="customerType" className="hidden" checked={billingInfo.type === 'individual'} onChange={() => setBillingInfo({ ...billingInfo, type: 'individual' })} />
-                        บุคคลธรรมดา
-                      </label>
-                      <label className={`flex-1 py-2 text-center rounded-md cursor-pointer transition text-sm font-bold ${billingInfo.type === 'juridical' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <input type="radio" name="customerType" className="hidden" checked={billingInfo.type === 'juridical'} onChange={() => setBillingInfo({ ...billingInfo, type: 'juridical' })} />
-                        นิติบุคคล
-                      </label>
-                    </div>
+                {(() => {
+                  // 1. Calculate Total Amount
+                  const totalAmount = selectedPaxForBooking.includes('group')
+                    ? bookingPaxList.filter(p => p.bookingType === 'group').reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0)
+                    : selectedPaxForBooking.reduce((sum, paxId) => {
+                      const pax = bookingPaxList.find(c => c.id === paxId);
+                      if (!pax) return sum;
+                      return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
+                    }, 0);
 
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">{billingInfo.type === 'individual' ? 'ชื่อ-นามสกุล ผู้ชำระเงิน' : 'ชื่อบริษัท / ห้างหุ้นส่วน'}</label>
-                        <input
-                          type="text"
-                          className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none"
-                          placeholder={billingInfo.type === 'individual' ? "เช่น นายสมชาย สายเสมอ" : "เช่น บริษัท ทัวร์ดี จำกัด"}
-                          value={billingInfo.name}
-                          onChange={(e) => setBillingInfo({ ...billingInfo, name: e.target.value })}
-                        />
-                      </div>
+                  // 2. Identify Payer Name
+                  let payerName = "ลูกค้าทั่วไป";
+                  if (selectedPaxForBooking.includes('group')) {
+                    payerName = currentGroupName || "Group Booking";
+                  } else if (selectedPaxForBooking.length === 1) {
+                    const pax = bookingPaxList.find(c => c.id === selectedPaxForBooking[0]);
+                    if (pax) payerName = `${pax.firstNameEn} ${pax.lastNameEn}`;
+                  }
 
-                      {billingInfo.type === 'juridical' && (
-                        <div className="animate-fade-in">
-                          <label className="text-xs font-bold text-gray-500 uppercase">เลขประจำตัวผู้เสียภาษี (Tax ID)</label>
-                          <input
-                            type="text"
-                            className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none"
-                            placeholder="เช่น 1234567890123"
-                            value={billingInfo.taxId}
-                            onChange={(e) => setBillingInfo({ ...billingInfo, taxId: e.target.value })}
-                          />
-                        </div>
-                      )}
+                  // 3. Paid Amount Calculation (Look up from local list)
+                  // The pax in bookingPaxList usually carry their 'paidAmount' if loaded from DB or updated
+                  const previouslyPaid = selectedPaxForBooking.includes('group')
+                    ? bookingPaxList.filter(p => p.bookingType === 'group').reduce((sum, pax) => sum + (pax.paidAmount || 0), 0)
+                    : selectedPaxForBooking.reduce((sum, paxId) => {
+                      const pax = bookingPaxList.find(c => c.id === paxId);
+                      return sum + (pax ? (pax.paidAmount || 0) : 0);
+                    }, 0);
 
-                      <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">ที่อยู่ (สำหรับออกใบกำกับภาษี)</label>
-                        <textarea
-                          className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none h-20 resize-none"
-                          placeholder="รายละเอียดที่อยู่..."
-                          value={billingInfo.address}
-                          onChange={(e) => setBillingInfo({ ...billingInfo, address: e.target.value })}
-                        ></textarea>
-                      </div>
+                  const netAmount = totalAmount - previouslyPaid;
 
-                      <div className="grid grid-cols-2 gap-3">
+                  return (
+                    <div className="space-y-6">
+
+                      {/* Payer Info */}
+                      <div className="bg-blue-50 p-4 rounded-lg flex items-start gap-3">
+                        <div className="bg-blue-100 p-2 rounded-full text-blue-600 mt-1"><UserCheck size={20} /></div>
                         <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase">อีเมล</label>
-                          <input
-                            type="email"
-                            className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none"
-                            value={billingInfo.email}
-                            onChange={(e) => setBillingInfo({ ...billingInfo, email: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase">เบอร์โทรศัพท์</label>
-                          <input
-                            type="tel"
-                            className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none"
-                            value={billingInfo.phone}
-                            onChange={(e) => setBillingInfo({ ...billingInfo, phone: e.target.value })}
-                          />
+                          <div className="text-xs text-blue-500 font-bold uppercase">ขื่อผู้จอง / ชื่อกลุ่ม</div>
+                          <div className="font-bold text-blue-900 text-lg">{payerName}</div>
+                          <div className="text-xs text-blue-400 mt-1">
+                            {selectedPaxForBooking.includes('group')
+                              ? `จำนวน ${bookingPaxList.filter(p => p.bookingType === 'group').length} ท่าน`
+                              : `จำนวน ${selectedPaxForBooking.length} ท่าน`}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <button
-                      onClick={() => {
-                        if (!billingInfo.name) return alert("กรุณาระบุชื่อผู้ชำระเงิน");
-                        if (billingInfo.type === 'juridical' && !billingInfo.taxId) return alert("กรุณาระบุเลขประจำตัวผู้เสียภาษีสำหรับนิติบุคคล");
-                        setPaymentStep(2);
-                      }}
-                      className="w-full bg-[#03b8fa] text-white py-2.5 rounded-lg font-bold mt-2 hover:bg-[#029bc4] transition flex items-center justify-center gap-2"
-                    >
-                      ถัดไป: เลือกวิธีการชำระเงิน <ArrowRight size={16} />
-                    </button>
-                  </div>
-                )}
-
-                {/* Step 2: Payment Section */}
-                {paymentStep === 2 && (
-                  <div className="animate-fade-in">
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500 cursor-pointer hover:text-blue-500" onClick={() => setPaymentStep(1)}>
-                      <ArrowLeft size={14} /> กลับไปแก้ไขข้อมูล
-                    </div>
-
-                    <div className="text-center mb-6">
-                      <div className="text-gray-500 text-sm mb-1">ยอดรวมทั้งหมด ({billingInfo.name})</div>
-                      <div className="text-3xl font-bold text-[#03b8fa]">
-                        ฿{(selectedPaxForBooking.reduce((sum, paxId) => {
-                          const pax = bookingPaxList.find(c => c.id === paxId);
-                          if (!pax) return sum;
-                          const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                          // Use simplified logic consistent with Bottom Bar
-                          const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
-                          return sum + Math.max(0, price - paid);
-                        }, 0)).toLocaleString()}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => {
-                          const amount = selectedPaxForBooking.reduce((sum, paxId) => {
-                            const pax = bookingPaxList.find(c => c.id === paxId);
-                            if (!pax) return sum;
-                            const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                            // Use simplified logic
-                            const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
-                            return sum + Math.max(0, price - paid);
-                          }, 0);
-
-                          // Create Booking
-                          const finalPax = bookingPaxList
-                            .filter(c => selectedPaxForBooking.includes(c.id))
-                            .map(c => ({
-                              ...c,
-                              bookedBy: bookingPaxMetadata[c.id]?.addedBy || currentUser.id
-                            }));
-                          const bookingId = Date.now();
-                          const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
-                          setBookings(prev => [...prev, newBooking]);
-
-                          // Create Payment Record (Pending)
-                          const newPayment = {
-                            id: Date.now() + 1,
-                            bookingId: bookingId,
-                            routeId: selectedRoute.id,
-                            roundId: selectedRound.id,
-                            saleId: currentUser.id,
-                            paxIds: selectedPaxForBooking,
-                            customerName: billingInfo.name || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
-                            billingInfo: billingInfo,
-                            totalAmount: amount,
-                            paidAmount: 0,
-                            status: 'pending',
-                            createdAt: new Date().toLocaleDateString(),
-                            transactions: []
-                          };
-                          setPayments(prev => [newPayment, ...prev]);
-
-                          // Reset UI & State
-                          setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'pending' } : c));
-                          setBookingPaxList(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: 'pending' } : c));
-                          setIsBookingConfirmationModalOpen(false);
-                          setPaymentStep(1);
-                          setBillingInfo({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
-
-                          alert("ทำรายการวางบิลสำเร็จ! สถานะ: รอชำระ");
-                        }}
-                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg font-bold text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] hover:bg-blue-50 transition"
-                      >
-                        ยืนยันการจอง & จ่ายทีหลัง (วางบิล)
-                      </button>
-
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-gray-200"></div></div>
-                        <div className="relative flex justify-center"><span className="bg-white px-2 text-sm text-gray-500">หรือ ชำระเงิน (บางส่วน/เต็มจำนวน)</span></div>
-                      </div>
-
-                      {/* Input Paid Amount */}
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div className="mb-2">
-                          <label className="text-xs font-bold text-gray-500 uppercase">ระบุยอดชำระ</label>
-                          <input
-                            type="number"
-                            className="w-full border p-2 rounded text-lg font-bold text-right text-gray-800 outline-none focus:border-[#03b8fa]"
-                            placeholder="0.00"
-                            defaultValue={selectedPaxForBooking.reduce((sum, paxId) => {
-                              const pax = bookingPaxList.find(c => c.id === paxId);
-                              if (!pax) return sum;
-                              const price = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                              // Use simplified logic
-                              const paid = pax.paymentStatus === 'paid' ? price : (pax.paidAmount || (pax.paymentStatus === 'partial' ? 10000 : 0));
-                              return sum + Math.max(0, price - paid);
-                            }, 0)}
-                            id="manualPaidAmountInput"
-                          />
+                      <div className="text-center">
+                        <div className="text-gray-500 text-sm mb-1">ยอดชำระสุทธิ (Net Amount)</div>
+                        <div className="text-4xl font-bold text-[#03b8fa] mb-4">
+                          ฿{netAmount.toLocaleString()}
                         </div>
+                      </div>
 
-                        <button
-                          onClick={() => {
-                            const totalAmount = selectedPaxForBooking.reduce((sum, paxId) => {
-                              const pax = bookingPaxList.find(c => c.id === paxId);
-                              if (!pax) return sum;
-                              return sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0);
-                            }, 0);
+                      {/* Payment Actions - Combined Flow */}
+                      <div className="space-y-3 mt-6">
 
-                            const paidInput = document.getElementById('manualPaidAmountInput');
-                            const paidAmount = parseFloat(paidInput.value) || 0;
+                        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                          <label className="text-sm font-bold text-gray-700 mb-3 block flex justify-between items-center">
+                            <span>ระบุยอดที่ต้องการชำระ</span>
+                            <span className="text-xs text-blue-500 cursor-pointer hover:underline" onClick={() => {
+                              document.getElementById('manualPaidAmountInput').value = 0;
+                              document.getElementById('manualPaidAmountInput').dispatchEvent(new Event('input', { bubbles: true }));
+                            }}>เคลียร์ค่า (0)</span>
+                          </label>
 
-                            if (paidAmount <= 0) return alert("กรุณาระบุยอดชำระที่ถูกต้อง");
+                          {/* Quick Amount Buttons */}
+                          <div className="grid grid-cols-3 gap-2 mb-3">
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById('manualPaidAmountInput');
+                                input.value = netAmount;
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                              }}
+                              className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
+                            >
+                              เต็มจำนวน ({Math.round(netAmount / 100) / 10}k)
+                            </button>
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById('manualPaidAmountInput');
+                                input.value = Math.floor(netAmount / 2);
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                              }}
+                              className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
+                            >
+                              มัดจำ 50%
+                            </button>
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById('manualPaidAmountInput');
+                                input.value = 0;
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                              }}
+                              className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
+                            >
+                              วางบิล (0฿)
+                            </button>
+                          </div>
 
-                            // Create Booking
-                            const finalPax = bookingPaxList
-                              .filter(c => selectedPaxForBooking.includes(c.id))
-                              .map(c => ({
-                                ...c,
-                                paymentStatus: paidAmount >= totalAmount ? 'paid' : 'partial',
-                                paymentDate: new Date().toISOString().split('T')[0],
-                                bookedBy: bookingPaxMetadata[c.id]?.addedBy || currentUser.id
-                              }));
+                          <div className="flex gap-2 mb-4 relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">฿</span>
+                            <input
+                              type="number"
+                              className="w-full border border-gray-300 p-3 pl-8 rounded-lg text-2xl font-bold text-right text-gray-800 outline-none focus:border-[#03b8fa] focus:ring-4 focus:ring-blue-50/50 transition bg-white"
+                              defaultValue={netAmount}
+                              id="manualPaidAmountInput"
+                              onChange={(e) => {
+                                // Simplified logic: No dynamic changes needed
+                              }}
+                            />
+                          </div>
 
-                            const bookingId = Date.now();
-                            const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
-                            setBookings(prev => [...prev, newBooking]);
+                          <button
+                            id="btn-confirm-payment"
+                            onClick={() => {
+                              const inputAmount = Number(document.getElementById('manualPaidAmountInput').value);
 
-                            // Determine Status
-                            let status = 'pending';
-                            if (paidAmount >= totalAmount) status = 'paid';
-                            else if (paidAmount > 0) status = 'partial';
+                              if (inputAmount < 0) return alert("ยอดชำระต้องไม่ติดลบ");
 
-                            // Create Payment Record (Paid/Partial)
-                            const newPayment = {
-                              id: Date.now() + 1,
-                              bookingId: bookingId,
-                              routeId: selectedRoute.id,
-                              roundId: selectedRound.id,
-                              saleId: currentUser.id,
-                              paxIds: selectedPaxForBooking,
-                              customerName: billingInfo.name || (finalPax[0]?.firstNameEn + ' ' + finalPax[0]?.lastNameEn),
-                              billingInfo: billingInfo,
-                              totalAmount: totalAmount,
-                              paidAmount: paidAmount,
-                              status: status,
-                              createdAt: new Date().toLocaleDateString(),
-                              transactions: [
-                                { id: 1, date: new Date().toLocaleDateString(), amount: paidAmount, method: 'transfer', receipt: '-', status: 'verified', verifiedBy: currentUser.id, verifiedAt: new Date().toLocaleDateString() }
-                              ]
-                            };
-                            setPayments(prev => [newPayment, ...prev]);
+                              // Create Booking
+                              const finalPax = bookingPaxList
+                                .filter(p => {
+                                  if (selectedPaxForBooking.includes('group')) return p.bookingType === 'group';
+                                  return selectedPaxForBooking.includes(p.id);
+                                })
+                                .map(p => ({
+                                  ...p,
+                                  groupName: p.bookingType === 'group' ? currentGroupName : p.groupName
+                                }));
 
-                            // Reset UI & State
-                            setCustomers(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status, paymentDate: new Date().toISOString().split('T')[0] } : c));
-                            setBookingPaxList(prev => prev.map(c => selectedPaxForBooking.includes(c.id) ? { ...c, paymentStatus: status, paymentDate: new Date().toISOString().split('T')[0] } : c));
-                            setIsBookingConfirmationModalOpen(false);
-                            setPaymentStep(1);
-                            setBillingInfo({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
+                              const bookingId = Date.now();
+                              const newBooking = { id: bookingId, route: selectedRoute, round: selectedRound, pax: finalPax, details: bookingDetails };
+                              setBookings(prev => [...prev, newBooking]);
 
-                            alert(`บันทึกการชำระเงินสำเร็จ! สถานะ: ${status === 'paid' ? 'ชำระแล้ว' : 'ชำระบางส่วน'}`);
-                          }}
-                          className="w-full bg-emerald-500 text-white py-3 rounded-lg font-bold hover:bg-emerald-600 transition shadow-lg shadow-emerald-200"
-                        >
-                          ยืนยันการชำระเงิน
-                        </button>
+                              // Determine Status & Transactions
+                              let status = 'pending';
+                              let transactions = [];
+
+                              if (inputAmount > 0) {
+                                status = inputAmount >= netAmount ? 'paid' : 'partial';
+                                transactions.push({
+                                  id: Date.now() + 2,
+                                  date: new Date().toLocaleDateString(),
+                                  amount: inputAmount,
+                                  method: 'transfer', // Default method
+                                  receipt: 'auto_gen.jpg',
+                                  status: 'verified',
+                                  verifiedBy: currentUser.id,
+                                  verifiedAt: new Date().toISOString()
+                                });
+                              }
+
+                              // Create Payment Record
+                              const newPayment = {
+                                id: Date.now() + 1,
+                                bookingId: bookingId,
+                                routeId: selectedRoute.id,
+                                roundId: selectedRound.id,
+                                saleId: currentUser.id,
+                                paxIds: finalPax.map(p => p.id),
+                                customerName: payerName,
+                                billingInfo: { name: payerName, type: selectedPaxForBooking.includes('group') ? 'juridical' : 'individual' },
+                                totalAmount: netAmount, // This is the amount for THIS transaction/billing
+                                paidAmount: inputAmount,
+                                status: status,
+                                createdAt: new Date().toLocaleDateString(),
+                                transactions: transactions
+                              };
+                              setPayments(prev => [newPayment, ...prev]);
+
+                              // === CRITICAL: Create Billing Note if NOT fully paid ===
+                              if (status !== 'paid') {
+                                const newBillingControl = {
+                                  id: `INV-${Date.now()}`,
+                                  routeId: selectedRoute.id,
+                                  customerName: payerName,
+                                  billingType: selectedPaxForBooking.includes('group') ? 'group' : 'individual',
+                                  billingAmount: netAmount - inputAmount, // Outstanding Balance
+                                  totalAmount: netAmount, // Total Booking Amount (CRITICAL for display)
+                                  previousPaid: inputAmount, // Already Paid
+                                  dueDate: "", // Optional
+                                  status: status,
+                                  bookingId: bookingId,
+                                  paymentId: newPayment.id,
+                                  paxIds: finalPax.map(p => p.id), // Link passengers
+                                  roundId: selectedRound.id, // Link round for pricing
+                                  createdAt: new Date().toLocaleDateString()
+                                };
+                                setBillingNotes(prev => [newBillingControl, ...prev]);
+                              }
+
+                              if (status === 'paid') {
+                                setBookingPaxList(prev => prev.filter(p => !finalPax.some(fp => fp.id === p.id)));
+                                setBookingAddMode(null);
+                                setCurrentGroupName('');
+                              }
+
+                              setIsBookingConfirmationModalOpen(false);
+
+                              if (inputAmount > 0) {
+                                alert(`บันทึกการชำระเงินเรียบร้อย!`);
+                              } else {
+                                alert("บันทึกการจองและสร้างใบวางบิลเรียบร้อย!");
+                              }
+                            }}
+                            className="w-full bg-[#03b8fa] hover:bg-[#029bc4] text-white py-4 rounded-lg font-bold shadow-md transition flex items-center justify-center gap-2 text-lg"
+                          >
+                            <CheckCircle size={20} /> <span id="label-confirm-payment">ยืนยัน</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
