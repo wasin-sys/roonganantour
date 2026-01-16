@@ -237,10 +237,10 @@ const generateCustomers = () => {
         { id: id++, title: 'MRS', firstNameEn: 'SUWANNA', lastNameEn: 'WONG', firstNameTh: 'สุวรรณา', lastNameTh: 'วงศ์', gender: 'F', dob: '1968-07-19', passportNo: 'AA7890124', nationality: 'THAI', phone: '081-555-6667', ownerId: 3 } // 9
     );
 
-    // Generate others
-    for (let i = 0; i < 110; i++) {
+    // Generate others (start from index 3 to avoid duplicate names with hardcoded customers)
+    for (let i = 3; i < 113; i++) {
         const fn = firstNames[i % firstNames.length];
-        const ln = lastNames[i % lastNames.length];
+        const ln = lastNames[(i + 3) % lastNames.length]; // Offset lastname to create unique combinations
         const gender = ['Somchai', 'Somsak', 'Prasert', 'Wichai', 'Kittipong', 'Anuwat', 'Pakin', 'Weerachai', 'Wisit', 'Thawatchai', 'Narong', 'Piyawat', 'Sakchai', 'Thongchai', 'Udom', 'Sopon'].includes(fn) ? 'M' : 'F';
         customers.push({
             id: id++,
@@ -278,16 +278,28 @@ export const INITIAL_BLACKLIST_DATA = [
     { id: 2, name: 'SOMSAK TROUBLE', passport: 'A11111111', reason: 'เมาสุราอาละวาด สร้างความวุ่นวาย' }
 ];
 
+// === BOOKING TYPE (Individual or Group) ===
+export const BOOKING_TYPES = {
+    INDIVIDUAL: 'individual', // แบบเดี่ยว - แต่ละคนคำนวณยอดค้างแยกกัน
+    GROUP: 'group'            // แบบกลุ่ม - ยอดค้างรวมกันเป็นก้อนเดียว
+};
+
 // === BOOKING / PAX IN ROUNDS ===
 
 // Helper to get pax range safely
 const getPax = (start, count) => MOCK_CUSTOMERS_DB.slice(start, start + count);
 
+// Group definitions for multi-passenger bookings
+export const MOCK_BOOKING_GROUPS = [
+    { groupId: 'GRP-101-001', name: 'SOMCHAI JAIDEE GROUP', roundId: 101, totalAmount: 72700, paidAmount: 10400, balance: 62300, bookingType: 'group' },
+    { groupId: 'GRP-102-001', name: 'WASIN GARNSOMDEE GROUP', roundId: 102, totalAmount: 134500, paidAmount: 80700, balance: 53800, bookingType: 'group' }
+];
+
 // Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group)
 export const MOCK_PAX_IN_ROUND_101 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101' },
-    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101' }
+    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group' },
+    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group' },
+    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
 ];
 
 // Round 102: 5 pax (Sold: 5) - Indices 3-7 (Wasin + Tanakorn group)
@@ -536,3 +548,189 @@ export const MOCK_BOOKINGS = [
         saleName: 'K.Anne'
     }
 ];
+
+// === DOCUMENT MANAGEMENT SYSTEM ===
+
+// Document Status Types
+export const DOCUMENT_STATUS = {
+    DRAFT: 'draft',           // ฉบับร่าง
+    PENDING: 'pending',       // รอชำระ
+    PARTIAL: 'partial',       // ชำระบางส่วน
+    PAID: 'paid',             // ชำระแล้ว
+    CANCELLED: 'cancelled'    // ยกเลิก
+};
+
+// Payment Methods
+export const PAYMENT_METHODS = {
+    CASH: 'cash',             // เงินสด
+    TRANSFER: 'transfer',     // โอนเงิน
+    QR_CODE: 'qr_code'        // QR Code จาก Payment Gateway
+};
+
+// === Billing Notes (ใบวางบิล) ===
+export const INITIAL_BILLING_NOTES = [
+    {
+        id: 'BN-160126-001',
+        paymentId: 1,
+        roundId: 101,
+        routeId: 1,
+        groupId: 'GRP-101-001',
+        customerName: 'SOMCHAI JAIDEE GROUP',
+        billingType: 'group', // 'group' or 'individual'
+        paxIds: [1, 2], // Customer IDs in this billing
+        totalAmount: 51800, // ยอดทั้งหมดที่ต้องชำระ
+        previousPaid: 10400, // ยอดที่ชำระไปแล้ว
+        billingAmount: 41400, // ยอดที่วางบิลครั้งนี้
+        status: 'pending', // 'pending', 'partial', 'paid'
+        createdAt: '2026-01-15',
+        createdBy: 2, // K.Boy
+        dueDate: '2026-01-20',
+        paymentMethod: null, // Selected when paying
+        bankAccountId: null,
+        note: 'กรุณาชำระภายในวันที่กำหนด'
+    },
+    {
+        id: 'BN-160126-002',
+        paymentId: 3,
+        roundId: 102,
+        routeId: 1,
+        groupId: 'GRP-102-001',
+        customerName: 'WASIN GARNSOMDEE GROUP',
+        billingType: 'group',
+        paxIds: [4, 7, 8],
+        totalAmount: 134500,
+        previousPaid: 80700,
+        billingAmount: 53800,
+        status: 'pending',
+        createdAt: '2026-01-14',
+        createdBy: 4, // K.New
+        dueDate: '2026-01-18',
+        paymentMethod: null,
+        bankAccountId: null,
+        note: ''
+    },
+    {
+        id: 'BN-150126-001',
+        paymentId: 6,
+        roundId: 103,
+        routeId: 1,
+        groupId: null,
+        customerName: 'INDIVIDUAL - SUNISA',
+        billingType: 'individual',
+        paxIds: [71],
+        totalAmount: 29900,
+        previousPaid: 0,
+        billingAmount: 29900,
+        status: 'paid',
+        createdAt: '2026-01-13',
+        createdBy: 3, // K.Anne
+        dueDate: '2026-01-15',
+        paymentMethod: 'transfer',
+        bankAccountId: 1,
+        paidAt: '2026-01-14',
+        note: 'ลูกค้าโอนเงินสด'
+    }
+];
+
+// === Receipts (ใบรับเงิน) ===
+export const INITIAL_RECEIPTS = [
+    {
+        id: 'RCP-150126-001',
+        billingNoteId: 'BN-150126-001',
+        paymentId: 6,
+        roundId: 103,
+        routeId: 1,
+        customerName: 'INDIVIDUAL - SUNISA',
+        paxIds: [71],
+        totalAmount: 29900,
+        receiptAmount: 29900,
+        paymentMethod: 'transfer',
+        bankAccountId: 1,
+        transferSlip: 'slip_sunisa_150126.jpg',
+        status: 'issued', // 'issued', 'used_for_tax'
+        createdAt: '2026-01-14',
+        createdBy: 3,
+        note: 'รับชำระเต็มจำนวน',
+        usedForTaxInvoice: false,
+        taxInvoiceId: null
+    },
+    {
+        id: 'RCP-100126-001',
+        billingNoteId: null,
+        paymentId: 2,
+        roundId: 201,
+        routeId: 2,
+        customerName: 'CORPORATE BOOKING - ABC CO.',
+        paxIds: MOCK_PAX_IN_ROUND_201.map(p => p.id),
+        totalAmount: 668100,
+        receiptAmount: 668100,
+        paymentMethod: 'transfer',
+        bankAccountId: 2,
+        transferSlip: 'cheque_abc_co.jpg',
+        status: 'used_for_tax',
+        createdAt: '2025-10-17',
+        createdBy: 1,
+        note: 'ชำระผ่านเช็คบริษัท',
+        usedForTaxInvoice: true,
+        taxInvoiceId: 'TAX-171025-001'
+    }
+];
+
+// === Tax Invoices (ใบกำกับภาษี) ===
+// Running number format: DDMMYY### (e.g., 160126001)
+export const INITIAL_TAX_INVOICES = [
+    {
+        id: 'TAX-171025-001',
+        runningNumber: '171025001',
+        receiptIds: ['RCP-100126-001'],
+        paymentId: 2,
+        roundId: 201,
+        routeId: 2,
+        // Customer / Billing Info
+        customerType: 'juridical', // 'individual' or 'juridical'
+        customerName: 'บริษัท เอบีซี จำกัด',
+        taxId: '0105556123456',
+        address: '123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ 10900',
+        // Amounts
+        subtotal: 624392.52, // ก่อน VAT
+        vatAmount: 43707.48, // VAT 7%
+        totalAmount: 668100, // รวมทั้งสิ้น
+        // Metadata
+        status: 'issued', // 'draft', 'issued', 'cancelled'
+        createdAt: '2025-10-17',
+        createdBy: 1, // Manager only
+        issuedAt: '2025-10-17',
+        note: 'ออกใบกำกับภาษีสำหรับการจองทัวร์คุนหมิง'
+    }
+];
+
+// Helper function to generate running number for tax invoice
+// Running number is ONLY generated when Manager issues the tax invoice
+// Format: DDMMYY### (e.g., 160126001)
+export const generateTaxInvoiceNumber = (existingInvoices = [], date = new Date()) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2);
+    const datePrefix = `${dd}${mm}${yy}`;
+
+    // Find existing invoices issued on the same date
+    const todaysInvoices = existingInvoices.filter(inv =>
+        inv.runningNumber && inv.runningNumber.startsWith(datePrefix)
+    );
+
+    // Get next sequence number
+    const nextSeq = todaysInvoices.length + 1;
+    const sequence = String(nextSeq).padStart(3, '0');
+
+    return `${datePrefix}${sequence}`;
+};
+
+// QR Code Payment Gateway Config (Mock)
+export const PAYMENT_GATEWAY_CONFIG = {
+    enabled: true,
+    provider: 'PromptPay', // or 'K PLUS', 'SCB Easy', etc.
+    merchantId: '0123456789012',
+    merchantName: 'บจก. รุ่งอนันต์ ทัวร์',
+    // QR will be generated dynamically based on amount
+    qrCodeBaseUrl: 'https://api.promptpay.io/generateQR?'
+};
