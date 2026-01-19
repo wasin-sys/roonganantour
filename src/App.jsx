@@ -48,7 +48,8 @@ import {
   FileCheck,
   ShieldCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Pin
 } from 'lucide-react';
 
 import {
@@ -194,7 +195,7 @@ export default function TourSystemApp() {
 
   // User Management State
   const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
-  const [userFormData, setUserFormData] = useState({ name: '', role: 'SALE', commission: 0, avatar: 'https://i.pravatar.cc/150?u=99' });
+  const [userFormData, setUserFormData] = useState({ name: '', role: 'SALE', commissionRank: 2, avatar: 'https://i.pravatar.cc/150?u=99', id: null });
 
   // === Document Management States ===
   const [billingNotes, setBillingNotes] = useState(INITIAL_BILLING_NOTES);
@@ -219,6 +220,14 @@ export default function TourSystemApp() {
   const [billingAmount, setBillingAmount] = useState(0); // ยอดที่ต้องการวางบิล
   const [selectedReceiptForTaxInvoice, setSelectedReceiptForTaxInvoice] = useState(null);
   const [taxInvoiceFormData, setTaxInvoiceFormData] = useState({ customerType: 'individual' });
+
+  // Commission Ranks State
+  const [commissionRanks, setCommissionRanks] = useState([
+    { id: 1, name: 'Rank 1 (อาวุโส)', defaultAmount: 500, color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
+    { id: 2, name: 'Rank 2 (ทั่วไป)', defaultAmount: 300, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' }
+  ]);
+  const [isRankModalOpen, setIsRankModalOpen] = useState(false);
+  const [rankFormData, setRankFormData] = useState({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: null });
 
   const getPaxForRound = (roundId) => {
     // Get unique passengers from actual bookings for this round
@@ -316,6 +325,32 @@ export default function TourSystemApp() {
     }));
   };
 
+  // Handle Tour Approval by Manager
+  const handleApproveRound = (roundId) => {
+    if (currentUser.role !== 'MANAGER') {
+      alert('เฉพาะ Manager เท่านั้นที่สามารถอนุมัติทัวร์ได้');
+      return;
+    }
+
+    const round = rounds.find(r => r.id === roundId);
+    if (!round) return;
+
+    const confirmMessage = `ยืนยันการอนุมัติทัวร์ ${routes.find(r => r.id === round.routeId)?.code || ''} วันที่ ${round.date}?`;
+    if (window.confirm(confirmMessage)) {
+      setRounds(prev => prev.map(r =>
+        r.id === roundId
+          ? {
+            ...r,
+            approved: true,
+            approvedBy: currentUser.id,
+            approvedAt: new Date().toISOString().split('T')[0]
+          }
+          : r
+      ));
+      alert('✅ อนุมัติทัวร์เรียบร้อยแล้ว');
+    }
+  };
+
   const operationProgress = useMemo(() => {
     // Default safe return
     const safeBreakdown = { passport: 0, visa: 0, ticket: 0, insurance: 0, prepDoc: 0, payment: 0 };
@@ -380,31 +415,59 @@ export default function TourSystemApp() {
     // We'll pass a 'readOnly' flag to the state or just handle it in UI render
     // For now, let's just open. renderCustomerFormModal will handle the UI state.
 
-    if (customer) { setFormData({ ...INITIAL_CUSTOMER_STATE, ...customer }); setFormMode('edit'); validatePassport(customer); }
-    else { setFormData({ ...INITIAL_CUSTOMER_STATE, ownerId: currentUser.id }); setFormMode('create'); setAlerts([]); }
+    if (customer) {
+      const baseData = { ...INITIAL_CUSTOMER_STATE, ...customer };
+      // Documents are NOT loaded from global customer but can be loaded from local pax context
+      if (bookingStep === 3 || activeTab === 'operation') {
+        baseData.attachments = customer.attachments || { passport: null, visa: null, birthCert: null };
+      }
+      setFormData(baseData);
+      setFormMode('edit');
+      validatePassport(baseData);
+    }
+    else {
+      setFormData({
+        ...INITIAL_CUSTOMER_STATE,
+        ownerId: currentUser.id,
+        attachments: (bookingStep === 3) ? { passport: null, visa: null, birthCert: null } : null
+      });
+      setFormMode('create');
+      setAlerts([]);
+    }
     setIsFormOpen(true);
   };
 
   const saveCustomer = () => {
     if (!formData.firstNameEn || !formData.passportNo) { alert("Please fill in at least Name and Passport No."); return; }
 
-    // Normalize Data
-    const saveData = { ...formData, ownerId: formData.ownerId || currentUser.id };
+    // Normalize Data - Strip attachments for global database
+    const { attachments, ...globalData } = formData;
+    const finalGlobalData = { ...globalData, ownerId: formData.ownerId || currentUser.id };
 
     if (formMode === 'create') {
       const newId = customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1;
-      const newCustomer = { ...saveData, ownerId: currentUser.id, id: newId };
+      const newCustomer = { ...finalGlobalData, id: newId };
 
       setCustomers(prev => [...prev, newCustomer]);
 
-      // If we are in booking step 3, also add to bookingPaxList with roundId
+      // If we are in booking step 3, add with attachments to the booking session
       if (bookingStep === 3 && selectedRound) {
-        const customerWithRound = { ...newCustomer, roundId: selectedRound.id };
-        setCustomers(prev => prev.map(c => c.id === newId ? customerWithRound : c));
-        setBookingPaxList(prev => [...prev, customerWithRound]);
+        const paxWithAttachments = { ...newCustomer, attachments: attachments || {}, roundId: selectedRound.id };
+        setBookingPaxList(prev => [...prev, paxWithAttachments]);
         setSelectedPaxForBooking(prev => [...prev, newId]);
       }
-    } else { setCustomers(customers.map(c => c.id === formData.id ? saveData : c)); }
+    } else {
+      setCustomers(customers.map(c => c.id === formData.id ? finalGlobalData : c));
+      // If we are editing from Booking/Operation context, we might want to update the local instance with attachments
+      if (bookingStep === 3) {
+        setBookingPaxList(prev => prev.map(p => p.id === formData.id ? { ...p, ...formData } : p));
+      }
+      if (activeTab === 'operation') {
+        // Update attachments in paxTaskStatus or bookings state if needed
+        // For simplicity in this mock, we assume paxList in Operation is derived or we update the relevant context
+        // If we update paxTaskStatus, it covers the file check
+      }
+    }
     setIsFormOpen(false);
   };
 
@@ -472,60 +535,67 @@ export default function TourSystemApp() {
                 </div>
                 <div><label className="text-xs text-gray-500 font-medium">สถานที่เกิด (จังหวัด/เมือง)</label><input type="text" className="w-full border rounded p-2 text-sm uppercase" placeholder="BANGKOK" value={formData.birthplace} onChange={e => handleFormChange('birthplace', e.target.value.toUpperCase())} /><p className="text-[10px] text-gray-400">จำเป็นสำหรับการขอวีซ่าจีน</p></div>
               </div>
-              <div className="col-span-1 md:col-span-2 space-y-4">
-                <h4 className="font-bold text-gray-800 border-b pb-2">เอกสารแนบ</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {(bookingStep === 3 || activeTab === 'operation') && (
+                <div className="col-span-1 md:col-span-2 space-y-4">
+                  <div className="flex justify-between items-end border-b pb-2">
+                    <h4 className="font-bold text-gray-800">เอกสารแนบ (เฉพาะทริปนี้)</h4>
+                    <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100 flex items-center gap-1">
+                      <Clock size={10} /> ระบบจะเก็บไฟล์ไว้เพียง 5 วันหลังจบวันทัวร์
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-                  {/* Calculate age from DOB to determine if birthCert needed */}
-                  {(() => {
-                    const calculateAge = (dob) => {
-                      if (!dob) return 99;
-                      const birthDate = new Date(dob);
-                      const today = new Date();
-                      return today.getFullYear() - birthDate.getFullYear();
-                    };
-                    const age = calculateAge(formData.dob);
-                    const isUnder15 = age < 15;
+                    {/* Calculate age from DOB to determine if birthCert needed */}
+                    {(() => {
+                      const calculateAge = (dob) => {
+                        if (!dob) return 99;
+                        const birthDate = new Date(dob);
+                        const today = new Date();
+                        return today.getFullYear() - birthDate.getFullYear();
+                      };
+                      const age = calculateAge(formData.dob);
+                      const isUnder15 = age < 15;
 
-                    // Include birthCert if under 15
-                    const docTypes = isUnder15
-                      ? ['passport', 'birthCert', 'visa']
-                      : ['passport', 'visa'];
-                    const docLabels = {
-                      passport: 'หน้าพาสปอร์ต',
-                      visa: 'วีซ่า',
-                      birthCert: 'สูติบัตร'
-                    };
+                      // Include birthCert if under 15
+                      const docTypes = isUnder15
+                        ? ['passport', 'birthCert', 'visa']
+                        : ['passport', 'visa'];
+                      const docLabels = {
+                        passport: 'หน้าพาสปอร์ต',
+                        visa: 'วีซ่า',
+                        birthCert: 'สูติบัตร'
+                      };
 
-                    return docTypes.map((docType) => (
-                      <div key={docType} className={`border rounded-lg p-3 flex flex-col items-center text-center ${docType === 'birthCert' ? 'bg-pink-50 border-pink-200' : 'bg-gray-50'}`}>
-                        <div className={`mb-2 p-2 rounded-full shadow-sm ${docType === 'birthCert' ? 'bg-pink-100' : 'bg-white'}`}>
-                          {formData.attachments?.[docType] ? <FileText size={20} className="text-green-600" /> : <Plus size={20} className={docType === 'birthCert' ? 'text-pink-400' : 'text-gray-400'} />}
+                      return docTypes.map((docType) => (
+                        <div key={docType} className={`border rounded-lg p-3 flex flex-col items-center text-center ${docType === 'birthCert' ? 'bg-pink-50 border-pink-200' : 'bg-gray-50'}`}>
+                          <div className={`mb-2 p-2 rounded-full shadow-sm ${docType === 'birthCert' ? 'bg-pink-100' : 'bg-white'}`}>
+                            {formData.attachments?.[docType] ? <FileText size={20} className="text-green-600" /> : <Plus size={20} className={docType === 'birthCert' ? 'text-pink-400' : 'text-gray-400'} />}
+                          </div>
+                          <label className={`text-xs font-bold uppercase mb-1 ${docType === 'birthCert' ? 'text-pink-600' : 'text-gray-600'}`}>{docLabels[docType] || docType}</label>
+                          {docType === 'birthCert' && <div className="text-[9px] text-pink-500 mb-1">(อายุต่ำกว่า 15 ปี)</div>}
+                          <div className="text-[10px] text-gray-400 truncate w-full mb-2">
+                            {formData.attachments?.[docType] ? formData.attachments[docType] : 'ไม่มีไฟล์'}
+                          </div>
+                          <div className="flex gap-1 w-full justify-center">
+                            <label className={`cursor-pointer border px-2 py-1 rounded text-[10px] hover:opacity-80 ${docType === 'birthCert' ? 'bg-pink-100 border-pink-300 text-pink-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+                              อัปโหลด
+                              <input type="file" className="hidden" onChange={(e) => handleFileAttach(docType, e.target.files[0])} />
+                            </label>
+                            {formData.attachments?.[docType] && (
+                              <button
+                                onClick={() => window.alert(`Opening ${formData.attachments[docType]}...`)}
+                                className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded text-[10px] hover:bg-blue-100"
+                              >
+                                ดูไฟล์
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <label className={`text-xs font-bold uppercase mb-1 ${docType === 'birthCert' ? 'text-pink-600' : 'text-gray-600'}`}>{docLabels[docType] || docType}</label>
-                        {docType === 'birthCert' && <div className="text-[9px] text-pink-500 mb-1">(อายุต่ำกว่า 15 ปี)</div>}
-                        <div className="text-[10px] text-gray-400 truncate w-full mb-2">
-                          {formData.attachments?.[docType] ? formData.attachments[docType] : 'ไม่มีไฟล์'}
-                        </div>
-                        <div className="flex gap-1 w-full justify-center">
-                          <label className={`cursor-pointer border px-2 py-1 rounded text-[10px] hover:opacity-80 ${docType === 'birthCert' ? 'bg-pink-100 border-pink-300 text-pink-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
-                            อัปโหลด
-                            <input type="file" className="hidden" onChange={(e) => handleFileAttach(docType, e.target.files[0])} />
-                          </label>
-                          {formData.attachments?.[docType] && (
-                            <button
-                              onClick={() => window.alert(`Opening ${formData.attachments[docType]}...`)}
-                              className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded text-[10px] hover:bg-blue-100"
-                            >
-                              ดูไฟล์
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ));
-                  })()}
+                      ));
+                    })()}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="col-span-1 md:col-span-2 space-y-4">
                 <h4 className="font-bold text-gray-800 border-b pb-2">ข้อมูลการติดต่อ</h4>
@@ -594,7 +664,9 @@ export default function TourSystemApp() {
                       <td className="px-6 py-4"><div className="text-gray-600">{customer.phone}</div></td>
                       <td className="px-6 py-4">
                         {customer.remark ? (
-                          <div className="text-xs text-[#03b8fa] truncate max-w-[120px]" title={customer.remark}>{customer.remark}</div>
+                          <div className="text-xs text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-2 py-1 rounded border border-amber-100 truncate max-w-[150px]" title={customer.remark}>
+                            <Pin size={10} /> {customer.remark}
+                          </div>
                         ) : (
                           <span className="text-gray-300">-</span>
                         )}
@@ -710,11 +782,8 @@ export default function TourSystemApp() {
         const route = routes.find(r => r.id === p.routeId);
         const paxCount = p.paxIds?.length || 1;
         myTotalPax += paxCount;
-        if (currentUser.commissionRank === 1) {
-          myTotalCommission += (route?.rank1Com || 0) * paxCount;
-        } else if (currentUser.commissionRank === 2) {
-          myTotalCommission += (route?.rank2Com || 0) * paxCount;
-        }
+        const rankKey = `rank${currentUser.commissionRank || 1}Com`;
+        myTotalCommission += (route?.[rankKey] || 0) * paxCount;
       });
 
       // 2. Identify Active Rounds for this Sale
@@ -742,8 +811,11 @@ export default function TourSystemApp() {
               <p className="text-gray-500 text-sm">ติดตามสถานะลูกค้า, เอกสาร, และค่าคอมมิชชั่น</p>
             </div>
             <div className="flex gap-2">
-              <div className="px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-600 shadow-sm">
-                Rank: <span className="text-[#03b8fa] font-bold">Level {currentUser.commissionRank || '-'}</span>
+              <div className="px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-600 shadow-sm flex items-center gap-2">
+                <span className="text-gray-400">Commission Rank:</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold ${commissionRanks.find(r => r.id === currentUser.commissionRank)?.bg || 'bg-gray-100'} ${commissionRanks.find(r => r.id === currentUser.commissionRank)?.color || 'text-gray-700'}`}>
+                  {commissionRanks.find(r => r.id === currentUser.commissionRank)?.name || 'None'}
+                </span>
               </div>
               <button
                 onClick={() => setActiveTab('booking')}
@@ -792,7 +864,9 @@ export default function TourSystemApp() {
                   <tr>
                     <th className="px-6 py-3 font-medium">เส้นทาง / วันที่</th>
                     <th className="px-6 py-3 font-medium text-center">ลูกค้าของคุณ</th>
+                    <th className="px-6 py-3 font-medium text-center">ค่าคอมฯ (Paid)</th>
                     <th className="px-6 py-3 font-medium text-center">สถานะทัวร์</th>
+                    <th className="px-6 py-3 font-medium text-center">สถานะอนุมัติ</th>
                     <th className="px-6 py-3 font-medium">ติดตามเอกสาร & การจ่ายเงิน</th>
                     <th className="px-6 py-3"></th>
                   </tr>
@@ -851,10 +925,40 @@ export default function TourSystemApp() {
                           <td className="px-6 py-4 text-center font-bold text-gray-700">
                             {paxCount} ท่าน
                           </td>
+                          <td className="px-6 py-4 text-center font-mono">
+                            {(() => {
+                              const paidPaxCount = customers.filter(c => c.paymentStatus === 'paid').length;
+                              const rankKey = `rank${currentUser.commissionRank || 1}Com`;
+                              const comPerHead = route?.[rankKey] || 0;
+                              const earned = paidPaxCount * comPerHead;
+                              return earned > 0 ? (
+                                <div className="flex flex-col items-center">
+                                  <span className="text-green-600 font-bold">฿{earned.toLocaleString()}</span>
+                                  <span className="text-[10px] text-gray-400">({paidPaxCount} pax)</span>
+                                </div>
+                              ) : <span className="text-gray-300">-</span>;
+                            })()}
+                          </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`px-2 py-1 rounded-full text-xs border ${round.status === 'Full' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}`}>
                               {round.status}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {round.approved ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+                                  <CheckCircle size={10} /> อนุมัติแล้ว
+                                </span>
+                                <span className="text-[9px] text-gray-400">
+                                  {round.approvedAt}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                <Clock size={10} /> รอดำเนินการ
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-col gap-1.5">
@@ -890,7 +994,7 @@ export default function TourSystemApp() {
                         {/* Expandable Row with Passenger List */}
                         {isExpanded && (
                           <tr className="bg-gray-50 border-t border-gray-100 shadow-inner animate-fade-in relative z-10">
-                            <td colSpan={5} className="px-8 py-6">
+                            <td colSpan={6} className="px-8 py-6">
                               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                                 <div className="px-4 py-3 border-b border-gray-100 bg-blue-50/30 flex justify-between items-center">
                                   <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2"><Users size={16} /> รายชื่อลูกค้าในความดูแล ({customers.length})</h4>
@@ -902,6 +1006,7 @@ export default function TourSystemApp() {
                                       <th className="px-4 py-2 w-10">#</th>
                                       <th className="px-4 py-2">ชื่อ-นามสกุล</th>
                                       <th className="px-4 py-2">Passport</th>
+                                      <th className="px-4 py-2">หมายเหตุ</th>
                                       <th className="px-4 py-2 text-center">สถานะการเงิน</th>
                                       <th className="px-4 py-2">เอกสารที่ขาด</th>
                                     </tr>
@@ -916,6 +1021,21 @@ export default function TourSystemApp() {
                                         </td>
                                         <td className="px-4 py-2 font-mono text-xs text-gray-600">
                                           {c.passportNo || <span className="text-red-400 italic">Pending</span>}
+                                        </td>
+                                        <td className="px-4 py-2">
+                                          <div className="flex flex-col gap-0.5 max-w-[150px]">
+                                            {c.customerNote && (
+                                              <div className="text-[10px] text-gray-400 italic truncate" title={`DB Note: ${c.customerNote}`}>
+                                                📌 {c.customerNote}
+                                              </div>
+                                            )}
+                                            {c.remark && (
+                                              <div className="text-[10px] text-[#03b8fa] font-medium truncate" title={`Booking Note: ${c.remark}`}>
+                                                📝 {c.remark}
+                                              </div>
+                                            )}
+                                            {!c.customerNote && !c.remark && <span className="text-gray-300 text-[10px]">-</span>}
+                                          </div>
                                         </td>
                                         <td className="px-4 py-2 text-center">
                                           {c.paymentStatus === 'paid' ?
@@ -1022,12 +1142,14 @@ export default function TourSystemApp() {
                   <th className="px-6 py-3 font-medium">ลูกทัวร์</th>
                   <th className="px-6 py-3 font-medium">OP Staff</th>
                   <th className="px-6 py-3 font-medium">ความคืบหน้า</th>
+                  <th className="px-6 py-3 font-medium text-center">สถานะอนุมัติ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rounds.filter(r => r.status === 'Selling').map(round => {
+                {rounds.filter(r => r.status === 'Selling' || r.status === 'Full').map(round => {
                   const route = routes.find(r => r.id === round.routeId);
                   const progress = round.status === 'Completed' ? 100 : calculateEstimatedProgress(round.id);
+                  const approver = appUsers.find(u => u.id === round.approvedBy);
                   return (
                     <tr key={round.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest">
                       <td className="px-6 py-4 font-medium text-gray-800 group-hover:text-[#03b8fa] transition-colors">{route?.code}</td>
@@ -1045,6 +1167,26 @@ export default function TourSystemApp() {
                           </div>
                           <span className="text-xs text-gray-500">{progress}%</span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        {round.approved ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                              <CheckCircle size={12} /> อนุมัติแล้ว
+                            </span>
+                            <span className="text-[10px] text-gray-400">โดย {approver?.name || 'Admin'}</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApproveRound(round.id);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors"
+                          >
+                            <ShieldCheck size={14} /> อนุมัติทัวร์
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -1088,11 +1230,8 @@ export default function TourSystemApp() {
                     const route = routes.find(r => r.id === p.routeId);
                     const paxCount = p.paxIds?.length || 1;
                     totalPaxCount += paxCount;
-                    if (user.commissionRank === 1) {
-                      totalCommission += (route?.rank1Com || 0) * paxCount;
-                    } else if (user.commissionRank === 2) {
-                      totalCommission += (route?.rank2Com || 0) * paxCount;
-                    }
+                    const rankKey = `rank${user.commissionRank || 1}Com`;
+                    totalCommission += (route?.[rankKey] || 0) * paxCount;
                   });
 
                   return (
@@ -1104,8 +1243,8 @@ export default function TourSystemApp() {
                       <td className="px-6 py-4 text-right font-mono text-gray-600">฿{totalSales.toLocaleString()}</td>
                       <td className="px-6 py-4 text-right font-mono font-medium text-blue-600">฿{totalPaid.toLocaleString()}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-100 text-green-700' : user.commissionRank === 2 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {user.commissionRank ? `Rank ${user.commissionRank}` : 'N/A'}
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${commissionRanks.find(r => r.id === user.commissionRank)?.bg || 'bg-gray-100'} ${commissionRanks.find(r => r.id === user.commissionRank)?.color || 'text-gray-700'}`}>
+                          {commissionRanks.find(r => r.id === user.commissionRank)?.name || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center font-mono text-gray-700">{totalPaxCount} คน</td>
@@ -1143,11 +1282,8 @@ export default function TourSystemApp() {
                     const route = routes.find(r => r.id === p.routeId);
                     const paxCount = p.paxIds?.length || 1;
                     totalPaxCount += paxCount;
-                    if (user.commissionRank === 1) {
-                      totalCommission += (route?.rank1Com || 0) * paxCount;
-                    } else if (user.commissionRank === 2) {
-                      totalCommission += (route?.rank2Com || 0) * paxCount;
-                    }
+                    const rankKey = `rank${user.commissionRank || 1}Com`;
+                    totalCommission += (route?.[rankKey] || 0) * paxCount;
                   });
 
                   return (
@@ -1156,8 +1292,8 @@ export default function TourSystemApp() {
                         <div>
                           <h3 className="font-bold text-lg flex items-center gap-2"><Wallet size={20} /> รายละเอียดยอดขาย: {user?.name}</h3>
                           <p className="text-gray-400 text-xs flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${user?.commissionRank === 1 ? 'bg-green-600 text-white' : user?.commissionRank === 2 ? 'bg-blue-600 text-white' : 'bg-gray-600 text-white'}`}>
-                              {user?.commissionRank ? `Rank ${user.commissionRank}` : 'N/A'}
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${commissionRanks.find(r => r.id === user?.commissionRank)?.bg || 'bg-gray-600'} ${commissionRanks.find(r => r.id === user?.commissionRank)?.color || 'text-white'}`}>
+                              {commissionRanks.find(r => r.id === user?.commissionRank)?.name || 'N/A'}
                             </span>
                             | Total Pax: {totalPaxCount} คน | Total Earned: ฿{totalCommission.toLocaleString()}
                           </p>
@@ -1180,7 +1316,8 @@ export default function TourSystemApp() {
                             {userPayments.length > 0 ? userPayments.map(p => {
                               const route = routes.find(r => r.id === p.routeId);
                               const paxCount = p.paxIds?.length || 1;
-                              const comPerHead = user.commissionRank === 1 ? (route?.rank1Com || 0) : user.commissionRank === 2 ? (route?.rank2Com || 0) : 0;
+                              const rankKey = `rank${user.commissionRank || 1}Com`;
+                              const comPerHead = route?.[rankKey] || 0;
                               const comm = p.status === 'paid' ? comPerHead * paxCount : 0;
                               return (
                                 <tr key={p.id} className={p.status !== 'paid' ? 'opacity-50' : ''}>
@@ -1310,36 +1447,24 @@ export default function TourSystemApp() {
                     <textarea className="w-full border rounded-lg p-3 text-sm h-24" placeholder="Briefly describe the highlights..." value={editorRoute.description || ''} onChange={e => setEditorRoute({ ...editorRoute, description: e.target.value })}></textarea>
                   </div>
 
-                  {/* Commission Settings */}
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <label className="block text-xs font-bold text-green-700 uppercase mb-3 flex items-center gap-2"><Wallet size={14} /> ค่าคอมมิชชั่นต่อหัว (บาท)</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs text-green-600 font-medium">Rank 1 (อาวุโส)</label>
-                        <div className="relative mt-1">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 text-sm">฿</span>
-                          <input
-                            type="number"
-                            className="w-full border border-green-200 rounded-lg pl-7 pr-3 py-2 text-sm bg-white font-mono font-bold text-green-700"
-                            placeholder="500"
-                            value={editorRoute.rank1Com || ''}
-                            onChange={e => setEditorRoute({ ...editorRoute, rank1Com: Number(e.target.value) })}
-                          />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {commissionRanks.map(rank => (
+                        <div key={rank.id}>
+                          <label className={`text-xs font-medium ${rank.color}`}>{rank.name}</label>
+                          <div className="relative mt-1">
+                            <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm ${rank.color}`}>฿</span>
+                            <input
+                              type="number"
+                              className={`w-full border ${rank.border} rounded-lg pl-7 pr-3 py-2 text-sm bg-white font-mono font-bold ${rank.color}`}
+                              placeholder={rank.defaultAmount.toString()}
+                              value={editorRoute['rank' + rank.id + 'Com'] !== undefined ? editorRoute['rank' + rank.id + 'Com'] : rank.defaultAmount}
+                              onChange={e => setEditorRoute({ ...editorRoute, ['rank' + rank.id + 'Com']: Number(e.target.value) })}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <label className="text-xs text-blue-600 font-medium">Rank 2 (ทั่วไป)</label>
-                        <div className="relative mt-1">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 text-sm">฿</span>
-                          <input
-                            type="number"
-                            className="w-full border border-blue-200 rounded-lg pl-7 pr-3 py-2 text-sm bg-white font-mono font-bold text-blue-700"
-                            placeholder="300"
-                            value={editorRoute.rank2Com || ''}
-                            onChange={e => setEditorRoute({ ...editorRoute, rank2Com: Number(e.target.value) })}
-                          />
-                        </div>
-                      </div>
+                      ))}
                     </div>
                     <p className="text-[10px] text-green-600 mt-2">* ค่าคอมมิชชั่นที่พนักงานขายจะได้รับต่อลูกค้า 1 คนที่ชำระเงินแล้ว</p>
                   </div>
@@ -1581,6 +1706,7 @@ export default function TourSystemApp() {
                 <div className="flex-1 min-w-[60px] text-center text-green-600">ชำระแล้ว</div>
                 <div className="flex-1 min-w-[60px] text-center text-orange-500">รอชำระ</div>
                 <div className="flex-1 min-w-[60px] text-center text-yellow-600">บางส่วน</div>
+                <div className="flex-1 min-w-[70px] text-center">อนุมัติ</div>
                 <div className="flex-1 min-w-[60px] text-right">สถานะ</div>
               </div>
 
@@ -1615,6 +1741,17 @@ export default function TourSystemApp() {
                       </div>
                       <div className="flex-1 min-w-[60px] text-center">
                         <span className="inline-block min-w-[28px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">{round.partialCount || 0}</span>
+                      </div>
+                      <div className="flex-1 min-w-[70px] text-center">
+                        {round.approved ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+                            <CheckCircle size={10} /> อนุมัติ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                            <Clock size={10} /> รอ
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-[60px] text-right">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${isFull ? 'text-red-600 bg-red-50 border border-red-200' : 'text-green-600 bg-green-50 border border-green-200'}`}>
@@ -1663,100 +1800,7 @@ export default function TourSystemApp() {
               </div>
             </div>
 
-            {/* Existing Passengers Section - Only show PAID pax */}
-            {(() => {
-              const allPaxInRound = getPaxForRound(selectedRound.id);
-              const paidPax = allPaxInRound.filter(p => p.paymentStatus === 'paid');
-              const unpaidPax = allPaxInRound.filter(p => p.paymentStatus === 'pending' || p.paymentStatus === 'partial');
-
-              return (
-                <>
-                  {/* PAID Section */}
-                  {paidPax.length > 0 && (
-                    <div className="mb-6 border border-green-200 rounded-xl overflow-hidden">
-                      <div className="bg-green-50 px-4 py-2 text-sm font-bold text-green-700 flex justify-between">
-                        <span className="flex items-center gap-2">
-                          <CheckCircle size={14} /> รายชื่อผู้ที่ชำระเงินแล้ว ({paidPax.length} ท่าน)
-                        </span>
-                        <span className="text-xs font-normal text-green-500">ยืนยันการจองเรียบร้อย</span>
-                      </div>
-                      <div className="bg-green-50/30 max-h-48 overflow-y-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-green-100 text-green-700 sticky top-0">
-                            <tr>
-                              <th className="px-4 py-2">ชื่อ-นามสกุล</th>
-                              <th className="px-4 py-2">ผู้ขาย</th>
-                              <th className="px-4 py-2">วันที่ชำระเงิน</th>
-                              <th className="px-4 py-2 text-right">ยอดจอง</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-green-100">
-                            {(() => {
-                              // Group by Booking ID
-                              const groupedPax = paidPax.reduce((groups, pax) => {
-                                const bid = pax.bookingId || 'unknown';
-                                if (!groups[bid]) groups[bid] = [];
-                                groups[bid].push(pax);
-                                return groups;
-                              }, {});
-
-                              return Object.entries(groupedPax).map(([bid, group]) => {
-                                const isGroupBooking = group.some(p => p.bookingType === 'group');
-                                const groupName = group[0].groupName || (isGroupBooking ? 'Group Booking' : 'Booking');
-                                const groupTotal = group.reduce((sum, p) => sum + (selectedRound.price?.[p.roomType || 'adultTwin'] || 0), 0);
-
-                                return (
-                                  <React.Fragment key={bid}>
-                                    {/* Group Header */}
-                                    <tr className="bg-green-50/80 font-bold text-green-800">
-                                      <td colSpan={4} className="px-4 py-1.5 flex items-center gap-2">
-                                        {isGroupBooking ? <Users size={12} /> : <UserIcon size={12} />}
-                                        <span className="uppercase">{groupName}</span>
-                                        <span className="text-xs font-normal text-green-600 bg-white px-1.5 rounded-full border border-green-200">
-                                          {group.length} ท่าน
-                                        </span>
-                                      </td>
-                                    </tr>
-                                    {/* Passengers */}
-                                    {group.map((pax, idx) => {
-                                      const seller = appUsers.find(u => u.id === pax.bookedBy);
-                                      return (
-                                        <tr key={idx} className="hover:bg-green-50">
-                                          <td className="px-4 py-2 pl-8 font-medium text-gray-700 border-l-4 border-l-transparent hover:border-l-green-400">
-                                            {pax.firstNameEn} {pax.lastNameEn}
-                                          </td>
-                                          <td className="px-4 py-2">
-                                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium">
-                                              {seller?.name || '-'}
-                                            </span>
-                                          </td>
-                                          <td className="px-4 py-2 font-mono text-gray-500">{pax.paymentDate || '-'}</td>
-                                          <td className="px-4 py-2 text-right font-mono font-bold text-green-600">
-                                            ฿{(selectedRound.price?.[pax.roomType || 'adultTwin'] || 0).toLocaleString()}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                    {/* Subtotal used to be here, but might be too cluttered. Let's keep it clean. */}
-                                  </React.Fragment>
-                                );
-                              });
-                            })()}
-                            {/* Total Row */}
-                            <tr className="bg-green-100 font-bold border-t-2 border-green-200">
-                              <td className="px-4 py-2 text-green-700" colSpan={3}>รวมยอดชำระแล้ว ({paidPax.length} ท่าน)</td>
-                              <td className="px-4 py-2 text-right font-mono text-green-700">
-                                ฿{paidPax.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            {/* Passengers are now shown in their respective Individual or Group tables below */}
 
             {/* Booking Customization Area */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 space-y-4">
@@ -1791,31 +1835,7 @@ export default function TourSystemApp() {
                 </div>
               )}
 
-              {/* Show current booking mode indicator */}
-              {bookingAddMode && bookingPaxList.length > 0 && (
-                <div className={`p-3 rounded-lg border mb-4 flex justify-between items-center ${bookingAddMode === 'individual' ? 'bg-blue-50 border-blue-200' : 'bg-purple-50 border-purple-200'}`}>
-                  <div className="flex items-center gap-2">
-                    {bookingAddMode === 'individual' ? <UserIcon size={16} className="text-blue-600" /> : <Users size={16} className="text-purple-600" />}
-                    <span className={`font-bold ${bookingAddMode === 'individual' ? 'text-blue-700' : 'text-purple-700'}`}>
-                      {bookingAddMode === 'individual' ? 'ลูกค้าเดี่ยว' : `กลุ่ม: ${currentGroupName}`}
-                    </span>
-                    <span className="text-xs text-gray-500">({bookingPaxList.length} ท่าน)</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (confirm('ต้องการเคลียร์รายการทั้งหมด?')) {
-                        setBookingAddMode(null);
-                        setCurrentGroupName('');
-                        setBookingPaxList([]);
-                        setSelectedPaxForBooking([]);
-                      }
-                    }}
-                    className="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1"
-                  >
-                    <Trash2 size={14} /> เคลียร์ทั้งหมด
-                  </button>
-                </div>
-              )}
+
 
               {/* === INDIVIDUAL PASSENGERS TABLE === */}
               {bookingPaxList.filter(p => p.bookingType === 'individual').length > 0 && (
@@ -1834,9 +1854,11 @@ export default function TourSystemApp() {
                           <th className="px-4 py-2">#</th>
                           <th className="px-4 py-2">ชื่อ-นามสกุล</th>
                           <th className="px-4 py-2">ประเภทห้อง</th>
+                          <th className="px-4 py-2">หมายเหตุ</th>
                           <th className="px-4 py-2 text-right">ยอดจอง</th>
                           <th className="px-4 py-2 text-right">ค้างชำระ</th>
                           <th className="px-4 py-2 text-center">สถานะ</th>
+                          <th className="px-4 py-2 text-center">วันที่ชำระ</th>
                           <th className="px-4 py-2"></th>
                         </tr>
                       </thead>
@@ -1857,12 +1879,12 @@ export default function TourSystemApp() {
                           let statusClass = 'bg-gray-100 text-gray-600';
 
                           if (pax.billingNoteId || pax.paymentStatus) {
-                            // Has billing note created
+                            // Has billing note created or starting payment
                             if (pax.paymentStatus === 'paid' || isFullyPaid) {
                               statusText = 'ชำระแล้ว';
                               statusClass = 'bg-green-100 text-green-700';
                             } else if (pax.paymentStatus === 'partial' || (paid > 0 && !isFullyPaid)) {
-                              statusText = 'บางส่วน';
+                              statusText = 'ชำระมัดจำแล้ว';
                               statusClass = 'bg-yellow-100 text-yellow-700';
                             } else {
                               statusText = 'รอชำระ';
@@ -1901,12 +1923,37 @@ export default function TourSystemApp() {
                                   <option value="childNoBed">เด็ก (ไม่มีเตียง)</option>
                                 </select>
                               </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-1">
+                                  {pax.customerNote && (
+                                    <div className="text-[10px] text-gray-400 flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 italic" title="Database Note (Read-only)">
+                                      <Pin size={10} className="text-gray-400" /> {pax.customerNote}
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-1">
+                                    <Edit2 size={10} className="text-[#03b8fa]" />
+                                    <input
+                                      type="text"
+                                      className="bg-transparent border-b border-dashed border-gray-200 focus:border-[#03b8fa] outline-none text-[11px] w-full"
+                                      placeholder="เพิ่มหมายเหตุ..."
+                                      value={pax.remark || ''}
+                                      onChange={(e) => {
+                                        const newVal = e.target.value;
+                                        setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: newVal } : p));
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
                               <td className="px-4 py-3 text-right font-mono text-[#03b8fa] font-bold">฿{total.toLocaleString()}</td>
                               <td className={`px-4 py-3 text-right font-mono font-bold ${balance > 0 ? 'text-red-500' : 'text-green-600'}`}>
                                 {balance > 0 ? `฿${balance.toLocaleString()}` : '฿0'}
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${statusClass}`}>{statusText}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center font-mono text-xs text-gray-500">
+                                {pax.paymentDate || (isFullyPaid ? new Date().toISOString().split('T')[0] : '-')}
                               </td>
                               <td className="px-4 py-3">
                                 {!isFullyPaid && (
@@ -1948,15 +1995,16 @@ export default function TourSystemApp() {
                   let statusColor = 'bg-gray-100 text-gray-600';
 
                   if (hasBillingNote) {
-                    // Check if all members are paid
-                    const allPaid = members.every(m => m.paymentStatus === 'paid');
-                    const anyPartial = members.some(m => m.paymentStatus === 'partial' || (m.paidAmount > 0 && m.paymentStatus !== 'paid'));
-
-                    if (allPaid || (groupPaid >= groupTotal && groupTotal > 0)) {
+                    // Group status logic:
+                    // 1. If sum of paidAmount >= group total -> 'ชำระแล้ว'
+                    // 2. If sum of paidAmount > 0 but < total -> 'ชำระมัดจำแล้ว'
+                    // 3. Otherwise -> 'รอชำระ'
+                    const isFullyPaid = groupPaid >= (groupTotal - 1) && groupTotal > 0;
+                    if (isFullyPaid) {
                       statusText = 'ชำระแล้ว';
                       statusColor = 'bg-green-100 text-green-700';
-                    } else if (anyPartial || groupPaid > 0) {
-                      statusText = 'บางส่วน';
+                    } else if (groupPaid > 0) {
+                      statusText = 'ชำระมัดจำแล้ว';
                       statusColor = 'bg-yellow-100 text-yellow-700';
                     } else {
                       statusText = 'รอชำระ';
@@ -2022,6 +2070,7 @@ export default function TourSystemApp() {
                               <th className="px-4 py-2">#</th>
                               <th className="px-4 py-2">ชื่อ-นามสกุล</th>
                               <th className="px-4 py-2">ประเภทห้อง</th>
+                              <th className="px-4 py-2">หมายเหตุ</th>
                               <th className="px-4 py-2 text-right">ยอดจอง</th>
                               <th className="px-4 py-2"></th>
                             </tr>
@@ -2029,15 +2078,36 @@ export default function TourSystemApp() {
                           <tbody className="divide-y divide-gray-100">
                             {members.map((pax, idx) => {
                               const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                              const paid = pax.paidAmount || 0;
+                              const isFullyPaid = paid >= total && total > 0;
+
+                              // Status logic per member
+                              let memberStatus = 'จองแล้ว';
+                              let memberStatusClass = 'bg-gray-100 text-gray-600';
+
+                              if (pax.billingNoteId || pax.paymentStatus) {
+                                if (pax.paymentStatus === 'paid' || isFullyPaid) {
+                                  memberStatus = 'ชำระแล้ว';
+                                  memberStatusClass = 'bg-green-100 text-green-700';
+                                } else if (pax.paymentStatus === 'partial' || (paid > 0 && !isFullyPaid)) {
+                                  memberStatus = 'ชำระมัดจำแล้ว';
+                                  memberStatusClass = 'bg-yellow-100 text-yellow-700';
+                                } else {
+                                  memberStatus = 'รอชำระ';
+                                  memberStatusClass = 'bg-orange-100 text-orange-700';
+                                }
+                              }
+
                               return (
-                                <tr key={pax.id} className="hover:bg-gray-50">
+                                <tr key={pax.id} className={`hover:bg-gray-50 ${groupPaid >= groupTotal && groupTotal > 0 ? 'bg-green-50/30' : ''}`}>
                                   {idx === 0 && (
                                     <td className="px-4 py-3" rowSpan={members.length}>
                                       <input
                                         type="radio"
                                         name="selectedBooking"
-                                        className="w-4 h-4 accent-purple-500"
+                                        className={`w-4 h-4 accent-purple-500 ${statusText === 'ชำระแล้ว' ? 'opacity-30 cursor-not-allowed' : ''}`}
                                         checked={isSelected}
+                                        disabled={statusText === 'ชำระแล้ว'}
                                         onChange={() => {
                                           setSelectedPaxForBooking([`group:${groupName}`]);
                                           setCurrentGroupName(groupName);
@@ -2053,8 +2123,9 @@ export default function TourSystemApp() {
                                   </td>
                                   <td className="px-4 py-3">
                                     <select
-                                      className="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-purple-400"
+                                      className={`border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-purple-400 ${groupPaid >= groupTotal && groupTotal > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                       value={pax.roomType || 'adultTwin'}
+                                      disabled={groupPaid >= groupTotal && groupTotal > 0}
                                       onChange={(e) => {
                                         setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, roomType: e.target.value } : p));
                                       }}
@@ -2065,14 +2136,38 @@ export default function TourSystemApp() {
                                       <option value="childNoBed">เด็ก (ไม่มีเตียง)</option>
                                     </select>
                                   </td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex flex-col gap-1">
+                                      {pax.customerNote && (
+                                        <div className="text-[10px] text-gray-400 flex items-center gap-1 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 italic" title="Database Note (Read-only)">
+                                          <Pin size={10} className="text-gray-400" /> {pax.customerNote}
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-1">
+                                        <Edit2 size={10} className="text-[#03b8fa]" />
+                                        <input
+                                          type="text"
+                                          className="bg-transparent border-b border-dashed border-gray-200 focus:border-[#03b8fa] outline-none text-[11px] w-full"
+                                          placeholder="เพิ่มหมายเหตุ..."
+                                          value={pax.remark || ''}
+                                          onChange={(e) => {
+                                            const newVal = e.target.value;
+                                            setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: newVal } : p));
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
                                   <td className="px-4 py-3 text-right font-mono font-bold text-gray-700">฿{total.toLocaleString()}</td>
                                   <td className="px-4 py-3 text-right">
-                                    <button
-                                      onClick={() => setBookingPaxList(prev => prev.filter(p => p.id !== pax.id))}
-                                      className="text-gray-400 hover:text-red-500 transition"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                    {!(groupPaid >= groupTotal && groupTotal > 0) && (
+                                      <button
+                                        onClick={() => setBookingPaxList(prev => prev.filter(p => p.id !== pax.id))}
+                                        className="text-gray-400 hover:text-red-500 transition"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
                                   </td>
                                 </tr>
                               );
@@ -2103,12 +2198,16 @@ export default function TourSystemApp() {
                           const gName = groupSelect.split(':')[1];
                           const gMembers = bookingPaxList.filter(p => p.groupName === gName);
                           const gTotal = gMembers.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0);
-                          return `฿${gTotal.toLocaleString()}`;
+                          const gPaid = gMembers.reduce((sum, pax) => sum + (pax.paidAmount || 0), 0);
+                          const gBalance = gTotal - gPaid;
+                          return `฿${gBalance.toLocaleString()}`;
                         } else if (selectedPaxForBooking.length === 1) {
                           const pax = bookingPaxList.find(c => c.id === selectedPaxForBooking[0]);
                           if (pax) {
                             const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                            return `฿${total.toLocaleString()}`;
+                            const paid = pax.paidAmount || 0;
+                            const balance = total - paid;
+                            return `฿${balance.toLocaleString()}`;
                           }
                         }
                         return '-';
@@ -2279,6 +2378,18 @@ export default function TourSystemApp() {
                         <span className="text-gray-500">Pax:</span>
                         <span className="font-medium text-gray-800">{round.sold}/{round.seats}</span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">สถานะอนุมัติ:</span>
+                        {round.approved ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+                            <CheckCircle size={10} /> อนุมัติแล้ว
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                            <Clock size={10} /> รออนุมัติ
+                          </span>
+                        )}
+                      </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-400">
                           <span>ความคืบหน้า</span>
@@ -2339,10 +2450,31 @@ export default function TourSystemApp() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">พื้นที่จัดการทัวร์</h1>
-              <p className="text-gray-500 text-sm">{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</p>
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <span>{selectedOpRound.date} • {currentRoute?.code || 'N/A'}</span>
+                {/* Approval Status Badge */}
+                {selectedOpRound.approved ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+                    <CheckCircle size={10} /> อนุมัติแล้ว
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                    <Clock size={10} /> รออนุมัติ
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
+            {/* Manager Approval Button */}
+            {currentUser.role === 'MANAGER' && !selectedOpRound.approved && (
+              <button
+                onClick={() => handleApproveRound(selectedOpRound.id)}
+                className="bg-amber-500 text-white px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-amber-600 shadow-sm"
+              >
+                <ShieldCheck size={16} /> อนุมัติทัวร์นี้
+              </button>
+            )}
             <button
               className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
               onClick={() => {
@@ -2490,6 +2622,19 @@ export default function TourSystemApp() {
             );
           })()}
 
+        </div>
+
+        {/* PDPA & Data Security Notice */}
+        <div className="bg-sky-50 rounded-xl p-4 border border-sky-100 shadow-sm mb-6 flex items-center gap-4 animate-fade-in">
+          <div className="bg-sky-100 p-2 rounded-full text-[#03b8fa]">
+            <ShieldCheck size={24} />
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-800 text-sm">Tour Privacy & PDPA Notice:</h4>
+            <p className="text-xs text-gray-600">
+              เอกสารสำคัญของลูกทัวร์ (พาสปอร์ต/วีซ่า/ตั๋ว) จะถูกจัดเก็บเฉพาะกิจสำหรับกรุ๊ปทัวร์นี้ และจะถูก <span className="text-red-600 font-bold uppercase underline">ลบทิ้งถาวรภายใน 5 วัน</span> หลังจบวันทัวร์ เพื่อความปลอดภัยของข้อมูลลูกค้า
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
@@ -2719,15 +2864,35 @@ export default function TourSystemApp() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-xs text-gray-600 max-w-[200px] truncate" title={pax.remark || ''}>
-                        {pax.remark ? (
-                          <span className="flex items-center gap-1">
-                            <FileText size={12} className="text-blue-500 flex-shrink-0" />
-                            {pax.remark}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 italic">-</span>
+                      <div className="flex flex-col gap-1 max-w-[200px]">
+                        {/* 1. Database Note (Read-only) */}
+                        {pax.customerNote && (
+                          <div className="flex items-start gap-1 p-1.5 rounded bg-amber-50 border border-amber-100 group/note relative" title={`Note from DB: ${pax.customerNote}`}>
+                            <Pin size={12} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-[10px] text-amber-700 italic leading-tight font-medium">{pax.customerNote}</span>
+                            <div className="absolute -top-2 -right-1 bg-amber-500 text-white text-[8px] px-1 rounded-full opacity-0 group-hover/note:opacity-100 transition-opacity uppercase font-black">DB</div>
+                          </div>
                         )}
+
+                        {/* 2. Tour Specific Note (Editable) */}
+                        <div className="flex items-start gap-1 p-1.5 rounded bg-[#f0f9ff] border border-[#d9edf4] group/edit relative">
+                          <Edit2 size={12} className="text-[#03b8fa] mt-0.5 flex-shrink-0" />
+                          <textarea
+                            className="w-full bg-transparent text-[11px] text-[#0279a9] outline-none font-medium leading-tight resize-none min-h-[20px]"
+                            placeholder="หมายเหตุเฉพาะทริป..."
+                            rows={1}
+                            value={pax.remark || ''}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              // Update rounds/bookings state directly since it's Operation view
+                              setBookings(prev => prev.map(b => b.id === pax.bookingId ? {
+                                ...b,
+                                pax: b.pax.map(px => px.id === pax.id ? { ...px, remark: newVal } : px)
+                              } : b));
+                            }}
+                          />
+                          <div className="absolute -top-2 -right-1 bg-[#03b8fa] text-white text-[8px] px-1 rounded-full opacity-0 group-hover/edit:opacity-100 transition-opacity uppercase font-black">Trip</div>
+                        </div>
                       </div>
                     </td>
                     {
@@ -2825,7 +2990,7 @@ export default function TourSystemApp() {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden">
         <header className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
-          <h3 className="font-bold text-lg flex items-center gap-2"><UserPlus size={20} /> เพิ่มพนักงานใหม่</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2"><UserPlus size={20} /> {userFormData.id ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}</h3>
           <button onClick={() => setIsUserFormModalOpen(false)}><X size={20} /></button>
         </header>
         <div className="p-6 space-y-4">
@@ -2844,19 +3009,39 @@ export default function TourSystemApp() {
               <option value="GUIDE">Guide (ไกด์/Ops)</option>
             </select>
           </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">ค่าคอมมิชชั่น (%)</label>
-            <input type="number" className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none" value={userFormData.commission} onChange={e => setUserFormData({ ...userFormData, commission: Number(e.target.value) })} />
-          </div>
+          {userFormData.role === 'SALE' && (
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase">Commission Rank</label>
+              <select
+                className={`w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none bg-white font-bold ${commissionRanks.find(r => r.id === userFormData.commissionRank)?.color || 'text-gray-700'}`}
+                value={userFormData.commissionRank || 1}
+                onChange={e => setUserFormData({ ...userFormData, commissionRank: Number(e.target.value) })}
+              >
+                {commissionRanks.map(rank => (
+                  <option key={rank.id} value={rank.id}>{rank.name}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gray-400 mt-1">ได้รับค่าคอมมิชชั่นตามสิทธิ์ที่ผูกกับประเภทพนักงาน</p>
+            </div>
+          )}
           <button onClick={() => {
             if (!userFormData.name) return alert("กรุณาระบุชื่อพนักงาน");
-            const newUser = {
-              id: Date.now(),
-              ...userFormData
-            };
-            setAppUsers([...appUsers, newUser]);
+
+            if (userFormData.id) {
+              // Update existing user
+              setAppUsers(prev => prev.map(u => u.id === userFormData.id ? userFormData : u));
+            } else {
+              // Add new user
+              const newUser = {
+                ...userFormData,
+                id: Date.now()
+              };
+              setAppUsers([...appUsers, newUser]);
+            }
             setIsUserFormModalOpen(false);
-          }} className="w-full bg-[#03b8fa] text-white py-2 rounded-lg font-bold hover:bg-[#0279a9] transition shadow-lg mt-2">บันทึกพนักงาน</button>
+          }} className="w-full bg-[#03b8fa] text-white py-2 rounded-lg font-bold hover:bg-[#0279a9] transition shadow-lg mt-2">
+            {userFormData.id ? 'บันทึกการแก้ไข' : 'บันทึกพนักงานใหม่'}
+          </button>
         </div>
       </div>
     </div>
@@ -2884,7 +3069,7 @@ export default function TourSystemApp() {
               </div>
               <button
                 onClick={() => {
-                  setUserFormData({ name: '', role: 'SALE', commission: 0, avatar: 'https://i.pravatar.cc/150?u=99', id: null });
+                  setUserFormData({ name: '', role: 'SALE', commissionRank: 2, avatar: 'https://i.pravatar.cc/150?u=99', id: null });
                   setIsUserFormModalOpen(true);
                 }}
                 className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#029bc4]"
@@ -2926,15 +3111,16 @@ export default function TourSystemApp() {
                       <td className="p-3">
                         {user.role === 'SALE' ? (
                           <select
-                            className={`border rounded px-2 py-1 text-xs font-bold ${user.commissionRank === 1 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
-                            value={user.commissionRank || 2}
+                            className={`border rounded px-2 py-1 text-xs font-bold ${commissionRanks.find(r => r.id === user.commissionRank)?.bg || 'bg-gray-50'} ${commissionRanks.find(r => r.id === user.commissionRank)?.color || 'text-gray-700'} ${commissionRanks.find(r => r.id === user.commissionRank)?.border || 'border-gray-200'}`}
+                            value={user.commissionRank || 1}
                             onChange={(e) => {
                               const newRank = Number(e.target.value);
                               setAppUsers(users => users.map(u => u.id === user.id ? { ...u, commissionRank: newRank } : u));
                             }}
                           >
-                            <option value="1">Rank 1</option>
-                            <option value="2">Rank 2</option>
+                            {commissionRanks.map(rank => (
+                              <option key={rank.id} value={rank.id}>{rank.name}</option>
+                            ))}
                           </select>
                         ) : (
                           <span className="text-gray-300">-</span>
@@ -2971,13 +3157,62 @@ export default function TourSystemApp() {
             <div className="mt-4 p-4 bg-blue-50 text-blue-800 text-xs rounded-lg border border-blue-100">
               <strong>Note on Commission Ranks:</strong>
               <ul className="list-disc pl-4 mt-1 space-y-1">
-                <li><strong>Rank 1:</strong> พนักงานขายอาวุโส - ได้รับค่าคอมมิชชั่นสูงกว่า (กำหนดที่หน้าเส้นทาง)</li>
-                <li><strong>Rank 2:</strong> พนักงานขายทั่วไป - ได้รับค่าคอมมิชชั่นตามมาตรฐาน</li>
+                {commissionRanks.map(rank => (
+                  <li key={rank.id}><strong>{rank.name}:</strong> ได้รับค่าคอมมิชชั่นตามที่กำหนดในแต่ละเส้นทาง (ค่าเริ่มต้น ฿{rank.defaultAmount.toLocaleString()})</li>
+                ))}
               </ul>
             </div>
           </div>
         )}
 
+        {/* Commission Ranks Management Section (Manager Only) */}
+        {settingsTab === 'users' && currentUser.role === 'MANAGER' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <Wallet size={20} className="text-green-600" /> ตั้งค่าเลเวลพนักงาน และ ค่าคอมมิชชั่นหลัก
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">กำหนดชื่อ Rank และ ยอดเงินรางวัลมาตรฐานต่อหัว</p>
+              </div>
+              <button
+                onClick={() => {
+                  setRankFormData({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: null });
+                  setIsRankModalOpen(true);
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-green-700 shadow-sm"
+              >
+                <Plus size={16} /> เพิ่ม Rank
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {commissionRanks.map(rank => (
+                <div key={rank.id} className={`border rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-md ${rank.bg} ${rank.border}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${rank.bg} ${rank.color} border border-current opacity-70`}>Level {rank.id}</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => { setRankFormData(rank); setIsRankModalOpen(true); }} className="p-1 hover:bg-white/50 rounded text-gray-400 hover:text-gray-600"><Edit2 size={14} /></button>
+                      <button onClick={() => {
+                        if (window.confirm(`ลบ Rank ${rank.name}? ผู้ใช้ที่อยู่ใน Rank นี้จะถูกรีเซ็ต`)) {
+                          setCommissionRanks(ranks => ranks.filter(r => r.id !== rank.id));
+                        }
+                      }} className="p-1 hover:bg-white/50 rounded text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className={`font-bold text-lg ${rank.color}`}>{rank.name}</h4>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-2xl font-mono font-bold text-gray-800">฿{rank.defaultAmount.toLocaleString()}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">/ หัว</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-3">* ยอดนี้คือค่าเริ่มต้นเมื่อสร้างเส้นทางใหม่</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Bank Accounts Section */}
         {settingsTab === 'bank' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in">
@@ -3040,6 +3275,7 @@ export default function TourSystemApp() {
           </div>
         )}
       </div>
+
       {/* Bank Form Modal */}
       {isBankFormOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -3052,67 +3288,82 @@ export default function TourSystemApp() {
                   className="w-full border rounded px-3 py-2 text-sm"
                   value={bankFormData.bank}
                   onChange={e => setBankFormData({ ...bankFormData, bank: e.target.value })}
-                  placeholder="เช่น KBANK, SCB"
+                  placeholder="เช่น กสิกรไทย"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">ชื่อบัญชี</label>
+                  <input
+                    className="w-full border rounded px-3 py-2 text-sm"
+                    value={bankFormData.accountName}
+                    onChange={e => setBankFormData({ ...bankFormData, accountName: e.target.value })}
+                    placeholder="บจก. รุ่งอนันต์ ทัวร์"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">สาขา</label>
+                  <input
+                    className="w-full border rounded px-3 py-2 text-sm"
+                    value={bankFormData.branch}
+                    onChange={e => setBankFormData({ ...bankFormData, branch: e.target.value })}
+                    placeholder="พหลโยธิน"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase">เลขที่บัญชี</label>
                 <input
-                  className="w-full border rounded px-3 py-2 text-sm font-mono"
+                  className="w-full border rounded px-3 py-2 text-sm font-mono font-bold text-[#0279a9]"
                   value={bankFormData.accountNumber}
                   onChange={e => setBankFormData({ ...bankFormData, accountNumber: e.target.value })}
-                  placeholder="XXX-X-XXXXX-X"
+                  placeholder="012-3-45678-9"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">ชื่อบัญชี</label>
-                <input
-                  className="w-full border rounded px-3 py-2 text-sm"
-                  value={bankFormData.accountName}
-                  onChange={e => setBankFormData({ ...bankFormData, accountName: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">สาขา</label>
-                <input
-                  className="w-full border rounded px-3 py-2 text-sm"
-                  value={bankFormData.branch}
-                  onChange={e => setBankFormData({ ...bankFormData, branch: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">สีธนาคาร</label>
-                <div className="flex gap-2 mt-1">
-                  {['bg-[#138f2d]', 'bg-[#4e2e7f]', 'bg-[#1e4598]', 'bg-[#f4a01e]', 'bg-[#00a9e0]'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setBankFormData({ ...bankFormData, color: c })}
-                      className={`w-8 h-8 rounded-full ${c} ${bankFormData.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
-                    ></button>
-                  ))}
-                </div>
               </div>
             </div>
-            <div className="flex gap-2 mt-6 justify-end">
-              <button
-                onClick={() => setIsBankFormOpen(false)}
-                className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg text-sm"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={() => {
-                  if (bankFormData.id) {
-                    setBankAccounts(prev => prev.map(a => a.id === bankFormData.id ? bankFormData : a));
-                  } else {
-                    setBankAccounts(prev => [...prev, { ...bankFormData, id: Date.now() }]);
-                  }
-                  setIsBankFormOpen(false);
-                }}
-                className="px-4 py-2 bg-[#03b8fa] text-white rounded-lg text-sm font-bold"
-              >
-                บันทึก
-              </button>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setIsBankFormOpen(false)} className="px-4 py-2 text-gray-400 hover:text-gray-600 font-medium">ยกเลิก</button>
+              <button onClick={() => {
+                if (!bankFormData.bank || !bankFormData.accountNumber) return alert("กรุณาระบุเลขที่บัญชีและชื่อธนาคาร");
+                if (bankFormData.id) {
+                  setBankAccounts(prev => prev.map(a => a.id === bankFormData.id ? bankFormData : a));
+                } else {
+                  setBankAccounts([...bankAccounts, { ...bankFormData, id: Date.now() }]);
+                }
+                setIsBankFormOpen(false);
+              }} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#0279a9] shadow-lg">บันทึกข้อมูล</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Commission Rank Modal */}
+      {isRankModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="font-bold text-lg mb-4">{rankFormData.id ? 'แก้ไขข้อมูล Rank' : 'เพิ่ม Rank ใหม่'}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">ชื่อ Rank</label>
+                <input className="w-full border rounded px-3 py-2 text-sm" placeholder="e.g. Rank 3 (พิเศษ)" value={rankFormData.name} onChange={e => setRankFormData({ ...rankFormData, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">ยอดคอมมิชชั่นมาตรฐาน (฿)</label>
+                <input type="number" className="w-full border rounded px-3 py-2 text-sm font-mono font-bold" placeholder="500" value={rankFormData.defaultAmount} onChange={e => setRankFormData({ ...rankFormData, defaultAmount: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setIsRankModalOpen(false)} className="px-4 py-2 text-gray-400 hover:text-gray-600 font-medium">ยกเลิก</button>
+              <button onClick={() => {
+                if (!rankFormData.name) return alert("กรุณาระบุชื่อ Rank");
+                if (rankFormData.id) {
+                  setCommissionRanks(ranks => ranks.map(r => r.id === rankFormData.id ? rankFormData : r));
+                } else {
+                  const newRank = { ...rankFormData, id: commissionRanks.length > 0 ? Math.max(...commissionRanks.map(r => r.id)) + 1 : 1 };
+                  setCommissionRanks([...commissionRanks, newRank]);
+                }
+                setIsRankModalOpen(false);
+              }} className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-lg">บันทึกข้อมูล</button>
             </div>
           </div>
         </div>
@@ -3120,15 +3371,17 @@ export default function TourSystemApp() {
     </div>
   );
 
-
-  // === Payment Management ===
-
   const renderPayment = () => {
     // Get data based on active tab
     const getBillingStats = () => {
-      const pending = billingNotes.filter(b => b.status === 'pending');
-      const total = pending.reduce((sum, b) => sum + b.billingAmount, 0);
-      return { count: pending.length, total };
+      const unpaid = billingNotes.filter(b => b.status !== 'paid');
+      // Calculate remaining balance for each billing note
+      const total = unpaid.reduce((sum, b) => {
+        const paidFromBilling = b.paidAmount || 0;
+        const remaining = b.billingAmount - paidFromBilling;
+        return sum + (remaining > 0 ? remaining : 0);
+      }, 0);
+      return { count: unpaid.length, total };
     };
 
     const getReceiptStats = () => {
@@ -3218,16 +3471,23 @@ export default function TourSystemApp() {
                   <th className="px-6 py-4">ลูกค้า / กลุ่ม</th>
                   <th className="px-6 py-4 text-center">ประเภท</th>
                   <th className="px-6 py-4 text-right">ยอดวางบิล</th>
-                  <th className="px-6 py-4 text-center">กำหนดชำระ</th>
+                  <th className="px-6 py-4 text-right text-green-600">ชำระแล้ว</th>
+                  <th className="px-6 py-4 text-right text-orange-600">คงค้าง</th>
                   <th className="px-6 py-4 text-center">สถานะ</th>
                   <th className="px-6 py-4 text-center">ดำเนินการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {billingNotes.filter(b => b.status !== 'paid').map(bill => {
+                {billingNotes.map(bill => {
                   const route = routes.find(r => r.id === bill.routeId);
+                  // paidSoFar = previousPaid + paidAmount (จากใบวางบิลนี้)
+                  const paidFromBilling = bill.paidAmount || 0;
+                  const totalPaid = (bill.previousPaid || 0) + paidFromBilling;
+                  // remaining = billingAmount - paidAmount (ยอดคงค้างของใบวางบิลนี้)
+                  const remaining = bill.billingAmount - paidFromBilling;
+
                   return (
-                    <tr key={bill.id} className="hover:bg-gray-50 transition">
+                    <tr key={bill.id} className={`hover:bg-gray-50 transition ${bill.status === 'paid' ? 'bg-green-50/30' : ''}`}>
                       <td className="px-6 py-4 font-mono font-bold text-[#03b8fa]">{bill.id}</td>
                       <td className="px-6 py-4 font-bold text-gray-800">{bill.customerName}</td>
                       <td className="px-6 py-4 text-center">
@@ -3235,8 +3495,13 @@ export default function TourSystemApp() {
                           {bill.billingType === 'group' ? 'กลุ่ม' : 'เดี่ยว'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right font-mono font-bold text-gray-700">฿{bill.billingAmount.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-500">{bill.dueDate}</td>
+                      <td className="px-6 py-4 text-right font-mono text-gray-600">฿{bill.billingAmount.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-green-600">
+                        {paidFromBilling > 0 ? `฿${paidFromBilling.toLocaleString()}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-orange-600">
+                        {remaining > 0 ? `฿${remaining.toLocaleString()}` : '-'}
+                      </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${bill.status === 'paid' ? 'bg-green-100 text-green-700' : bill.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700'}`}>
                           {bill.status === 'pending' ? 'รอชำระ' : bill.status === 'partial' ? 'บางส่วน' : 'ชำระแล้ว'}
@@ -3247,20 +3512,24 @@ export default function TourSystemApp() {
                           <button onClick={() => setViewingBillingNote(bill)} className="text-[#03b8fa] hover:bg-[#d9edf4] px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition">
                             <Printer size={14} /> ออกใบวางบิล
                           </button>
-                          <button onClick={() => {
-                            // Create receipt from this billing note
-                            setIsCreatingReceipt(true);
-                            setViewingBillingNote(bill);
-                          }} className="text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition">
-                            <CheckCircle size={14} /> ชำระเงิน
-                          </button>
+                          {bill.status !== 'paid' && (
+                            <button onClick={() => {
+                              // Create receipt from this billing note
+                              setIsCreatingReceipt(true);
+                              setViewingBillingNote(bill);
+                              // Set default amount to remaining balance
+                              setBillingAmount(remaining > 0 ? remaining : bill.billingAmount);
+                            }} className="text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition">
+                              <CheckCircle size={14} /> ชำระเงิน
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   );
                 })}
-                {billingNotes.filter(b => b.status !== 'paid').length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10 text-gray-400">ไม่มีรายการใบวางบิลที่รอชำระ</td></tr>
+                {billingNotes.length === 0 && (
+                  <tr><td colSpan={8} className="text-center py-10 text-gray-400">ไม่มีรายการใบวางบิล</td></tr>
                 )}
               </tbody>
             </table>
@@ -3422,6 +3691,7 @@ export default function TourSystemApp() {
                             <th className="px-3 py-2 text-left">ชื่อ-นามสกุล</th>
                             <th className="px-3 py-2 text-left">Passport</th>
                             <th className="px-3 py-2 text-left">ประเภทห้อง</th>
+                            <th className="px-3 py-2 text-left">หมายเหตุ</th>
                             <th className="px-3 py-2 text-right">ยอดจอง</th>
                             <th className="px-3 py-2 text-left">ผู้ขาย</th>
                           </tr>
@@ -3435,6 +3705,13 @@ export default function TourSystemApp() {
                                 <td className="px-3 py-2 font-medium">{p.firstNameEn} {p.lastNameEn}</td>
                                 <td className="px-3 py-2 font-mono text-gray-500">{p.passportNo}</td>
                                 <td className="px-3 py-2 text-xs text-gray-600">{p.roomType || 'adultTwin'}</td>
+                                <td className="px-3 py-2">
+                                  <div className="flex flex-col gap-0.5 max-w-[120px]">
+                                    {p.customerNote && <div className="text-[10px] text-amber-600 font-medium truncate">📌 {p.customerNote}</div>}
+                                    {p.remark && <div className="text-[10px] text-blue-500 truncate">📝 {p.remark}</div>}
+                                    {!p.customerNote && !p.remark && <span className="text-gray-300">-</span>}
+                                  </div>
+                                </td>
                                 <td className="px-3 py-2 text-right font-mono font-bold text-[#03b8fa]">
                                   ฿{paxPrice.toLocaleString()}
                                 </td>
@@ -3446,7 +3723,7 @@ export default function TourSystemApp() {
                           })}
                           {/* Total Row */}
                           <tr className="bg-gray-100 font-bold">
-                            <td className="px-3 py-2 text-gray-600" colSpan={3}>รวมยอดจอง ({paxList.length} ท่าน)</td>
+                            <td className="px-3 py-2 text-gray-600" colSpan={4}>รวมยอดจอง ({paxList.length} ท่าน)</td>
                             <td className="px-3 py-2 text-right font-mono text-[#0279a9]">
                               ฿{paxList.reduce((sum, p) => sum + (round?.price?.[p.roomType || 'adultTwin'] || 0), 0).toLocaleString()}
                             </td>
@@ -3475,8 +3752,6 @@ export default function TourSystemApp() {
                             className="w-full border rounded px-3 py-2 text-sm bg-white"
                             value={paymentFormData.method || 'transfer'} // Use temp state if available, but here we modify directly? Ideally use a state.
                             // Since this is inline, let's assume valid change handler or controlled component logic if extended.
-                            // NOTE: The previous code was uncontrolled select. Let's make it controlled if possible,
-                            // but for minimal diff, let's just insert the logic.
                             // Actually, the user wants bank selection for "Transfer".
                             // We need to capture the selected method to conditionally show bank dropdown.
                             onChange={(e) => {
@@ -3610,42 +3885,42 @@ export default function TourSystemApp() {
                 <button onClick={() => setViewingBillingNote(null)}><X size={20} /></button>
               </header>
               <div className="p-6">
-                {/* Bank Account Selection (Control Panel) */}
-                <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center gap-3">
-                  <label className="text-sm font-bold text-blue-800 whitespace-nowrap">ระบุบัญชีรับโอน:</label>
-                  <select
-                    className="flex-1 text-sm border-gray-300 rounded px-2 py-1"
-                    value={selectedBillingBankId || (bankAccounts[0]?.id)}
-                    onChange={(e) => setSelectedBillingBankId(e.target.value)}
-                  >
-                    <option value="">-- เลือกบัญชีธนาคาร --</option>
-                    {bankAccounts.map(b => (
-                      <option key={b.id} value={b.id}>{b.bank} - {b.accountNumber} ({b.accountName})</option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* PDF Preview Style */}
-                <div className="border-2 border-gray-200 rounded-lg p-6 bg-gray-50">
-                  <div className="flex justify-between mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-800">บจก. รุ่งอนันต์ ทัวร์</h2>
-                      <p className="text-sm text-gray-500">123/45 ถนนพหลโยธิน แขวงลาดยาว กรุงเทพฯ 10900</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">เลขที่ใบวางบิล</p>
-                      <p className="font-mono font-bold text-xl text-[#03b8fa]">{viewingBillingNote.id}</p>
-                      <p className="text-sm text-gray-400 mt-1">วันที่: {viewingBillingNote.createdAt}</p>
-                    </div>
-                  </div>
+                <div className="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 relative">
+                  {(() => {
+                    const roundForBill = rounds.find(r => r.id === viewingBillingNote.roundId);
+                    const routeForBill = routes.find(r => r.id === roundForBill?.routeId);
+                    return (
+                      <div className="flex justify-between mb-6">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-800">บจก. รุ่งอนันต์ ทัวร์</h2>
+                          <p className="text-sm text-gray-500">123/45 ถนนพหลโยธิน แขวงลาดยาว กรุงเทพฯ 10900</p>
+
+                          {/* Route Info */}
+                          <div className="mt-4 bg-white/50 border border-gray-200 rounded-lg px-3 py-2 inline-block">
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">เส้นทาง / โปรแกรมทัวร์</div>
+                            <div className="text-sm font-bold text-[#03b8fa]">{routeForBill?.code || 'N/A'} - {routeForBill?.name || '-'}</div>
+                            <div className="text-[11px] text-gray-600 flex items-center gap-2">
+                              <Calendar size={12} className="text-gray-400" />
+                              รอบการเดินทาง: <span className="font-bold">{roundForBill?.date || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">เลขที่ใบวางบิล</p>
+                          <p className="font-mono font-bold text-xl text-[#03b8fa]">{viewingBillingNote.id}</p>
+                          <p className="text-sm text-gray-400 mt-1">วันที่: {viewingBillingNote.createdAt}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="border-t border-b border-gray-300 py-4 my-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-gray-500 uppercase">ลูกค้า / กลุ่ม</p>
-                        <p className="font-bold text-gray-800">{viewingBillingNote.customerName}</p>
+                        <p className="text-xs text-gray-500 uppercase font-bold">ลูกค้า / กลุ่ม</p>
+                        <p className="font-bold text-gray-800 text-lg uppercase">{viewingBillingNote.customerName}</p>
                       </div>
-                      {/* Due date removed as requested */}
                     </div>
                   </div>
 
@@ -3711,26 +3986,45 @@ export default function TourSystemApp() {
                   </div>
 
                   {/* Footer: Bank Details */}
-                  {(() => {
-                    const bankToShow = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId)) || bankAccounts[0];
-                    if (bankToShow) {
-                      return (
-                        <div className="mt-8 pt-4 border-t border-dashed border-gray-300">
-                          <p className="text-xs text-gray-500 mb-2 font-bold uppercase">ช่องทางการชำระเงิน (Payment Channel)</p>
-                          <div className="flex items-center gap-3 bg-white p-3 rounded border border-gray-200">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${bankToShow.color || 'bg-gray-500'}`}>
+                  <div className="mt-8 pt-4 border-t border-dashed border-gray-300 animate-fade-in">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">ช่องทางการชำระเงิน (PAYMENT CHANNEL)</p>
+                      <div className="flex items-center gap-2 bg-[#d9edf4] px-2 py-1 rounded border border-[#03b8fa]/30">
+                        <label className="text-[10px] font-bold text-[#03b8fa] whitespace-nowrap uppercase">เลือกบัญชี:</label>
+                        <select
+                          className="text-[10px] bg-transparent border-none focus:ring-0 font-bold text-[#0279a9] cursor-pointer outline-none p-0"
+                          value={selectedBillingBankId || (bankAccounts[0]?.id)}
+                          onChange={(e) => setSelectedBillingBankId(e.target.value)}
+                        >
+                          <option value="">-- เลือกบัญชี --</option>
+                          {bankAccounts.map(b => (
+                            <option key={b.id} value={b.id}>{b.bank} - {b.accountNumber}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    {(() => {
+                      const bankToShow = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId)) || bankAccounts[0];
+                      if (bankToShow) {
+                        return (
+                          <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200 shadow-sm transition-all">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-inner ${bankToShow.color || 'bg-gray-500'}`}>
                               {bankToShow.bank}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-800 text-sm">{bankToShow.bank} - {bankToShow.accountNumber}</p>
-                              <p className="text-xs text-gray-500">{bankToShow.accountName} ({bankToShow.branch})</p>
+                              <p className="font-black text-[#0279a9] text-sm uppercase">{bankToShow.bank} - {bankToShow.accountNumber}</p>
+                              <p className="text-xs text-gray-500 font-medium">{bankToShow.accountName} (สาขา {bankToShow.branch})</p>
                             </div>
                           </div>
+                        );
+                      }
+                      return (
+                        <div className="p-3 border-2 border-dashed border-red-200 rounded-lg text-red-400 text-center text-xs font-bold">
+                          กรุณาเลือกบัญชีธนาคารสำหรับรับโอนเงิน
                         </div>
                       );
-                    }
-                    return null;
-                  })()}
+                    })()}
+                  </div>
 
                   {viewingBillingNote.note && (
                     <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
@@ -3898,7 +4192,7 @@ export default function TourSystemApp() {
                     onChange={(e) => setBillingAmount(Number(e.target.value))}
                   />
                   {billingAmount < viewingBillingNote.billingAmount && billingAmount > 0 && (
-                    <p className="text-sm text-orange-600 mt-1">* ชำระบางส่วน - ยอดคงเหลือ ฿{(viewingBillingNote.billingAmount - billingAmount).toLocaleString()}</p>
+                    <p className="text-sm text-orange-600 mt-1">* ชำระมัดจำแล้ว - ยอดคงเหลือ ฿{(viewingBillingNote.billingAmount - billingAmount).toLocaleString()}</p>
                   )}
                 </div>
 
@@ -3965,6 +4259,9 @@ export default function TourSystemApp() {
                 <button onClick={() => { setIsCreatingReceipt(false); setViewingBillingNote(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ยกเลิก</button>
                 <button
                   onClick={() => {
+                    // Calculate paid amount
+                    const paidAmount = billingAmount || viewingBillingNote.billingAmount;
+
                     // Create receipt
                     const newReceipt = {
                       id: `RCP-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(receipts.length + 1).padStart(3, '0')}`,
@@ -3975,7 +4272,7 @@ export default function TourSystemApp() {
                       customerName: viewingBillingNote.customerName,
                       paxIds: viewingBillingNote.paxIds,
                       totalAmount: viewingBillingNote.billingAmount,
-                      receiptAmount: billingAmount || viewingBillingNote.billingAmount,
+                      receiptAmount: paidAmount,
                       paymentMethod: paymentFormData.method || 'cash',
                       bankAccountId: selectedBankForTransfer ? Number(selectedBankForTransfer) : null,
                       status: 'issued',
@@ -3987,24 +4284,94 @@ export default function TourSystemApp() {
                     };
                     setReceipts(prev => [newReceipt, ...prev]);
 
+                    // Calculate new status for billing note
+                    const existingPaid = viewingBillingNote.paidAmount || 0;
+                    const totalPaidSoFar = existingPaid + paidAmount;
+                    const remainingBalance = viewingBillingNote.billingAmount - totalPaidSoFar;
+                    const newStatus = remainingBalance <= 0 ? 'paid' : 'partial';
+
                     // Update billing note status
-                    const paidAmount = billingAmount || viewingBillingNote.billingAmount;
-                    const newStatus = paidAmount >= viewingBillingNote.billingAmount ? 'paid' : 'partial';
                     setBillingNotes(prev => prev.map(b =>
                       b.id === viewingBillingNote.id
                         ? {
                           ...b,
                           status: newStatus,
-                          billingAmount: b.billingAmount - paidAmount, // Deduct balance
+                          paidAmount: totalPaidSoFar,
+                          paymentMethod: paymentFormData.method || 'cash',
+                          bankAccountId: selectedBankForTransfer ? Number(selectedBankForTransfer) : null,
                           paidAt: new Date().toISOString().split('T')[0]
                         }
                         : b
                     ));
 
-                    alert('สร้างใบรับเงินเรียบร้อย!');
+                    // Update related payment record
+                    if (viewingBillingNote.paymentId) {
+                      setPayments(prev => prev.map(p =>
+                        p.id === viewingBillingNote.paymentId
+                          ? {
+                            ...p,
+                            paidAmount: (p.paidAmount || 0) + paidAmount,
+                            status: remainingBalance <= 0 ? 'paid' : 'partial'
+                          }
+                          : p
+                      ));
+                    }
+
+                    const paymentDate = new Date().toISOString().split('T')[0];
+                    if (viewingBillingNote.roundId && viewingBillingNote.paxIds) {
+                      const shareOfPaid = paidAmount / viewingBillingNote.paxIds.length;
+                      const roundPrice = rounds.find(r => r.id === viewingBillingNote.roundId)?.price || {};
+
+                      setBookings(prev => prev.map(booking => {
+                        if (booking.roundId === viewingBillingNote.roundId) {
+                          return {
+                            ...booking,
+                            pax: booking.pax.map(p => {
+                              if (viewingBillingNote.paxIds.includes(p.id)) {
+                                const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                                const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                                const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                                return {
+                                  ...p,
+                                  paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                                  paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                                  paidAmount: newPaid
+                                };
+                              }
+                              return p;
+                            }),
+                            status: remainingBalance <= 0 ? (remainingBalance <= 0 ? 'paid' : 'partial') : 'partial'
+                            // Note: booking.status update here is simplified, groupPaid check is more reliable in UI
+                          };
+                        }
+                        return booking;
+                      }));
+
+                      // Also update bookingPaxList state (for current booking session)
+                      setBookingPaxList(prev => prev.map(p => {
+                        if (viewingBillingNote.paxIds.includes(p.id)) {
+                          const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                          const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                          const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                          return {
+                            ...p,
+                            paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                            paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                            paidAmount: newPaid
+                          };
+                        }
+                        return p;
+                      }));
+                    }
+
+                    alert(`✅ สร้างใบรับเงินเรียบร้อย!\n\nเลขที่: ${newReceipt.id}\nยอดชำระ: ฿${paidAmount.toLocaleString()}\nสถานะ: ${newStatus === 'paid' ? 'ชำระครบแล้ว' : 'ชำระมัดจำแล้ว'}`);
                     setIsCreatingReceipt(false);
                     setViewingBillingNote(null);
                     setBillingAmount(0);
+                    setPaymentFormData({ method: '', amount: 0, receipt: null, note: '' });
+                    setSelectedBankForTransfer('');
                     setPaymentSubTab('receipt');
                   }}
                   className="px-6 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 flex items-center gap-2"
@@ -4409,6 +4776,8 @@ export default function TourSystemApp() {
                                 }
                                 const newPax = {
                                   ...c,
+                                  customerNote: c.remark || '', // Copy original DB remark to customerNote
+                                  remark: '', // Reset remark for new booking-specific note
                                   // NO paymentStatus initially - will be set after payment process
                                   // bookingId will be set after confirmation
                                   bookingType: bookingAddMode,
@@ -4426,7 +4795,14 @@ export default function TourSystemApp() {
                             >
                               <div>
                                 <div className="font-bold text-sm text-gray-800">{c.firstNameEn} {c.lastNameEn}</div>
-                                <div className="text-xs text-gray-500">{c.passportNo}</div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500 font-mono">{c.passportNo}</span>
+                                  {c.remark && (
+                                    <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100 flex items-center gap-1 leading-none">
+                                      <Pin size={8} /> {c.remark}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <Plus size={16} className="text-[#03b8fa]" />
                             </div>
@@ -4619,30 +4995,28 @@ export default function TourSystemApp() {
                                   groupName: p.bookingType === 'group' ? (p.groupName || currentGroupName) : p.groupName
                                 }));
 
-                              const bookingId = Date.now();
-                              const newBooking = {
-                                id: bookingId,
-                                roundId: selectedRound.id,
-                                routeId: selectedRoute.id,
-                                saleId: currentUser.id,
-                                saleName: currentUser.name,
-                                status: 'pending', // Will be updated by billing note payment
-                                pax: finalPax,
-                                customerName: payerName,
-                                contactName: payerName,
-                                contactPhone: '',
-                                details: bookingDetails
-                              };
-                              setBookings(prev => [...prev, newBooking]);
+                              // Update current bookings if it exists, otherwise create new
+                              const existingBookingId = finalPax.find(p => p.bookingId)?.bookingId;
+                              const bookingId = existingBookingId || Date.now();
 
-                              // === BILLING NOTE FLOW ===
-                              // When creating billing note from booking page:
-                              // - Status is always 'pending' (รอชำระ) initially
-                              // - The inputAmount is the BILLED amount (not paid yet)
-                              // - Actual payment happens when "ชำระเงิน" is clicked on billing note page
-                              // - Receipt is created when payment is made on billing note page
+                              if (!existingBookingId) {
+                                const newBooking = {
+                                  id: bookingId,
+                                  roundId: selectedRound.id,
+                                  routeId: selectedRoute.id,
+                                  saleId: currentUser.id,
+                                  saleName: currentUser.name,
+                                  status: 'pending',
+                                  pax: finalPax,
+                                  customerName: payerName,
+                                  contactName: payerName,
+                                  contactPhone: '',
+                                  details: bookingDetails
+                                };
+                                setBookings(prev => [...prev, newBooking]);
+                              }
 
-                              // Create Payment Record (tracks the billing)
+                              // === BILLING NOTE FLOW === ... (rest stays the same)
                               const newPayment = {
                                 id: Date.now() + 1,
                                 bookingId: bookingId,
@@ -4652,27 +5026,26 @@ export default function TourSystemApp() {
                                 paxIds: finalPax.map(p => p.id),
                                 customerName: payerName,
                                 billingInfo: { name: payerName, type: groupSelect ? 'juridical' : 'individual' },
-                                totalAmount: netAmount, // Total amount to be billed
-                                paidAmount: 0, // No payment yet - payment happens from billing note page
-                                status: 'pending', // Always pending initially
+                                totalAmount: netAmount,
+                                paidAmount: 0,
+                                status: 'pending',
                                 createdAt: new Date().toLocaleDateString(),
                                 transactions: []
                               };
                               setPayments(prev => [newPayment, ...prev]);
 
-                              // === ALWAYS Create Billing Note (ใบวางบิล = Invoice) ===
                               const newBillingNote = {
                                 id: `INV-${Date.now()}`,
                                 routeId: selectedRoute.id,
                                 customerName: payerName,
                                 billingType: groupSelect ? 'group' : 'individual',
-                                totalAmount: netAmount, // Total amount to be billed
-                                billedAmount: inputAmount, // Amount being billed now
-                                paidAmount: 0, // No payment yet
-                                billingAmount: inputAmount, // Outstanding balance = billed amount initially
-                                previousPaid: 0,
+                                totalAmount: netAmount,
+                                billedAmount: inputAmount,
+                                paidAmount: 0,
+                                billingAmount: inputAmount,
+                                previousPaid: previouslyPaid,
                                 dueDate: "",
-                                status: 'pending', // Always pending - will become 'paid' when ชำระเงิน is clicked
+                                status: 'pending',
                                 bookingId: bookingId,
                                 paymentId: newPayment.id,
                                 paxIds: finalPax.map(p => p.id),
@@ -4683,14 +5056,12 @@ export default function TourSystemApp() {
                               };
                               setBillingNotes(prev => [newBillingNote, ...prev]);
 
-                              // Update bookingPaxList - ALWAYS keep customers in list
                               const finalPaxIds = finalPax.map(p => p.id);
                               setBookingPaxList(prev => prev.map(p => {
                                 if (finalPaxIds.includes(p.id)) {
                                   return {
                                     ...p,
-                                    paidAmount: 0, // No payment yet
-                                    paymentStatus: 'pending', // รอชำระ - billing note created
+                                    paymentStatus: p.paidAmount > 0 ? 'partial' : 'pending',
                                     bookingId: bookingId,
                                     billingNoteId: newBillingNote.id
                                   };

@@ -80,7 +80,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Boy',
         guideId: 5,
         guide: 'K.Guide1',
-        price: { adultTwin: 25900, adultSingle: 30900, adultTriple: 24900, childBed: 23900, childNoBed: 20900 }
+        price: { adultTwin: 25900, adultSingle: 30900, adultTriple: 24900, childBed: 23900, childNoBed: 20900 },
+        approved: false,
+        approvedBy: null,
+        approvedAt: null
     },
     {
         id: 102,
@@ -98,7 +101,10 @@ export const MOCK_ROUNDS = [
         head: 'K.New',
         guideId: null,
         guide: 'ยังไม่กำหนด',
-        price: { adultTwin: 26900, adultSingle: 31900, adultTriple: 25900, childBed: 24900, childNoBed: 21900 }
+        price: { adultTwin: 26900, adultSingle: 31900, adultTriple: 25900, childBed: 24900, childNoBed: 21900 },
+        approved: true,
+        approvedBy: 1,
+        approvedAt: '2026-01-10'
     },
     {
         id: 201,
@@ -116,7 +122,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Anne',
         guideId: 5,
         guide: 'K.Guide1',
-        price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 }
+        price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 },
+        approved: true,
+        approvedBy: 1,
+        approvedAt: '2026-01-05'
     },
     {
         id: 301,
@@ -134,7 +143,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Boy',
         guideId: 5,
         guide: 'K.Guide1',
-        price: { adultTwin: 28900, adultSingle: 34900, adultTriple: 26900, childBed: 24900, childNoBed: 21000 }
+        price: { adultTwin: 28900, adultSingle: 34900, adultTriple: 26900, childBed: 24900, childNoBed: 21000 },
+        approved: true,
+        approvedBy: 1,
+        approvedAt: '2026-01-08'
     },
     {
         id: 103,
@@ -152,7 +164,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Anne',
         guideId: null,
         guide: 'ยังไม่กำหนด',
-        price: { adultTwin: 29900, adultSingle: 35900, adultTriple: 28900, childBed: 27900, childNoBed: 24900 }
+        price: { adultTwin: 29900, adultSingle: 35900, adultTriple: 28900, childBed: 27900, childNoBed: 24900 },
+        approved: false,
+        approvedBy: null,
+        approvedAt: null
     },
     {
         id: 401,
@@ -170,7 +185,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Boy',
         guideId: 5,
         guide: 'K.Guide1',
-        price: { adultTwin: 42900, adultSingle: 48900, adultTriple: 40900, childBed: 38900, childNoBed: 35000 }
+        price: { adultTwin: 42900, adultSingle: 48900, adultTriple: 40900, childBed: 38900, childNoBed: 35000 },
+        approved: true,
+        approvedBy: 1,
+        approvedAt: '2025-12-01'
     },
     {
         id: 402,
@@ -188,7 +206,10 @@ export const MOCK_ROUNDS = [
         head: 'K.Anne',
         guideId: 5,
         guide: 'K.Guide1',
-        price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 }
+        price: { adultTwin: 32900, adultSingle: 38900, adultTriple: 30900, childBed: 28900, childNoBed: 25000 },
+        approved: true,
+        approvedBy: 1,
+        approvedAt: '2025-12-05'
     }
 ];
 
@@ -211,7 +232,6 @@ export const INITIAL_CUSTOMER_STATE = {
     email: '',
     lineId: '',
     remark: '',
-    attachments: { passport: null, visa: null, ticket: null, insurance: null },
     ownerId: null
 };
 
@@ -303,16 +323,26 @@ const generateCustomers = () => {
 
 const CUSTOMER_TEMPLATES = generateCustomers();
 
-export const MOCK_CUSTOMERS_DB = CUSTOMER_TEMPLATES.map(c => ({
-    ...c,
-    passportIssue: '2020-01-01',
-    passportExpire: '2030-01-01',
-    birthplace: 'BANGKOK',
-    email: '',
-    lineId: '',
-    remark: '',
-    attachments: { passport: null, visa: null, ticket: null, insurance: null }
-}));
+export const MOCK_CUSTOMERS_DB = CUSTOMER_TEMPLATES.map((c, idx) => {
+    let remark = '';
+    if (idx === 0) remark = 'แพ้อาหารทะเลรุนแรงมาก';
+    if (idx === 1) remark = 'ขอชั้นบนหรือหน้าๆ';
+    if (idx === 2) remark = 'ต้องใช้วีลแชร์ (Wheelchair Service)';
+    if (idx === 3) remark = 'ไม่ทานเนื้อวัว';
+    if (idx === 4) remark = 'สมาชิกระดับ VIP';
+    if (idx === 6) remark = 'เคยมีประวัติเลื่อนการเดินทาง (Pending Last Time)';
+    if (idx === 10) remark = 'เน้นห้องพักเงียบๆ ไม่ติดลิฟต์';
+
+    return {
+        ...c,
+        passportIssue: '2020-01-01',
+        passportExpire: '2030-01-01',
+        birthplace: 'BANGKOK',
+        email: '',
+        lineId: '',
+        remark: remark
+    };
+});
 
 export const INITIAL_BLACKLIST_DATA = [
     { id: 1, name: 'SOMBAT BADGUY', passport: 'A00000000', reason: 'หนีทัวร์ปี 2023' },
@@ -339,23 +369,25 @@ export const MOCK_BOOKING_GROUPS = [
 // Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group + Lucy individual)
 // Note: No billing notes yet, so all should show "จองแล้ว" (gray) status
 export const MOCK_PAX_IN_ROUND_101 = [
-    { ...MOCK_CUSTOMERS_DB[0], roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
-    { ...MOCK_CUSTOMERS_DB[1], roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
-    { ...MOCK_CUSTOMERS_DB[2], roomType: 'childNoBed', bookedBy: 3, paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
+    { ...MOCK_CUSTOMERS_DB[0], customerNote: MOCK_CUSTOMERS_DB[0].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
+    { ...MOCK_CUSTOMERS_DB[1], customerNote: MOCK_CUSTOMERS_DB[1].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
+    { ...MOCK_CUSTOMERS_DB[2], customerNote: MOCK_CUSTOMERS_DB[2].remark, remark: 'น้องขอนั่งติดพ่อแม่', roomType: 'childNoBed', bookedBy: 3, paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
 ];
 
 // Round 102: 5 pax (Sold: 5) - Indices 3-7 (Wasin + Tanakorn group)
 export const MOCK_PAX_IN_ROUND_102 = [
-    { ...MOCK_CUSTOMERS_DB[3], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
-    { ...MOCK_CUSTOMERS_DB[6], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
-    { ...MOCK_CUSTOMERS_DB[7], roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
-    { ...MOCK_CUSTOMERS_DB[10], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
-    { ...MOCK_CUSTOMERS_DB[11], roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
+    { ...MOCK_CUSTOMERS_DB[3], customerNote: MOCK_CUSTOMERS_DB[3].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
+    { ...MOCK_CUSTOMERS_DB[6], customerNote: MOCK_CUSTOMERS_DB[6].remark, remark: 'จองพร้อมกัน 2 ท่าน', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
+    { ...MOCK_CUSTOMERS_DB[7], customerNote: MOCK_CUSTOMERS_DB[7].remark, remark: '', roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
+    { ...MOCK_CUSTOMERS_DB[10], customerNote: MOCK_CUSTOMERS_DB[10].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
+    { ...MOCK_CUSTOMERS_DB[11], customerNote: MOCK_CUSTOMERS_DB[11].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
 ];
 
 // Round 201: 20 pax (Sold: 20) - Indices 10-29 (Corporate Group)
 export const MOCK_PAX_IN_ROUND_201 = getPax(15, 20).map((c, i) => ({
     ...c,
+    customerNote: c.remark || '',
+    remark: '',
     roomType: i % 3 === 0 ? 'adultSingle' : 'adultTwin',
     bookedBy: 3,
     paymentStatus: 'paid',
@@ -367,6 +399,8 @@ export const MOCK_PAX_IN_ROUND_201 = getPax(15, 20).map((c, i) => ({
 // Round 301: 25 pax (Sold: 25) - Indices 35-59 (Large Group)
 export const MOCK_PAX_IN_ROUND_301 = getPax(35, 25).map((c, i) => ({
     ...c,
+    customerNote: c.remark || '',
+    remark: '',
     roomType: i % 4 === 0 ? 'adultSingle' : 'adultTwin',
     bookedBy: 2,
     paymentStatus: 'paid',
@@ -382,6 +416,8 @@ export const MOCK_PAX_IN_ROUND_103 = getPax(60, 12).map((c, i) => {
     if (i >= 10) status = 'pending';
     return {
         ...c,
+        customerNote: c.remark || '',
+        remark: '',
         roomType: 'adultTwin',
         bookedBy: 3,
         paymentStatus: status,
@@ -394,23 +430,27 @@ export const MOCK_PAX_IN_ROUND_103 = getPax(60, 12).map((c, i) => {
 // Round 401: 20 pax (JP-TYO) - Indices 72-91
 export const MOCK_PAX_IN_ROUND_401 = getPax(72, 20).map((c, i) => ({
     ...c,
-    roomType: i % 2 === 0 ? 'adultTwin' : 'adultTwin',
+    customerNote: c.remark || '',
+    remark: '',
+    roomType: 'adultTwin',
     bookedBy: 2,
     paymentStatus: 'paid',
-    paymentDate: '2025-11-01',
+    paymentDate: '2026-01-05',
     uniqueId: `${c.id}-401`,
-    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf' }
+    attachments: { passport: 'pass.pdf', visa: null }
 }));
 
-// Round 402: 18 pax (KM-LS) - Indices 92-109
-export const MOCK_PAX_IN_ROUND_402 = getPax(92, 18).map((c, i) => ({
+// Round 402: 15 pax (CN-BEI) - Indices 92-106
+export const MOCK_PAX_IN_ROUND_402 = getPax(92, 15).map((c, i) => ({
     ...c,
+    customerNote: c.remark || '',
+    remark: '',
     roomType: 'adultTwin',
     bookedBy: 3,
     paymentStatus: 'paid',
-    paymentDate: '2025-11-15',
+    paymentDate: '2026-01-10',
     uniqueId: `${c.id}-402`,
-    attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf' }
+    attachments: { passport: 'pass.pdf', visa: 'visa.pdf' }
 }));
 
 
@@ -634,6 +674,7 @@ export const INITIAL_BILLING_NOTES = [
         totalAmount: 51800, // ยอดทั้งหมดที่ต้องชำระ
         previousPaid: 10400, // ยอดที่ชำระไปแล้ว
         billingAmount: 41400, // ยอดที่วางบิลครั้งนี้
+        paidAmount: 0, // ยอดที่ชำระจากใบวางบิลนี้
         status: 'pending', // 'pending', 'partial', 'paid'
         createdAt: '2026-01-15',
         createdBy: 2, // K.Boy
@@ -654,6 +695,7 @@ export const INITIAL_BILLING_NOTES = [
         totalAmount: 134500,
         previousPaid: 80700,
         billingAmount: 53800,
+        paidAmount: 0,
         status: 'pending',
         createdAt: '2026-01-14',
         createdBy: 4, // K.New
@@ -674,6 +716,7 @@ export const INITIAL_BILLING_NOTES = [
         totalAmount: 29900,
         previousPaid: 0,
         billingAmount: 29900,
+        paidAmount: 29900, // ชำระครบแล้ว
         status: 'paid',
         createdAt: '2026-01-13',
         createdBy: 3, // K.Anne
@@ -682,6 +725,48 @@ export const INITIAL_BILLING_NOTES = [
         bankAccountId: 1,
         paidAt: '2026-01-14',
         note: 'ลูกค้าโอนเงินสด'
+    },
+    {
+        id: 'RCP-260119-003',
+        paymentId: 7,
+        roundId: 101,
+        routeId: 1,
+        groupId: null,
+        customerName: 'A TEST',
+        billingType: 'individual',
+        paxIds: [1],
+        totalAmount: 25900,
+        previousPaid: 0,
+        billingAmount: 25900,
+        paidAmount: 0,
+        status: 'pending',
+        createdAt: '2026-01-19',
+        createdBy: 1,
+        dueDate: '2026-01-25',
+        paymentMethod: null,
+        bankAccountId: null,
+        note: 'รอชำระเงิน - เดี่ยว เงินสด'
+    },
+    {
+        id: 'RCP-100126-001',
+        paymentId: 8,
+        roundId: 201,
+        routeId: 2,
+        groupId: 'CORP-001',
+        customerName: 'CORPORATE BOOKING - ABC CO.',
+        billingType: 'group',
+        paxIds: [20, 21, 22, 23, 24],
+        totalAmount: 668100,
+        previousPaid: 0,
+        billingAmount: 668100,
+        paidAmount: 0,
+        status: 'pending',
+        createdAt: '2026-01-17',
+        createdBy: 1,
+        dueDate: '2026-10-17',
+        paymentMethod: null,
+        bankAccountId: null,
+        note: 'Corporate booking - รอโอนเงิน'
     }
 ];
 
