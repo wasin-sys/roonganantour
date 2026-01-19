@@ -155,10 +155,10 @@ export const MOCK_ROUNDS = [
         airline: 'TG',
         flight: 'TG614',
         seats: 25,
-        sold: 12,
-        paidCount: 8,
+        sold: 8,
+        paidCount: 2,
         pendingCount: 2,
-        partialCount: 2,
+        partialCount: 4,
         status: 'Selling',
         headId: 3,
         head: 'K.Anne',
@@ -366,21 +366,22 @@ export const MOCK_BOOKING_GROUPS = [
     { groupId: 'GRP-102-001', name: 'WASIN GARNSOMDEE GROUP', roundId: 102, totalAmount: 134500, paidAmount: 80700, balance: 53800, bookingType: 'group' }
 ];
 
-// Round 101: 3 pax (Sold: 3) - Indices 0-2 (Somchai group + Lucy individual)
-// Note: No billing notes yet, so all should show "จองแล้ว" (gray) status
+// Round 101: 3 pax (Sold: 3, Paid: 0, Partial: 2, Pending: 1)
+// K.Boy เป็นผู้รับผิดชอบ, ลูกค้า SOMCHAI GROUP จาก K.Boy และ LUCY จาก K.Anne
 export const MOCK_PAX_IN_ROUND_101 = [
-    { ...MOCK_CUSTOMERS_DB[0], customerNote: MOCK_CUSTOMERS_DB[0].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
-    { ...MOCK_CUSTOMERS_DB[1], customerNote: MOCK_CUSTOMERS_DB[1].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
-    { ...MOCK_CUSTOMERS_DB[2], customerNote: MOCK_CUSTOMERS_DB[2].remark, remark: 'น้องขอนั่งติดพ่อแม่', roomType: 'childNoBed', bookedBy: 3, paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
+    { ...MOCK_CUSTOMERS_DB[0], customerNote: MOCK_CUSTOMERS_DB[0].remark, remark: 'ขอที่นั่งหน้าสุดในรถบัส', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'ครอบครัวใจดี' },
+    { ...MOCK_CUSTOMERS_DB[1], customerNote: MOCK_CUSTOMERS_DB[1].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'ครอบครัวใจดี' },
+    { ...MOCK_CUSTOMERS_DB[2], customerNote: MOCK_CUSTOMERS_DB[2].remark, remark: 'ขอ Wheelchair Service ที่สนามบิน', roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual' }
 ];
 
-// Round 102: 5 pax (Sold: 5) - Indices 3-7 (Wasin + Tanakorn group)
+// Round 102: 5 pax (Sold: 5, Paid: 3, Partial: 2, Pending: 0)
+// K.New เป็นผู้รับผิดชอบ
 export const MOCK_PAX_IN_ROUND_102 = [
-    { ...MOCK_CUSTOMERS_DB[3], customerNote: MOCK_CUSTOMERS_DB[3].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102' },
-    { ...MOCK_CUSTOMERS_DB[6], customerNote: MOCK_CUSTOMERS_DB[6].remark, remark: 'จองพร้อมกัน 2 ท่าน', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102' },
-    { ...MOCK_CUSTOMERS_DB[7], customerNote: MOCK_CUSTOMERS_DB[7].remark, remark: '', roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102' },
-    { ...MOCK_CUSTOMERS_DB[10], customerNote: MOCK_CUSTOMERS_DB[10].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102' },
-    { ...MOCK_CUSTOMERS_DB[11], customerNote: MOCK_CUSTOMERS_DB[11].remark, remark: '', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102' }
+    { ...MOCK_CUSTOMERS_DB[3], customerNote: MOCK_CUSTOMERS_DB[3].remark, remark: 'VIP ขอห้องพักวิวดี', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '4-102', bookingType: 'individual' },
+    { ...MOCK_CUSTOMERS_DB[6], customerNote: MOCK_CUSTOMERS_DB[6].remark, remark: 'จองพร้อมกัน 2 ท่าน', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-01', uniqueId: '5-102', groupId: 'GRP-102-001', bookingType: 'group', groupName: 'กลุ่มคุณธนากร' },
+    { ...MOCK_CUSTOMERS_DB[7], customerNote: MOCK_CUSTOMERS_DB[7].remark, remark: '', roomType: 'adultSingle', bookedBy: 4, paymentStatus: 'paid', paymentDate: '2025-10-02', uniqueId: '6-102', groupId: 'GRP-102-001', bookingType: 'group', groupName: 'กลุ่มคุณธนากร' },
+    { ...MOCK_CUSTOMERS_DB[10], customerNote: MOCK_CUSTOMERS_DB[10].remark, remark: 'รอโอนเพิ่มอีก 10,000 บาท', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '7-102', bookingType: 'individual' },
+    { ...MOCK_CUSTOMERS_DB[11], customerNote: '', remark: 'จองคู่กับคุณ Malee', roomType: 'adultTwin', bookedBy: 4, paymentStatus: 'partial', paymentDate: '2025-10-03', uniqueId: '8-102', bookingType: 'individual' }
 ];
 
 // Round 201: 20 pax (Sold: 20) - Indices 10-29 (Corporate Group)
@@ -393,6 +394,9 @@ export const MOCK_PAX_IN_ROUND_201 = getPax(15, 20).map((c, i) => ({
     paymentStatus: 'paid',
     paymentDate: '2025-10-15',
     uniqueId: `${c.id}-201`,
+    bookingType: 'group',
+    groupId: 'GRP-201-001',
+    groupName: 'บริษัท ABC Co.',
     attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: c.nationality !== 'THAI' ? 'visa.pdf' : null }
 }));
 
@@ -406,24 +410,30 @@ export const MOCK_PAX_IN_ROUND_301 = getPax(35, 25).map((c, i) => ({
     paymentStatus: 'paid',
     paymentDate: '2025-11-01',
     uniqueId: `${c.id}-301`,
+    bookingType: 'group',
+    groupId: 'GRP-301-001',
+    groupName: 'กลุ่มใหญ่ 301',
     attachments: { passport: 'pass.pdf', ticket: 'ticket.pdf', insurance: 'ins.pdf', prepDoc: 'doc.pdf', visa: c.nationality !== 'THAI' ? 'visa.pdf' : null }
 }));
 
-// Round 103: 12 pax (Sold: 12) - Indices 60-71 (Mix Group)
-export const MOCK_PAX_IN_ROUND_103 = getPax(60, 12).map((c, i) => {
+// Round 103: 8 pax (Sold: 8) - Indices 60-67 (Mix Group)
+export const MOCK_PAX_IN_ROUND_103 = getPax(60, 8).map((c, i) => {
     let status = 'paid';
-    if (i >= 8 && i < 10) status = 'partial';
-    if (i >= 10) status = 'pending';
+    if (i >= 2 && i < 6) status = 'partial'; // 4 partial
+    if (i >= 6) status = 'pending'; // 2 pending
     return {
         ...c,
         customerNote: c.remark || '',
-        remark: '',
+        remark: i === 0 ? 'ขอห้องพักชั้นล่าง' : (i === 3 ? 'มาพร้อมครอบครัว 4 คน' : ''),
         roomType: 'adultTwin',
-        bookedBy: 3,
+        bookedBy: 3, // K.Anne
         paymentStatus: status,
         paymentDate: status === 'pending' ? null : '2025-12-01',
         uniqueId: `${c.id}-103`,
-        attachments: { passport: i < 8 ? 'pass.pdf' : null, visa: null }
+        bookingType: i < 4 ? 'group' : 'individual',
+        groupId: i < 4 ? 'GRP-103-001' : null,
+        groupName: i < 4 ? 'กลุ่มครอบครัว 103' : undefined,
+        attachments: { passport: i < 4 ? 'pass.pdf' : null, visa: null }
     };
 });
 

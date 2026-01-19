@@ -1006,7 +1006,7 @@ export default function TourSystemApp() {
                                       <th className="px-4 py-2 w-10">#</th>
                                       <th className="px-4 py-2">ชื่อ-นามสกุล</th>
                                       <th className="px-4 py-2">Passport</th>
-                                      <th className="px-4 py-2">หมายเหตุ</th>
+                                      <th className="px-4 py-2 min-w-[200px]">หมายเหตุ</th>
                                       <th className="px-4 py-2 text-center">สถานะการเงิน</th>
                                       <th className="px-4 py-2">เอกสารที่ขาด</th>
                                     </tr>
@@ -1020,27 +1020,31 @@ export default function TourSystemApp() {
                                           <div className="text-xs text-gray-500">{c.phone || '-'}</div>
                                         </td>
                                         <td className="px-4 py-2 font-mono text-xs text-gray-600">
-                                          {c.passportNo || <span className="text-red-400 italic">Pending</span>}
+                                          {c.passportNo || <span className="text-red-400 italic">รอข้อมูล</span>}
                                         </td>
-                                        <td className="px-4 py-2">
-                                          <div className="flex flex-col gap-0.5 max-w-[150px]">
+                                        {/* หมายเหตุ - ปรับให้อ่านง่ายขึ้น */}
+                                        <td className="px-4 py-3">
+                                          <div className="flex flex-col gap-1.5 max-w-[280px]">
                                             {c.customerNote && (
-                                              <div className="text-[10px] text-gray-400 italic truncate" title={`DB Note: ${c.customerNote}`}>
-                                                📌 {c.customerNote}
+                                              <div className="flex items-start gap-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
+                                                <Pin size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                                                <span className="text-sm text-amber-800 leading-relaxed">{c.customerNote}</span>
                                               </div>
                                             )}
                                             {c.remark && (
-                                              <div className="text-[10px] text-[#03b8fa] font-medium truncate" title={`Booking Note: ${c.remark}`}>
-                                                📝 {c.remark}
+                                              <div className="flex items-start gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100">
+                                                <Edit2 size={12} className="text-[#03b8fa] mt-0.5 flex-shrink-0" />
+                                                <span className="text-sm text-gray-700 leading-relaxed">{c.remark}</span>
                                               </div>
                                             )}
-                                            {!c.customerNote && !c.remark && <span className="text-gray-300 text-[10px]">-</span>}
+                                            {!c.customerNote && !c.remark && <span className="text-gray-300 text-sm">-</span>}
                                           </div>
                                         </td>
+                                        {/* สถานะการเงิน - เป็นภาษาไทย */}
                                         <td className="px-4 py-2 text-center">
                                           {c.paymentStatus === 'paid' ?
-                                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold"><CheckCircle size={10} /> PAID</span> :
-                                            <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">PENDING</span>
+                                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-xs font-bold"><CheckCircle size={12} /> ชำระแล้ว</span> :
+                                            <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-lg text-xs font-bold"><Clock size={12} /> ค้างชำระ</span>
                                           }
                                         </td>
                                         <td className="px-4 py-2">
@@ -1714,17 +1718,22 @@ export default function TourSystemApp() {
                 const isFull = round.sold >= round.seats;
                 const prices = round.price || selectedRoute.price || {};
 
+                // คำนวณสถานะการชำระจาก pax จริง แทนที่จะใช้ค่า static
+                const allPaxForRound = getPaxForRound(round.id);
+                const dynamicPaidCount = allPaxForRound.filter(p => p.paymentStatus === 'paid').length;
+                const dynamicPendingCount = allPaxForRound.filter(p => p.paymentStatus === 'pending' || !p.paymentStatus).length;
+                const dynamicPartialCount = allPaxForRound.filter(p => p.paymentStatus === 'partial').length;
+                const dynamicSoldCount = allPaxForRound.length;
+
                 return (
                   <div key={round.id} className="border border-gray-200 rounded-lg group hover:border-[#03b8fa] hover:shadow-md transition-all duration-200">
                     {/* Main Row */}
                     <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-5 py-4 cursor-pointer" onClick={() => {
                       setSelectedRound({ ...round, price: prices });
                       setBookingDetails(prev => ({ ...prev, contactName: round.head || '' }));
-                      // Auto-populate unpaid pax to bookingPaxList
-                      const allPax = getPaxForRound(round.id);
-                      const unpaidPax = allPax.filter(p => p.paymentStatus === 'pending' || p.paymentStatus === 'partial');
-                      setBookingPaxList(unpaidPax);
-                      setSelectedPaxForBooking(unpaidPax.map(p => p.id));
+                      // Auto-populate ALL pax to bookingPaxList (not just unpaid)
+                      setBookingPaxList(allPaxForRound);
+                      setSelectedPaxForBooking(allPaxForRound.filter(p => p.paymentStatus !== 'paid').map(p => p.id));
                       setBookingStep(3);
                     }}>
                       <div className="flex-1 min-w-[60px] font-bold text-[#03b8fa] text-lg">{round.airline}</div>
@@ -1734,13 +1743,13 @@ export default function TourSystemApp() {
                       <div className="flex-1 min-w-[80px] text-center text-sm text-gray-600 truncate" title={round.head}>{round.head || '-'}</div>
                       <div className="flex-1 min-w-[50px] text-center text-sm font-bold text-gray-700">{round.seats}</div>
                       <div className="flex-1 min-w-[60px] text-center">
-                        <span className="inline-block min-w-[28px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{round.paidCount || 0}</span>
+                        <span className="inline-block min-w-[28px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{dynamicPaidCount}</span>
                       </div>
                       <div className="flex-1 min-w-[60px] text-center">
-                        <span className="inline-block min-w-[28px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded">{round.pendingCount || 0}</span>
+                        <span className="inline-block min-w-[28px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded">{dynamicPendingCount}</span>
                       </div>
                       <div className="flex-1 min-w-[60px] text-center">
-                        <span className="inline-block min-w-[28px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">{round.partialCount || 0}</span>
+                        <span className="inline-block min-w-[28px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">{dynamicPartialCount}</span>
                       </div>
                       <div className="flex-1 min-w-[70px] text-center">
                         {round.approved ? (
@@ -1800,7 +1809,33 @@ export default function TourSystemApp() {
               </div>
             </div>
 
-            {/* Passengers are now shown in their respective Individual or Group tables below */}
+            {/* === สรุปสถานะการชำระเงิน (ตรงกับหน้า Round Selection) === */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 mb-4 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wallet size={18} className="text-gray-500" />
+                  <span className="font-bold text-gray-700">สรุปสถานะการชำระเงิน</span>
+                  <span className="text-sm text-gray-500">({bookingPaxList.length} ท่าน)</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                      <CheckCircle size={12} /> ชำระแล้ว: {bookingPaxList.filter(p => p.paymentStatus === 'paid').length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                      <Clock size={12} /> รอชำระ: {bookingPaxList.filter(p => p.paymentStatus === 'pending' || !p.paymentStatus).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                      <DollarSign size={12} /> ชำระบางส่วน: {bookingPaxList.filter(p => p.paymentStatus === 'partial').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Booking Customization Area */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 space-y-4">
@@ -2496,193 +2531,163 @@ export default function TourSystemApp() {
           </div>
         </header>
 
-        {/* === PROMINENT ALERT CARDS === */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* 1. Birthday Alert */}
-          {(() => {
-            const birthdayPax = paxList.filter(p => {
-              if (!p.dob) return false;
-              const dobMonth = new Date(p.dob).getMonth();
-              // Check if tour date range might include birthday (simplified check)
-              const tourMonth = selectedOpRound.date?.split(' ')[1]?.toLowerCase();
-              const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
-              return dobMonth === monthMap[tourMonth?.slice(0, 3)?.toLowerCase()];
-            });
+        {/* === MODERN COMPACT STATUS STRIP === */}
+        {(() => {
+          const ticketCount = Object.values(paxTaskStatus).filter(t => t.ticket?.checked).length;
+          const prepDocCount = Object.values(paxTaskStatus).filter(t => t.prepDoc?.checked).length;
+          const totalPax = paxList.length;
+          const ticketPercent = totalPax > 0 ? Math.round((ticketCount / totalPax) * 100) : 0;
+          const prepPercent = totalPax > 0 ? Math.round((prepDocCount / totalPax) * 100) : 0;
 
-            const getMonthName = (dateStr) => {
-              const d = new Date(dateStr);
-              return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-            };
+          const birthdayPax = paxList.filter(p => {
+            if (!p.dob) return false;
+            const dobMonth = new Date(p.dob).getMonth();
+            const tourMonth = selectedOpRound.date?.split(' ')[1]?.toLowerCase();
+            const monthMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+            return dobMonth === monthMap[tourMonth?.slice(0, 3)?.toLowerCase()];
+          });
+          const foreignerCount = paxList.filter(p => p.nationality !== 'THAI').length;
 
-            return birthdayPax.length > 0 ? (
-              <div className="bg-pink-50 rounded-xl p-4 border-2 border-pink-200 shadow-sm relative overflow-hidden group">
-                {/* Decorative Icon Background */}
-                <div className="absolute right-[-10px] top-[-10px] opacity-10 rotate-12 group-hover:rotate-45 transition-all duration-700">
-                  <Gift size={80} className="text-pink-400" />
+          return (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 mb-4 flex flex-wrap items-center gap-4">
+              {/* ตั๋วเครื่องบิน - Mini */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${ticketPercent === 100 ? 'bg-sky-100 text-sky-600' : 'bg-rose-100 text-rose-600'}`}>
+                  {ticketPercent}%
                 </div>
-
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-pink-200/50 p-2 rounded-full text-pink-600">
-                      <Gift size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-pink-800">🎂 วันเกิดลูกทัวร์!</h4>
-                      <p className="text-xs text-pink-600 font-medium">{birthdayPax.length} ท่านมีวันเกิดในทริปนี้</p>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 max-h-[85px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
-                    <div className="flex flex-wrap gap-1.5">
-                      {birthdayPax.map((p, idx) => (
-                        <div key={`${p.id}-${idx}`} className="bg-white/90 border border-pink-100 px-2 py-1 rounded shadow-sm flex items-center gap-1.5 transition-transform hover:scale-105">
-                          <span className="text-[10px] font-bold text-pink-700">{p.firstNameEn}</span>
-                          <span className="text-[9px] bg-pink-100 text-pink-500 px-1 rounded-full font-bold">{getMonthName(p.dob)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-[10px] mt-3 text-pink-400 flex items-center gap-1">
-                    <AlertTriangle size={10} /> แนะนำ: เตรียมเค้กหรือเซอร์ไพรส์พิเศษ
-                  </p>
+                <div className="flex items-center gap-1.5">
+                  <Plane size={14} className={ticketPercent === 100 ? 'text-sky-500' : 'text-rose-500'} />
+                  <span className="text-sm font-medium text-gray-700">ตั๋วบิน</span>
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${ticketPercent === 100 ? 'bg-sky-100 text-sky-700' : 'bg-rose-100 text-rose-700'}`}>{ticketCount}/{totalPax}</span>
                 </div>
               </div>
-            ) : (
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <div className="flex items-center gap-3 text-gray-400 opacity-60">
-                  <div className="bg-gray-100 p-2 rounded-full">
-                    <Gift size={24} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm">วันเกิดลูกทัวร์</h4>
-                    <p className="text-xs">ไม่มีวันเกิดในช่วงทริปนี้</p>
-                  </div>
+
+              {/* ใบเตรียมตัว - Mini */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${prepPercent === 100 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                  {prepPercent}%
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <FileText size={14} className={prepPercent === 100 ? 'text-emerald-500' : 'text-amber-500'} />
+                  <span className="text-sm font-medium text-gray-700">ใบเตรียมตัว</span>
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${prepPercent === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{prepDocCount}/{totalPax}</span>
                 </div>
               </div>
-            );
-          })()}
 
-          {/* 2. Travel Prep Document - Per Passenger Progress */}
-          {(() => {
-            const prepDocCount = Object.values(paxTaskStatus).filter(t => t.prepDoc?.checked).length;
-            const totalPax = paxList.length;
-            const percent = totalPax > 0 ? Math.round((prepDocCount / totalPax) * 100) : 0;
-            const isComplete = prepDocCount === totalPax && totalPax > 0;
-            return (
-              <div className={`rounded-xl p-4 border transition-all shadow-sm ${isComplete ? 'bg-emerald-50 border-emerald-200' : percent > 0 ? 'bg-amber-50 border-amber-200' : 'bg-orange-50/50 border-orange-200'}`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-full ${isComplete ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {isComplete ? <CheckCircle size={24} /> : <FileIcon size={24} />}
+              {/* Divider */}
+              <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+
+              {/* วันเกิด - Compact */}
+              {birthdayPax.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-50 border border-pink-100 cursor-pointer group" title={birthdayPax.map(p => `${p.firstNameTh || p.firstNameEn}`).join(', ')}>
+                  <Gift size={14} className="text-pink-500" />
+                  <span className="text-sm font-medium text-pink-700">🎂 {birthdayPax.length} ท่าน</span>
+                  <div className="hidden group-hover:flex gap-1 animate-fade-in">
+                    {birthdayPax.slice(0, 2).map((p, i) => (
+                      <span key={i} className="text-xs bg-white px-1.5 py-0.5 rounded border border-pink-200 text-pink-600 font-medium">{p.firstNameTh || p.firstNameEn}</span>
+                    ))}
+                    {birthdayPax.length > 2 && <span className="text-xs text-pink-500">+{birthdayPax.length - 2}</span>}
                   </div>
-                  <div className="flex-1">
-                    <h4 className={`font-bold text-sm ${isComplete ? 'text-emerald-800' : 'text-orange-800'}`}>
-                      ใบเตรียมตัวเดินทาง
-                    </h4>
-                    <p className={`text-[11px] font-medium ${isComplete ? 'text-emerald-600' : 'text-orange-600'}`}>
-                      {isComplete ? '✅ ส่งครบทุกคนแล้ว' : `⚠️ ส่งแล้ว ${prepDocCount}/${totalPax} ท่าน`}
-                    </p>
-                  </div>
-                  <span className={`text-xl font-black ${isComplete ? 'text-emerald-500' : 'text-orange-500'}`}>{percent}%</span>
                 </div>
-                <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-emerald-500' : 'bg-orange-400'}`} style={{ width: `${percent}%` }}></div>
+              )}
+
+              {/* ต่างชาติ - Compact */}
+              {foreignerCount > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-100">
+                  <Globe size={14} className="text-orange-500" />
+                  <span className="text-sm font-medium text-orange-700">⚠️ ต่างชาติ {foreignerCount}</span>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-3 italic italic opacity-80">คลิกที่คอลัมน์ "ใบเตรียมตัว" เพื่อบันทึกผล</p>
+              )}
+
+              {/* Overall Progress - Right aligned */}
+              <div className="ml-auto flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-[10px] text-gray-400 uppercase font-bold">ภาพรวม</div>
+                  <div className="text-lg font-black text-[#03b8fa]">{operationProgress.percent}%</div>
+                </div>
+                <div className="relative w-10 h-10">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-gray-100" />
+                    <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-[#03b8fa]" strokeDasharray={100.5} strokeDashoffset={100.5 * (1 - operationProgress.percent / 100)} strokeLinecap="round" />
+                  </svg>
+                </div>
               </div>
-            );
-          })()}
+            </div>
+          );
+        })()}
 
-          {/* 3. Flight Ticket - Per Passenger Progress */}
-          {(() => {
-            const ticketCount = Object.values(paxTaskStatus).filter(t => t.ticket?.checked).length;
-            const totalPax = paxList.length;
-            const percent = totalPax > 0 ? Math.round((ticketCount / totalPax) * 100) : 0;
-            const isComplete = ticketCount === totalPax && totalPax > 0;
-            return (
-              <div className={`rounded-xl p-4 border transition-all shadow-sm ${isComplete ? 'bg-sky-50 border-sky-200' : percent > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-rose-50 border-rose-200'}`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-full ${isComplete ? 'bg-sky-100 text-sky-600' : 'bg-rose-100 text-rose-600'}`}>
-                    {isComplete ? <CheckCircle size={24} /> : <Plane size={24} />}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className={`font-bold text-sm ${isComplete ? 'text-sky-800' : 'text-rose-800'}`}>
-                      ตั๋วเครื่องบิน
-                    </h4>
-                    <p className={`text-[11px] font-medium ${isComplete ? 'text-sky-600' : 'text-rose-600'}`}>
-                      {isComplete ? '✅ แนบตั๋วครบทุกคนแล้ว' : `❌ แนบแล้ว ${ticketCount}/${totalPax} ท่าน`}
-                    </p>
-                  </div>
-                  <span className={`text-xl font-black ${isComplete ? 'text-sky-500' : 'text-rose-500'}`}>{percent}%</span>
-                </div>
-                <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-sky-500' : 'bg-rose-400'}`} style={{ width: `${percent}%` }}></div>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-3 italic opacity-80">คลิกที่คอลัมน์ "ตั๋วบิน" เพื่ออัปโหลดไฟล์</p>
-              </div>
-            );
-          })()}
-
-        </div>
-
-        {/* PDPA & Data Security Notice */}
-        <div className="bg-sky-50 rounded-xl p-4 border border-sky-100 shadow-sm mb-6 flex items-center gap-4 animate-fade-in">
-          <div className="bg-sky-100 p-2 rounded-full text-[#03b8fa]">
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-            <h4 className="font-bold text-gray-800 text-sm">Tour Privacy & PDPA Notice:</h4>
-            <p className="text-xs text-gray-600">
-              เอกสารสำคัญของลูกทัวร์ (พาสปอร์ต/วีซ่า/ตั๋ว) จะถูกจัดเก็บเฉพาะกิจสำหรับกรุ๊ปทัวร์นี้ และจะถูก <span className="text-red-600 font-bold uppercase underline">ลบทิ้งถาวรภายใน 5 วัน</span> หลังจบวันทัวร์ เพื่อความปลอดภัยของข้อมูลลูกค้า
-            </p>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-end mb-4">
-                <h3 className="font-bold text-gray-800">ความคืบหน้าภาพรวม</h3>
-                <span className="text-2xl font-bold text-[#03b8fa]">{operationProgress.percent}%</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-4 mb-6 relative overflow-hidden">
-                <div
-                  className="bg-[#03b8fa] h-full rounded-full transition-all duration-700 ease-out shadow-sm"
-                  style={{ width: `${operationProgress.percent}%` }}
-                >
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+          <div className="lg:col-span-1 space-y-4">
+            {/* 1. OP Staff Section - ย้ายขึ้นมาบนสุด */}
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <UserCheck size={18} className="text-[#03b8fa]" /> OP Staff ผู้ดูแล
+              </h3>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-10 h-10 bg-[#03b8fa] rounded-full flex items-center justify-center text-white font-bold">
+                  {selectedOpRound.head?.charAt(0) || 'O'}
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800">{selectedOpRound.head}</p>
+                  <p className="text-xs text-gray-500">ผู้รับผิดชอบเอกสาร</p>
                 </div>
               </div>
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">รายละเอียดงาน</h4>
+              {isManager && (
+                <button className="mt-3 w-full text-xs bg-gray-100 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-200 transition">
+                  เปลี่ยน OP Staff
+                </button>
+              )}
+            </div>
+
+            {/* 2. ความคืบหน้าภาพรวม */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-gray-800 text-sm">ความคืบหน้าภาพรวม</h3>
+                <span className="text-xl font-black text-[#03b8fa]">{operationProgress.percent}%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-4 overflow-hidden">
+                <div
+                  className="bg-[#03b8fa] h-full rounded-full transition-all duration-700"
+                  style={{ width: `${operationProgress.percent}%` }}
+                ></div>
+              </div>
+              <div className="space-y-2">
                 {INDIVIDUAL_TASKS.map(task => (
-                  <div key={task.key} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-transparent hover:border-[#d9edf4] transition-colors">
+                  <div key={task.key} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-md ${task.bg} ${task.color}`}>
-                        <task.icon size={14} />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{task.label}</span>
+                      <task.icon size={14} className={task.color} />
+                      <span className="text-gray-600">{task.label}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-800">
+                    <span className="font-bold text-gray-700">
                       {operationProgress.breakdown[task.key]}/{operationProgress.paxCount}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-            {/* OP Staff Section */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2"><UserCheck size={18} /> OP Staff ผู้ดูแล</h3>
-              <p className="text-sm text-gray-600 mb-3">ผู้รับผิดชอบเอกสาร: <strong className="text-[#03b8fa]">{selectedOpRound.head}</strong></p>
-              {isManager && <button className="text-xs bg-gray-50 text-gray-600 px-3 py-1 rounded border border-gray-200 hover:bg-gray-100">เปลี่ยน OP Staff</button>}
-            </div>
 
-            {/* Tour Guide Section */}
-            <div className="bg-[#d9edf4] rounded-xl p-6 border border-[#6bc8e9]">
-              <h3 className="font-bold text-[#0279a9] mb-2 flex items-center gap-2"><Users size={18} /> ไกด์ / หัวหน้าทัวร์</h3>
-              <p className="text-sm text-[#03b8fa] mb-3">ไกด์นำเที่ยว: <strong>{selectedOpRound.guide || 'ยังไม่กำหนด'}</strong></p>
-              {isManager && (
+            {/* 3. Tour Guide Section - ปรับสีใหม่ให้อ่านง่าย */}
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Users size={18} className="text-purple-500" /> ไกด์ / หัวหน้าทัวร์
+              </h3>
+
+              {/* แสดงชื่อไกด์ */}
+              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg mb-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                  {selectedOpRound.guide?.charAt(0) || '?'}
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800">{selectedOpRound.guide || 'ยังไม่กำหนด'}</p>
+                  <p className="text-xs text-gray-500">ไกด์นำเที่ยว</p>
+                </div>
+              </div>
+
+              {/* Dropdown เฉพาะ Manager */}
+              {isManager ? (
                 <select
-                  className="text-xs bg-white text-[#03b8fa] px-3 py-1.5 rounded border border-[#6bc8e9] w-full outline-none focus:border-[#03b8fa]"
+                  className="text-sm bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 w-full outline-none focus:border-purple-400 mb-3"
                   value={selectedOpRound.guideId || ''}
                   onChange={(e) => {
                     const guideId = Number(e.target.value) || null;
@@ -2696,64 +2701,70 @@ export default function TourSystemApp() {
                     <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                   ))}
                 </select>
+              ) : (
+                <p className="text-xs text-gray-400 mb-3">ดูได้อย่างเดียว (Manager เท่านั้นที่สามารถเปลี่ยนได้)</p>
               )}
 
-              {/* Guide Checkboxes */}
-              {selectedOpRound.guideId && (
-                <div className="mt-4 pt-4 border-t border-[#6bc8e9] space-y-3">
-                  <div className="flex items-center justify-between group cursor-pointer"
-                    onClick={() => toggleGuideTask(selectedOpRound.id, 'ticket')}>
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded transition-colors ${guideTaskStatus[selectedOpRound.id]?.ticket ? 'bg-green-100 text-green-600' : 'bg-white/50 text-[#03b8fa]'}`}>
-                        <Plane size={14} />
+              {/* Guide Checkboxes - ถ้ามีไกด์แล้ว */}
+              {selectedOpRound.guideId && (() => {
+                // ผู้ที่สามารถใช้งาน checkbox ได้: Manager, OP Staff (Head), หรือ ไกด์ที่ถูกกำหนด
+                const canEditGuideTask = isManager || currentUser.id === selectedOpRound.headId || currentUser.id === selectedOpRound.guideId;
+
+                return (
+                  <div className="pt-3 border-t border-gray-100 space-y-2">
+                    <p className="text-xs text-gray-400 font-medium mb-2">เอกสารที่ส่งมอบแล้ว:</p>
+                    <div
+                      className={`flex items-center justify-between p-2.5 rounded-lg border ${guideTaskStatus[selectedOpRound.id]?.ticket ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'} ${canEditGuideTask ? 'cursor-pointer hover:border-gray-300' : ''}`}
+                      onClick={() => canEditGuideTask && toggleGuideTask(selectedOpRound.id, 'ticket')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Plane size={14} className={guideTaskStatus[selectedOpRound.id]?.ticket ? 'text-green-600' : 'text-gray-400'} />
+                        <span className={`text-sm ${guideTaskStatus[selectedOpRound.id]?.ticket ? 'text-green-700 font-medium' : 'text-gray-600'}`}>ตั๋วเครื่องบิน</span>
                       </div>
-                      <span className="text-sm font-medium text-[#0279a9]">ตั๋วเครื่องบิน</span>
+                      {guideTaskStatus[selectedOpRound.id]?.ticket ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-gray-300" />}
                     </div>
-                    {guideTaskStatus[selectedOpRound.id]?.ticket ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-[#03b8fa]" />}
-                  </div>
-                  <div className="flex items-center justify-between group cursor-pointer"
-                    onClick={() => toggleGuideTask(selectedOpRound.id, 'hotel')}>
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded transition-colors ${guideTaskStatus[selectedOpRound.id]?.hotel ? 'bg-green-100 text-green-600' : 'bg-white/50 text-[#03b8fa]'}`}>
-                        <Bed size={14} />
+                    <div
+                      className={`flex items-center justify-between p-2.5 rounded-lg border ${guideTaskStatus[selectedOpRound.id]?.hotel ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'} ${canEditGuideTask ? 'cursor-pointer hover:border-gray-300' : ''}`}
+                      onClick={() => canEditGuideTask && toggleGuideTask(selectedOpRound.id, 'hotel')}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Bed size={14} className={guideTaskStatus[selectedOpRound.id]?.hotel ? 'text-green-600' : 'text-gray-400'} />
+                        <span className={`text-sm ${guideTaskStatus[selectedOpRound.id]?.hotel ? 'text-green-700 font-medium' : 'text-gray-600'}`}>ที่พัก / โรงแรม</span>
                       </div>
-                      <span className="text-sm font-medium text-[#0279a9]">ที่พัก / โรงแรม</span>
+                      {guideTaskStatus[selectedOpRound.id]?.hotel ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-gray-300" />}
                     </div>
-                    {guideTaskStatus[selectedOpRound.id]?.hotel ? <CheckSquare size={18} className="text-green-600" /> : <Square size={18} className="text-[#03b8fa]" />}
+                    {!canEditGuideTask && (
+                      <p className="text-[10px] text-gray-400 text-center mt-2">เฉพาะ Manager, OP Staff หรือ ไกด์ที่ถูกกำหนด เท่านั้นที่แก้ไขได้</p>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
-            {/* Travel Preparation Document Section */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <FileText size={18} /> ใบเตรียมตัวการเดินทาง
-              </h3>
+            {/* 4. Travel Prep Document - เฉพาะ Manager/Head เท่านั้น */}
+            {(isManager || currentUser.id === selectedOpRound.headId) && (
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <FileText size={18} className="text-orange-500" /> ใบเตรียมตัวการเดินทาง
+                </h3>
 
-              {selectedOpRound.prepDocument ? (
-                // Document exists - Show download option
-                <div className="space-y-3">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText size={20} className="text-green-600" />
-                      <div>
-                        <p className="text-sm font-medium text-green-800">{selectedOpRound.prepDocument}</p>
-                        <p className="text-xs text-green-600">อัปโหลดแล้ว</p>
+                {selectedOpRound.prepDocument ? (
+                  <div className="space-y-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium text-green-800">{selectedOpRound.prepDocument}</p>
+                          <p className="text-xs text-green-600">อัปโหลดแล้ว</p>
+                        </div>
                       </div>
+                      <button
+                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1"
+                        onClick={() => alert(`กำลังดาวน์โหลด: ${selectedOpRound.prepDocument}`)}
+                      >
+                        <Download size={14} /> ดาวน์โหลด
+                      </button>
                     </div>
-                    <button
-                      className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-1"
-                      onClick={() => {
-                        alert(`กำลังดาวน์โหลด: ${selectedOpRound.prepDocument}\n\n(Demo: ไฟล์จะถูกดาวน์โหลดในระบบจริง)`);
-                      }}
-                    >
-                      <Download size={14} /> ดาวน์โหลด
-                    </button>
-                  </div>
-
-                  {/* Replace option for Manager/Head */}
-                  {(isManager || currentUser.id === selectedOpRound.headId) && (
                     <label className="block text-center text-xs text-gray-500 hover:text-[#03b8fa] cursor-pointer">
                       <input
                         type="file"
@@ -2770,18 +2781,13 @@ export default function TourSystemApp() {
                       />
                       เปลี่ยนไฟล์
                     </label>
-                  )}
-                </div>
-              ) : (
-                // No document yet
-                <div className="space-y-3">
-                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
-                    <FileText size={32} className="mx-auto text-gray-300 mb-2" />
-                    <p className="text-sm text-gray-500">ยังไม่มีใบเตรียมตัวการเดินทาง</p>
                   </div>
-
-                  {/* Upload option for Manager/Head only */}
-                  {(isManager || currentUser.id === selectedOpRound.headId) ? (
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
+                      <FileText size={28} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-500">ยังไม่มีใบเตรียมตัว</p>
+                    </div>
                     <label className="block w-full bg-[#03b8fa] text-white py-2 rounded-lg text-sm font-bold hover:bg-[#0279a9] cursor-pointer text-center transition">
                       <input
                         type="file"
@@ -2798,37 +2804,36 @@ export default function TourSystemApp() {
                       />
                       <Upload size={14} className="inline mr-1" /> อัปโหลดใบเตรียมตัว
                     </label>
-                  ) : (
-                    <p className="text-xs text-gray-400 text-center">รอ Manager หรือ OP Staff อัปโหลด</p>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-800">รายชื่อลูกทัวร์ & สถานะเอกสาร ({paxList.length} ท่าน)</h3><div className="relative"><Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search pax..." className="pl-9 pr-4 py-1 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" /></div></div>
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="font-bold text-gray-800 text-base">รายชื่อลูกทัวร์ & สถานะเอกสาร ({paxList.length} ท่าน)</h3>
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder="ค้นหา..." className="pl-9 pr-4 py-1.5 border border-gray-200 rounded-full text-sm outline-none focus:border-[#6bc8e9]" />
+              </div>
+            </div>
             <div className="overflow-auto flex-1 p-2">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 sticky top-0 z-10 text-xs uppercase tracking-wider font-semibold shadow-sm">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10 text-sm font-bold">
                   <tr className="border-b-2 border-gray-200">
-                    <th className="px-3 py-3 w-12 text-center align-bottom border-b-2 border-gray-100">#</th>
-                    <th className="px-4 py-3 min-w-[200px] align-bottom border-b-2 border-gray-100 text-left">ชื่อ-นามสกุล / พาสปอร์ต</th>
-                    <th className="px-4 py-3 min-w-[150px] align-bottom border-b-2 border-gray-100 text-left">หมายเหตุ</th>
+                    <th className="px-3 py-3 w-12 text-center">#</th>
+                    <th className="px-4 py-3 min-w-[280px] text-left">ชื่อ-นามสกุล</th>
+                    <th className="px-4 py-3 min-w-[220px] text-left">หมายเหตุ</th>
                     {INDIVIDUAL_TASKS.map((task, idx) => (
-                      <th
-                        key={task.key}
-                        className={`px-2 py-3 text-center w-24 align-bottom border-b-2 border-gray-100 ${idx === 0 ? 'border-l-2 border-gray-200' : ''}`}
-                      >
-                        <div className="flex flex-col items-center justify-end gap-1 h-full min-h-[30px]">
-                          <span className={`${task.key === 'insurance' ? 'mb-0' : 'mb-1'}`}>{task.label}</span>
+                      <th key={task.key} className={`px-2 py-3 text-center w-20 text-xs ${idx === 0 ? 'border-l border-gray-200' : ''}`}>
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{task.label}</span>
                           {task.key === 'insurance' && (
                             <button
                               onClick={() => toggleAllTask('insurance')}
-                              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all transform active:scale-95 ${paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked)
-                                ? 'bg-green-100 text-green-700 border-green-200 shadow-sm'
-                                : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
-                                }`}
-                              title={paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked) ? "Uncheck All" : "Check All"}
+                              className={`text-[9px] px-2 py-0.5 rounded-full border ${paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked)
+                                ? 'bg-green-100 text-green-700 border-green-200'
+                                : 'bg-white text-gray-400 border-gray-200'}`}
                             >
                               {paxList.every(pax => paxTaskStatus[pax.id]?.insurance?.checked) ? 'ALL ✓' : 'ALL'}
                             </button>
@@ -2836,62 +2841,65 @@ export default function TourSystemApp() {
                         </div>
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-center w-20 align-bottom border-b-2 border-gray-100 border-l border-gray-200">จัดการ</th>
+                    <th className="px-3 py-3 text-center w-16 text-xs border-l border-gray-200">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">{paxList.map((pax, index) => (
-                  <tr key={pax.uniqueId || pax.id} className={`hover:bg-gray-50 ${pax.nationality !== 'THAI' ? 'bg-orange-50/30 border-l-4 border-orange-400' : ''}`}>
-                    <td className="px-3 py-3 text-center font-bold text-gray-600">{index + 1}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-800 cursor-pointer hover:text-[#03b8fa] flex items-center gap-2" onClick={() => openCustomerForm(pax)}>
-                            {pax.firstNameEn} {pax.lastNameEn}
+                  <tr key={pax.uniqueId || pax.id} className={`hover:bg-blue-50/30 transition-colors ${pax.nationality !== 'THAI' ? 'bg-orange-50/30 border-l-4 border-orange-400' : ''}`}>
+                    <td className="px-3 py-4 text-center font-bold text-gray-500 text-sm">{index + 1}</td>
+                    {/* ชื่อ - เน้นขนาดใหญ่ */}
+                    <td className="px-4 py-4">
+                      <div className="cursor-pointer" onClick={() => openCustomerForm(pax)}>
+                        {/* ชื่อภาษาไทย - ขนาดใหญ่ */}
+                        {pax.firstNameTh && (
+                          <div className="text-base font-bold text-gray-800 hover:text-[#03b8fa] transition-colors flex items-center gap-2">
+                            {pax.firstNameTh} {pax.lastNameTh}
                             {pax.nationality !== 'THAI' && (
-                              <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-orange-300">
-                                <Globe size={10} />
-                                {pax.nationality}
+                              <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                                <Globe size={12} /> {pax.nationality}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
-                            {pax.passportNo}
-                            {pax.nationality !== 'THAI' && (
-                              <span className="text-orange-600 font-bold">⚠️ ต่างชาติ</span>
-                            )}
-                          </div>
+                        )}
+                        {/* ชื่อภาษาอังกฤษ */}
+                        <div className={`${pax.firstNameTh ? 'text-sm text-gray-500' : 'text-base font-bold text-gray-800 hover:text-[#03b8fa]'} flex items-center gap-2`}>
+                          {pax.firstNameEn} {pax.lastNameEn}
+                          {!pax.firstNameTh && pax.nationality !== 'THAI' && (
+                            <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                              <Globe size={12} /> {pax.nationality}
+                            </span>
+                          )}
                         </div>
+                        {/* Passport */}
+                        <div className="text-xs text-gray-400 font-mono mt-0.5">{pax.passportNo || 'N/A'}</div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1 max-w-[200px]">
-                        {/* 1. Database Note (Read-only) */}
+                    {/* หมายเหตุ - ขนาดใหญ่ขึ้น */}
+                    <td className="px-4 py-4">
+                      <div className="space-y-2 max-w-[250px]">
+                        {/* หมายเหตุจากฐานข้อมูล */}
                         {pax.customerNote && (
-                          <div className="flex items-start gap-1 p-1.5 rounded bg-amber-50 border border-amber-100 group/note relative" title={`Note from DB: ${pax.customerNote}`}>
-                            <Pin size={12} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-[10px] text-amber-700 italic leading-tight font-medium">{pax.customerNote}</span>
-                            <div className="absolute -top-2 -right-1 bg-amber-500 text-white text-[8px] px-1 rounded-full opacity-0 group-hover/note:opacity-100 transition-opacity uppercase font-black">DB</div>
+                          <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 border border-amber-200">
+                            <Pin size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-amber-800 font-medium leading-relaxed">{pax.customerNote}</span>
                           </div>
                         )}
-
-                        {/* 2. Tour Specific Note (Editable) */}
-                        <div className="flex items-start gap-1 p-1.5 rounded bg-[#f0f9ff] border border-[#d9edf4] group/edit relative">
-                          <Edit2 size={12} className="text-[#03b8fa] mt-0.5 flex-shrink-0" />
+                        {/* หมายเหตุเฉพาะทริป */}
+                        <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-50 border border-blue-100">
+                          <Edit2 size={14} className="text-[#03b8fa] mt-0.5 flex-shrink-0" />
                           <textarea
-                            className="w-full bg-transparent text-[11px] text-[#0279a9] outline-none font-medium leading-tight resize-none min-h-[20px]"
-                            placeholder="หมายเหตุเฉพาะทริป..."
+                            className="w-full bg-transparent text-sm text-gray-700 outline-none font-medium leading-relaxed resize-none min-h-[24px]"
+                            placeholder="หมายเหตุเฉพาะทริปนี้..."
                             rows={1}
                             value={pax.remark || ''}
                             onChange={(e) => {
                               const newVal = e.target.value;
-                              // Update rounds/bookings state directly since it's Operation view
                               setBookings(prev => prev.map(b => b.id === pax.bookingId ? {
                                 ...b,
                                 pax: b.pax.map(px => px.id === pax.id ? { ...px, remark: newVal } : px)
                               } : b));
                             }}
                           />
-                          <div className="absolute -top-2 -right-1 bg-[#03b8fa] text-white text-[8px] px-1 rounded-full opacity-0 group-hover/edit:opacity-100 transition-opacity uppercase font-black">Trip</div>
                         </div>
                       </div>
                     </td>
