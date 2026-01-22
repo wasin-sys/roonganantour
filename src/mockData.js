@@ -663,11 +663,17 @@ export const DOCUMENT_STATUS = {
     CANCELLED: 'cancelled'    // ยกเลิก
 };
 
-// Payment Methods
+// Payment Methods (Refined - QR Code removed, manual slip only)
 export const PAYMENT_METHODS = {
     CASH: 'cash',             // เงินสด
-    TRANSFER: 'transfer',     // โอนเงิน
-    QR_CODE: 'qr_code'        // QR Code จาก Payment Gateway
+    TRANSFER: 'transfer'      // โอนเงิน (แนบสลิป)
+};
+
+// Transaction/Slip Verification Status
+export const TRANSACTION_STATUS = {
+    PENDING_VERIFY: 'pending_verify',   // รอตรวจสอบสลิป
+    VERIFIED: 'verified',               // ตรวจสอบแล้ว (อนุมัติ)
+    REJECTED: 'rejected'                // ปฏิเสธ
 };
 
 // === Billing Notes (ใบวางบิล) ===

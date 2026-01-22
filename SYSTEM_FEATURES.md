@@ -2,7 +2,7 @@
 
 เอกสารฉบับนี้รวบรวมรายการฟีเจอร์ทั้งหมดของระบบ Tour System Prototype (เวอร์ชันปัจจุบัน) โดยแบ่งตามโมดูลการทำงาน เพื่อให้เห็นภาพรวมความสามารถของระบบ
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-22
 
 ---
 
@@ -35,6 +35,12 @@
 ### 1.4 Payment Options (ตัวเลือกการชำระ)
 *   **ยืนยันการจอง:** สร้าง Booking Record พร้อมสถานะการเงินเริ่มต้น สามารถชำระผ่าน **โอนเงิน (Transfer)** หรือ **เงินสด (Cash)** เท่านั้น
 *   **Credit/Cheque Removed:** นำออกตามความต้องการ (Refined Payment Methods)
+
+### 1.5 ระบบแจ้งชำระเงิน (Payment Notification System)
+*   **Slip Attachment:** เซลล์สามารถแนบสลิปการโอนเงินเข้าสู่ระบบ พร้อมระบุยอดเงินและวันที่ชำระ
+*   **Payment Verification:** Admin/Manager ตรวจสอบสลิปและอนุมัติการชำระเงิน
+*   **Status Tracking:** ติดตามสถานะการชำระ (รอตรวจสอบ / อนุมัติแล้ว / ปฏิเสธ)
+*   **Transaction History:** บันทึกประวัติการชำระเงินทุกรายการพร้อมหลักฐาน
 
 ---
 
@@ -134,5 +140,77 @@
 ## 8. Product Management (บริหารจัดการทัวร์)
 *   **Route Approval:** ฟังก์ชันอนุมัติ Route/Round (Sub-routes) เพื่อเปลี่ยนสถานะเป็น "พร้อมขาย" (Selling)
 *   **Quality Control:** ป้องกันการขายทัวร์ที่ข้อมูลยังไม่ครบถ้วนหรือไม่ผ่านการอนุมัติ
+
+---
+
+## 9. LINE Official Account (ระบบลูกค้าสัมพันธ์ผ่าน LINE)
+ระบบ LINE OA สำหรับการสื่อสารและติดตามข้อมูลกับลูกค้าโดยตรง
+
+### 9.1 Customer Registration (ลงทะเบียนลูกค้า)
+*   **LINE ID Linking:** เชื่อมบัญชี LINE ของลูกค้าเข้ากับระบบ CRM
+*   **Rich Menu:** เมนูหลักสำหรับลูกค้าเข้าถึงฟีเจอร์ต่างๆ
+*   **Auto Welcome Message:** ข้อความต้อนรับอัตโนมัติเมื่อลูกค้าเพิ่มเพื่อน
+
+### 9.2 Tour Tracking (ติดตามทัวร์ที่จอง)
+*   **My Bookings:** ลูกค้าสามารถดูรายการทัวร์ที่จองทั้งหมดผ่าน LINE
+*   **Booking Status:** แสดงสถานะการจอง (ยืนยันแล้ว / รอชำระ / เสร็จสิ้น)
+*   **Trip Details:** ดูรายละเอียดทัวร์ (วันเดินทาง, สายการบิน, ไกด์ประจำกรุ๊ป)
+*   **Document Status:** ตรวจสอบสถานะเอกสาร (Passport, Visa, Ticket)
+
+### 9.3 Payment Reminders (แจ้งเตือนการชำระเงิน)
+*   **Stage-Based Notifications:** แจ้งเตือนตามขั้นตอนการชำระ:
+    *   งวดที่ 1: มัดจำ
+    *   งวดที่ 2: ชำระก่อนออกตั๋ว
+    *   งวดที่ 3: ชำระส่วนที่เหลือก่อนเดินทาง
+*   **Group-Specific Alerts:** แจ้งเตือนตาม Group/Round ที่ลูกค้าจอง
+*   **Payment Deadline Reminder:** เตือนล่วงหน้าก่อนกำหนดชำระ (7 วัน, 3 วัน, 1 วัน)
+*   **Payment Confirmation:** แจ้งยืนยันเมื่อได้รับการชำระเรียบร้อย
+
+### 9.4 Pre-Trip Notifications (แจ้งเตือนก่อนเดินทาง)
+*   **Countdown Reminder:** นับถอยหลังก่อนวันเดินทาง
+*   **Preparation Checklist:** ส่งรายการเตรียมตัวก่อนเดินทาง
+*   **Meeting Point Info:** แจ้งจุดนัดพบและเวลารวมกรุ๊ป
+*   **Weather Updates:** แจ้งสภาพอากาศปลายทาง
+
+### 9.5 Customer Communication
+*   **Broadcast Messages:** ส่งข่าวสารโปรโมชั่นถึงลูกค้าทั้งหมด
+*   **1:1 Chat:** แชทโต้ตอบกับเซลล์ผู้ดูแล
+*   **FAQ Chatbot:** ระบบตอบคำถามอัตโนมัติ
+
+---
+
+## 10. Customer Landing Page (หน้าเว็บลูกค้า)
+หน้าเว็บไซต์สำหรับลูกค้าดูข้อมูล package ทัวร์ที่เปิดขาย
+
+### 10.1 Tour Catalog (แค็ตตาล็อกทัวร์)
+*   **Route Listing:** แสดงรายการเส้นทางทัวร์ทั้งหมดที่เปิดขาย
+*   **Category Filter:** กรองตามหมวดหมู่ (เอเชีย, ยุโรป, อเมริกา, ฯลฯ)
+*   **Search Function:** ค้นหาทัวร์ตามชื่อหรือประเทศ
+*   **Featured Tours:** แสดงทัวร์แนะนำ/โปรโมชั่นพิเศษ
+
+### 10.2 Tour Details (รายละเอียดทัวร์)
+*   **Program Overview:** โปรแกรมการเดินทางแบบวันต่อวัน
+*   **Highlights:** ไฮไลท์สำคัญของทริป
+*   **Price Table:** ตารางราคาตามประเภท (Twin/Single/Triple/Child)
+*   **Inclusion/Exclusion:** รายการที่รวม/ไม่รวมในราคา
+*   **Terms & Conditions:** เงื่อนไขการจองและยกเลิก
+
+### 10.3 Available Rounds (รอบเดินทางที่เปิดขาย)
+*   **Round Calendar:** ปฏิทินแสดงรอบเดินทางที่เปิด
+*   **Seat Availability:** แสดงจำนวนที่นั่งว่าง/เต็ม
+*   **Departure Date:** วันที่เดินทาง-กลับ
+*   **Airline Info:** สายการบินที่ใช้บริการ
+*   **Price Display:** แสดงราคาต่อท่าน
+
+### 10.4 Inquiry & Contact (สอบถามและติดต่อ)
+*   **Inquiry Form:** ฟอร์มฝากข้อมูลติดต่อกลับ (ชื่อ, เบอร์โทร, LINE ID)
+*   **LINE Connect Button:** ปุ่มเพิ่มเพื่อน LINE OA โดยตรง
+*   **Contact Info:** แสดงข้อมูลติดต่อบริษัท
+*   **Social Links:** เชื่อมต่อ Social Media (Facebook, Instagram)
+
+### 10.5 Responsive Design
+*   **Mobile First:** ออกแบบรองรับการใช้งานบนมือถือเป็นหลัก
+*   **SEO Optimized:** ปรับแต่งสำหรับการค้นหาบน Google
+*   **Fast Loading:** โหลดเร็ว ใช้งานได้ลื่นไหล
 
 ---

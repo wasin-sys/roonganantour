@@ -77,6 +77,7 @@ import {
   INITIAL_TAX_INVOICES,
   PAYMENT_METHODS,
   DOCUMENT_STATUS,
+  TRANSACTION_STATUS,
   PAYMENT_GATEWAY_CONFIG,
   generateTaxInvoiceNumber
 } from './mockData';
@@ -3404,9 +3405,17 @@ export default function TourSystemApp() {
       return { count: issued.length, total };
     };
 
+    // Pending Verification Stats (for transfer slips)
+    const getPendingVerifyStats = () => {
+      const pending = receipts.filter(r => r.status === 'pending_verify');
+      const total = pending.reduce((sum, r) => sum + r.receiptAmount, 0);
+      return { count: pending.length, total };
+    };
+
     const billingStats = getBillingStats();
     const receiptStats = getReceiptStats();
     const taxStats = getTaxStats();
+    const pendingVerifyStats = getPendingVerifyStats();
 
     return (
       <div className="space-y-6 h-full flex flex-col animate-fade-in">
@@ -3440,6 +3449,16 @@ export default function TourSystemApp() {
             <ShieldCheck size={18} />
             3. ใบกำกับภาษี ({taxStats.count})
           </button>
+          {/* Manager Only: Verification Tab */}
+          {currentUser.role === 'MANAGER' && (
+            <button
+              onClick={() => setPaymentSubTab('pending')}
+              className={`px-6 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 ${paymentSubTab === 'pending' ? 'bg-amber-100 text-amber-700' : 'text-gray-500 hover:bg-gray-50'} ${pendingVerifyStats.count > 0 ? 'animate-pulse' : ''}`}
+            >
+              <Clock size={18} />
+              ⏳ รอตรวจสอบสลิป ({pendingVerifyStats.count})
+            </button>
+          )}
         </div>
 
         {/* Stats Row */}
@@ -3638,6 +3657,191 @@ export default function TourSystemApp() {
                 )}
               </tbody>
             </table>
+          )}
+
+          {/* Pending Verification Tab - Manager Only */}
+          {paymentSubTab === 'pending' && currentUser.role === 'MANAGER' && (
+            <div className="p-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-2">
+                  <Clock size={18} /> สลิปที่รอตรวจสอบ
+                </h3>
+                <p className="text-sm text-amber-700">รายการสลิปโอนเงินจาก Sales ที่รอการตรวจสอบและอนุมัติ หลังอนุมัติยอดจะถูกบันทึกเข้าสู่ระบบ</p>
+              </div>
+
+              {receipts.filter(r => r.status === 'pending_verify').length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <CheckCircle size={48} className="mx-auto mb-4 text-green-300" />
+                  <p className="font-bold">ไม่มีสลิปรอตรวจสอบ</p>
+                  <p className="text-sm">รายการทั้งหมดได้รับการตรวจสอบแล้ว</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {receipts.filter(r => r.status === 'pending_verify').map(receipt => {
+                    const route = routes.find(r => r.id === receipt.routeId);
+                    const round = rounds.find(r => r.id === receipt.roundId);
+                    const bank = bankAccounts.find(b => b.id === receipt.bankAccountId);
+
+                    return (
+                      <div key={receipt.id} className="bg-white border-2 border-amber-200 rounded-xl p-5 hover:shadow-lg transition">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-[#03b8fa]">{receipt.id}</span>
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-bold">รอตรวจสอบ</span>
+                            </div>
+                            <p className="font-bold text-gray-800 text-lg">{receipt.customerName}</p>
+                            <p className="text-sm text-gray-500">{route?.code} - {round?.date}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">ยอดโอน</p>
+                            <p className="text-2xl font-bold text-amber-600">฿{receipt.receiptAmount.toLocaleString()}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 bg-gray-50 p-3 rounded-lg text-sm">
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase">ส่งโดย</p>
+                            <p className="font-bold text-gray-700">{receipt.submittedByName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase">วันที่ส่ง</p>
+                            <p className="font-bold text-gray-700">{receipt.createdAt}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase">บัญชีปลายทาง</p>
+                            <p className="font-bold text-gray-700">{bank?.bank || 'N/A'} - {bank?.accountNumber || ''}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase">ไฟล์สลิป</p>
+                            <p className="font-bold text-blue-600 cursor-pointer hover:underline" onClick={() => alert(`ดูสลิป: ${receipt.slipFileName || receipt.slipFile || 'ไม่มีไฟล์'}`)}>
+                              📎 {receipt.slipFileName || 'ดูสลิป'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {receipt.note && (
+                          <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-4 text-sm text-blue-700">
+                            <strong>หมายเหตุจาก Sale:</strong> {receipt.note}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => {
+                              const reason = window.prompt('ระบุเหตุผลในการปฏิเสธ (ถ้ามี):');
+                              if (reason !== null) {
+                                setReceipts(prev => prev.map(r =>
+                                  r.id === receipt.id
+                                    ? { ...r, status: 'rejected', rejectionReason: reason, verifiedBy: currentUser.id, verifiedAt: new Date().toISOString().split('T')[0] }
+                                    : r
+                                ));
+                                alert(`❌ ปฏิเสธสลิป ${receipt.id}\nเหตุผล: ${reason || 'ไม่ระบุ'}`);
+                              }
+                            }}
+                            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-bold text-sm hover:bg-red-100 transition flex items-center gap-2"
+                          >
+                            <XCircle size={16} /> ปฏิเสธ
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Approve and update all related statuses
+                              const paidAmount = receipt.receiptAmount;
+                              const billingNote = billingNotes.find(b => b.id === receipt.billingNoteId);
+
+                              // 1. Update receipt status to issued
+                              setReceipts(prev => prev.map(r =>
+                                r.id === receipt.id
+                                  ? { ...r, status: 'issued', verifiedBy: currentUser.id, verifiedAt: new Date().toISOString().split('T')[0] }
+                                  : r
+                              ));
+
+                              // 2. Update billing note if exists
+                              if (billingNote) {
+                                const existingPaid = billingNote.paidAmount || 0;
+                                const totalPaidSoFar = existingPaid + paidAmount;
+                                const remainingBalance = billingNote.billingAmount - totalPaidSoFar;
+                                const newStatus = remainingBalance <= 0 ? 'paid' : 'partial';
+
+                                setBillingNotes(prev => prev.map(b =>
+                                  b.id === billingNote.id
+                                    ? { ...b, status: newStatus, paidAmount: totalPaidSoFar, paidAt: new Date().toISOString().split('T')[0] }
+                                    : b
+                                ));
+
+                                // 3. Update payment record
+                                if (receipt.paymentId) {
+                                  setPayments(prev => prev.map(p =>
+                                    p.id === receipt.paymentId
+                                      ? { ...p, paidAmount: (p.paidAmount || 0) + paidAmount, status: newStatus }
+                                      : p
+                                  ));
+                                }
+
+                                // 4. Update pax payment status
+                                if (receipt.roundId && receipt.paxIds) {
+                                  const paymentDate = new Date().toISOString().split('T')[0];
+                                  const shareOfPaid = paidAmount / receipt.paxIds.length;
+                                  const roundPrice = rounds.find(r => r.id === receipt.roundId)?.price || {};
+
+                                  setBookings(prev => prev.map(booking => {
+                                    if (booking.roundId === receipt.roundId) {
+                                      return {
+                                        ...booking,
+                                        pax: booking.pax.map(p => {
+                                          if (receipt.paxIds.includes(p.id)) {
+                                            const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                                            const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                                            const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                                            return {
+                                              ...p,
+                                              paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                                              paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                                              paidAmount: newPaid
+                                            };
+                                          }
+                                          return p;
+                                        })
+                                      };
+                                    }
+                                    return booking;
+                                  }));
+
+                                  // 5. Update bookingPaxList state (Crucial for UI consistency in Booking/Operations)
+                                  setBookingPaxList(prev => prev.map(p => {
+                                    if (receipt.paxIds.includes(p.id)) {
+                                      const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                                      const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                                      const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                                      return {
+                                        ...p,
+                                        paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                                        paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                                        paidAmount: newPaid
+                                      };
+                                    }
+                                    return p;
+                                  }));
+                                }
+
+                                alert(`✅ อนุมัติสลิป ${receipt.id} เรียบร้อย!\n\nยอด: ฿${paidAmount.toLocaleString()}\nสถานะ: ${newStatus === 'paid' ? 'ชำระครบแล้ว' : 'ชำระบางส่วน'}`);
+                              } else {
+                                alert(`✅ อนุมัติสลิป ${receipt.id} เรียบร้อย!\nยอด: ฿${paidAmount.toLocaleString()}`);
+                              }
+                            }}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold text-sm hover:bg-green-700 transition flex items-center gap-2 shadow-md"
+                          >
+                            <CheckCircle size={16} /> อนุมัติสลิป
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
         {viewingPaymentId && (() => {
@@ -4206,7 +4410,7 @@ export default function TourSystemApp() {
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase block mb-2">ช่องทางชำระ</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setPaymentFormData({ ...paymentFormData, method: 'cash' })}
                       className={`p-3 rounded-lg border-2 text-center font-bold text-sm transition ${paymentFormData.method === 'cash' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 hover:border-gray-300'}`}
@@ -4217,13 +4421,7 @@ export default function TourSystemApp() {
                       onClick={() => setPaymentFormData({ ...paymentFormData, method: 'transfer' })}
                       className={`p-3 rounded-lg border-2 text-center font-bold text-sm transition ${paymentFormData.method === 'transfer' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}
                     >
-                      🏦 โอนเงิน
-                    </button>
-                    <button
-                      onClick={() => setPaymentFormData({ ...paymentFormData, method: 'qr_code' })}
-                      className={`p-3 rounded-lg border-2 text-center font-bold text-sm transition ${paymentFormData.method === 'qr_code' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      📱 QR Code
+                      🏦 โอนเงิน (แนบสลิป)
                     </button>
                   </div>
                 </div>
@@ -4244,22 +4442,44 @@ export default function TourSystemApp() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase block mb-1">แนบสลิปการโอน</label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer transition">
+                      <label className="text-xs font-bold text-gray-500 uppercase block mb-1">แนบสลิปการโอน *</label>
+                      <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer transition block">
                         <Upload size={24} className="mx-auto text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-500">คลิกเพื่ออัปโหลดสลิป</span>
-                      </div>
+                        <span className="text-sm text-gray-500">{paymentFormData.slipFileName || 'คลิกเพื่ออัปโหลดสลิป'}</span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*,.pdf"
+                          onChange={(e) => {
+                            if (e.target.files[0]) {
+                              setPaymentFormData({
+                                ...paymentFormData,
+                                slipFileName: e.target.files[0].name,
+                                slipFile: `slip_${Date.now()}.jpg` // Mock file path
+                              });
+                            }
+                          }}
+                        />
+                      </label>
+                      {paymentFormData.slipFileName && (
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                          <CheckCircle size={12} /> ไฟล์: {paymentFormData.slipFileName}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {paymentFormData.method === 'qr_code' && (
-                  <div className="animate-fade-in text-center p-4 bg-gray-100 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-2">QR Code สำหรับชำระเงิน</p>
-                    <div className="w-40 h-40 mx-auto bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                      <span className="text-xs text-gray-400">[QR Code Placeholder]</span>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase block mb-1">หมายเหตุ (ถ้ามี)</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded-lg px-4 py-2 text-sm"
+                        placeholder="เช่น โอนจากบัญชี xxx เวลา xx:xx น."
+                        value={paymentFormData.note || ''}
+                        onChange={(e) => setPaymentFormData({ ...paymentFormData, note: e.target.value })}
+                      />
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">PromptPay: {PAYMENT_GATEWAY_CONFIG.merchantId}</p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                      <strong>หมายเหตุ:</strong> หลังจากส่งสลิป ยอดจะเข้าสู่สถานะ "รอตรวจสอบ" และจะถูกอนุมัติโดย Manager
+                    </div>
                   </div>
                 )}
               </div>
@@ -4267,10 +4487,20 @@ export default function TourSystemApp() {
                 <button onClick={() => { setIsCreatingReceipt(false); setViewingBillingNote(null); }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ยกเลิก</button>
                 <button
                   onClick={() => {
+                    // Validate transfer has slip
+                    if (paymentFormData.method === 'transfer' && !paymentFormData.slipFileName) {
+                      alert('กรุณาแนบสลิปการโอนเงิน');
+                      return;
+                    }
+
                     // Calculate paid amount
                     const paidAmount = billingAmount || viewingBillingNote.billingAmount;
 
-                    // Create receipt
+                    // Is this a transfer payment? Then it goes to pending verification
+                    const isTransfer = paymentFormData.method === 'transfer';
+                    const receiptStatus = isTransfer ? 'pending_verify' : 'issued';
+
+                    // Create receipt with appropriate status
                     const newReceipt = {
                       id: `RCP-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(receipts.length + 1).padStart(3, '0')}`,
                       billingNoteId: viewingBillingNote.id,
@@ -4283,108 +4513,123 @@ export default function TourSystemApp() {
                       receiptAmount: paidAmount,
                       paymentMethod: paymentFormData.method || 'cash',
                       bankAccountId: selectedBankForTransfer ? Number(selectedBankForTransfer) : null,
-                      status: 'issued',
+                      status: receiptStatus,
                       createdAt: new Date().toISOString().split('T')[0],
                       createdBy: currentUser.id,
-                      note: '',
+                      submittedBy: currentUser.id,
+                      submittedByName: currentUser.name,
+                      slipFile: paymentFormData.slipFile || null,
+                      slipFileName: paymentFormData.slipFileName || null,
+                      note: paymentFormData.note || '',
                       usedForTaxInvoice: false,
-                      taxInvoiceId: null
+                      taxInvoiceId: null,
+                      // Verification fields (for Manager)
+                      verifiedBy: isTransfer ? null : currentUser.id,
+                      verifiedAt: isTransfer ? null : new Date().toISOString().split('T')[0],
+                      rejectionReason: null
                     };
                     setReceipts(prev => [newReceipt, ...prev]);
 
-                    // Calculate new status for billing note
-                    const existingPaid = viewingBillingNote.paidAmount || 0;
-                    const totalPaidSoFar = existingPaid + paidAmount;
-                    const remainingBalance = viewingBillingNote.billingAmount - totalPaidSoFar;
-                    const newStatus = remainingBalance <= 0 ? 'paid' : 'partial';
+                    // For cash payments (immediate verification), update statuses now
+                    // For transfer payments, statuses will be updated when Manager approves
+                    if (!isTransfer) {
+                      // Calculate new status for billing note
+                      const existingPaid = viewingBillingNote.paidAmount || 0;
+                      const totalPaidSoFar = existingPaid + paidAmount;
+                      const remainingBalance = viewingBillingNote.billingAmount - totalPaidSoFar;
+                      const newStatus = remainingBalance <= 0 ? 'paid' : 'partial';
 
-                    // Update billing note status
-                    setBillingNotes(prev => prev.map(b =>
-                      b.id === viewingBillingNote.id
-                        ? {
-                          ...b,
-                          status: newStatus,
-                          paidAmount: totalPaidSoFar,
-                          paymentMethod: paymentFormData.method || 'cash',
-                          bankAccountId: selectedBankForTransfer ? Number(selectedBankForTransfer) : null,
-                          paidAt: new Date().toISOString().split('T')[0]
-                        }
-                        : b
-                    ));
-
-                    // Update related payment record
-                    if (viewingBillingNote.paymentId) {
-                      setPayments(prev => prev.map(p =>
-                        p.id === viewingBillingNote.paymentId
+                      // Update billing note status
+                      setBillingNotes(prev => prev.map(b =>
+                        b.id === viewingBillingNote.id
                           ? {
-                            ...p,
-                            paidAmount: (p.paidAmount || 0) + paidAmount,
-                            status: remainingBalance <= 0 ? 'paid' : 'partial'
+                            ...b,
+                            status: newStatus,
+                            paidAmount: totalPaidSoFar,
+                            paymentMethod: paymentFormData.method || 'cash',
+                            bankAccountId: selectedBankForTransfer ? Number(selectedBankForTransfer) : null,
+                            paidAt: new Date().toISOString().split('T')[0]
                           }
-                          : p
+                          : b
                       ));
+
+                      // Update related payment record
+                      if (viewingBillingNote.paymentId) {
+                        setPayments(prev => prev.map(p =>
+                          p.id === viewingBillingNote.paymentId
+                            ? {
+                              ...p,
+                              paidAmount: (p.paidAmount || 0) + paidAmount,
+                              status: remainingBalance <= 0 ? 'paid' : 'partial'
+                            }
+                            : p
+                        ));
+                      }
+
+                      const paymentDate = new Date().toISOString().split('T')[0];
+                      if (viewingBillingNote.roundId && viewingBillingNote.paxIds) {
+                        const shareOfPaid = paidAmount / viewingBillingNote.paxIds.length;
+                        const roundPrice = rounds.find(r => r.id === viewingBillingNote.roundId)?.price || {};
+
+                        setBookings(prev => prev.map(booking => {
+                          if (booking.roundId === viewingBillingNote.roundId) {
+                            return {
+                              ...booking,
+                              pax: booking.pax.map(p => {
+                                if (viewingBillingNote.paxIds.includes(p.id)) {
+                                  const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                                  const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                                  const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                                  return {
+                                    ...p,
+                                    paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                                    paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                                    paidAmount: newPaid
+                                  };
+                                }
+                                return p;
+                              }),
+                              status: remainingBalance <= 0 ? 'paid' : 'partial'
+                            };
+                          }
+                          return booking;
+                        }));
+
+                        // Also update bookingPaxList state
+                        setBookingPaxList(prev => prev.map(p => {
+                          if (viewingBillingNote.paxIds.includes(p.id)) {
+                            const newPaid = (p.paidAmount || 0) + shareOfPaid;
+                            const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
+                            const isFinalPaid = newPaid >= (targetPrice - 1);
+
+                            return {
+                              ...p,
+                              paymentStatus: isFinalPaid ? 'paid' : 'partial',
+                              paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
+                              paidAmount: newPaid
+                            };
+                          }
+                          return p;
+                        }));
+                      }
+
+                      alert(`✅ สร้างใบรับเงินเรียบร้อย!\n\nเลขที่: ${newReceipt.id}\nยอดชำระ: ฿${paidAmount.toLocaleString()}\nสถานะ: ${newStatus === 'paid' ? 'ชำระครบแล้ว' : 'ชำระมัดจำแล้ว'}`);
+                    } else {
+                      // Transfer payment - waiting for approval
+                      alert(`📤 ส่งหลักฐานการชำระเรียบร้อย!\n\nเลขที่: ${newReceipt.id}\nยอด: ฿${paidAmount.toLocaleString()}\nสถานะ: รอตรวจสอบโดย Manager\n\nหลังจาก Manager อนุมัติ ยอดจะถูกบันทึกเข้าสู่ระบบ`);
                     }
 
-                    const paymentDate = new Date().toISOString().split('T')[0];
-                    if (viewingBillingNote.roundId && viewingBillingNote.paxIds) {
-                      const shareOfPaid = paidAmount / viewingBillingNote.paxIds.length;
-                      const roundPrice = rounds.find(r => r.id === viewingBillingNote.roundId)?.price || {};
-
-                      setBookings(prev => prev.map(booking => {
-                        if (booking.roundId === viewingBillingNote.roundId) {
-                          return {
-                            ...booking,
-                            pax: booking.pax.map(p => {
-                              if (viewingBillingNote.paxIds.includes(p.id)) {
-                                const newPaid = (p.paidAmount || 0) + shareOfPaid;
-                                const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
-                                const isFinalPaid = newPaid >= (targetPrice - 1);
-
-                                return {
-                                  ...p,
-                                  paymentStatus: isFinalPaid ? 'paid' : 'partial',
-                                  paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
-                                  paidAmount: newPaid
-                                };
-                              }
-                              return p;
-                            }),
-                            status: remainingBalance <= 0 ? (remainingBalance <= 0 ? 'paid' : 'partial') : 'partial'
-                            // Note: booking.status update here is simplified, groupPaid check is more reliable in UI
-                          };
-                        }
-                        return booking;
-                      }));
-
-                      // Also update bookingPaxList state (for current booking session)
-                      setBookingPaxList(prev => prev.map(p => {
-                        if (viewingBillingNote.paxIds.includes(p.id)) {
-                          const newPaid = (p.paidAmount || 0) + shareOfPaid;
-                          const targetPrice = roundPrice[p.roomType || 'adultTwin'] || 0;
-                          const isFinalPaid = newPaid >= (targetPrice - 1);
-
-                          return {
-                            ...p,
-                            paymentStatus: isFinalPaid ? 'paid' : 'partial',
-                            paymentDate: isFinalPaid ? paymentDate : p.paymentDate,
-                            paidAmount: newPaid
-                          };
-                        }
-                        return p;
-                      }));
-                    }
-
-                    alert(`✅ สร้างใบรับเงินเรียบร้อย!\n\nเลขที่: ${newReceipt.id}\nยอดชำระ: ฿${paidAmount.toLocaleString()}\nสถานะ: ${newStatus === 'paid' ? 'ชำระครบแล้ว' : 'ชำระมัดจำแล้ว'}`);
                     setIsCreatingReceipt(false);
                     setViewingBillingNote(null);
                     setBillingAmount(0);
-                    setPaymentFormData({ method: '', amount: 0, receipt: null, note: '' });
+                    setPaymentFormData({ method: '', amount: 0, receipt: null, note: '', slipFileName: null, slipFile: null });
                     setSelectedBankForTransfer('');
                     setPaymentSubTab('receipt');
                   }}
                   className="px-6 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 flex items-center gap-2"
                 >
-                  <CheckCircle size={16} /> ยืนยันการชำระเงิน
+                  <CheckCircle size={16} /> {paymentFormData.method === 'transfer' ? 'ส่งหลักฐานการชำระ' : 'ยืนยันการชำระเงิน'}
                 </button>
               </div>
             </div>
