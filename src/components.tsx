@@ -1,7 +1,8 @@
 import React from 'react';
-import { AlertTriangle, UserCheck } from 'lucide-react';
+import { AlertTriangle, UserCheck, type LucideIcon } from 'lucide-react';
+import type { AlertBadgeProps, SidebarItemProps, StatCardProps } from './types';
 
-export const AlertBadge = ({ type, message }) => {
+export const AlertBadge: React.FC<AlertBadgeProps> = ({ type, message }) => {
     const styles = type === 'danger'
         ? 'bg-red-100 text-red-700 border-red-200'
         : 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -15,7 +16,7 @@ export const AlertBadge = ({ type, message }) => {
     );
 };
 
-export const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+export const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, active, onClick }) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${active ? 'bg-red-50 text-red-600 border-r-4 border-red-600' : 'text-gray-600 hover:bg-gray-50'}`}
@@ -25,7 +26,7 @@ export const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
     </button>
 );
 
-export const StatCard = ({ title, value, subtext, icon: Icon, color }) => (
+export const StatCard: React.FC<StatCardProps> = ({ title, value, subtext, icon: Icon, color }) => (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between">
         <div>
             <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>

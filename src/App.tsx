@@ -49,8 +49,48 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  Pin
+  Pin,
+  type LucideIcon
 } from 'lucide-react';
+
+import type {
+  User,
+  UserRole,
+  Route,
+  Round,
+  RoundPricing,
+  Customer,
+  Passenger,
+  BookingGroup,
+  Booking,
+  Payment,
+  BankAccount,
+  BillingNote,
+  Receipt,
+  TaxInvoice,
+  TaxInvoiceCustomerType,
+  PaymentMethod,
+  BlacklistEntry,
+  CustomerFormState,
+  CommissionRank,
+  IndividualTask,
+  PaxTaskStatusMap,
+  GuideTaskStatusMap,
+  OperationProgress,
+  Alert,
+  NavigationTab,
+  CrmSubTab,
+  OperationView,
+  OperationTab,
+  SettingsTab,
+  PaymentSubTab,
+  BookingAddMode,
+  BillingInfo,
+  PaymentFormData,
+  TaxInvoiceFormData,
+  BookingDetails,
+  RoomType,
+} from './types';
 
 import {
   MOCK_USERS as USERS,
@@ -69,7 +109,6 @@ import {
   INITIAL_CUSTOMER_STATE,
   MOCK_BANK_ACCOUNTS,
   MOCK_BOOKINGS,
-  // Document Management System
   BOOKING_TYPES,
   MOCK_BOOKING_GROUPS,
   INITIAL_BILLING_NOTES,
@@ -82,7 +121,7 @@ import {
   generateTaxInvoiceNumber
 } from './mockData';
 
-const INDIVIDUAL_TASKS = [
+const INDIVIDUAL_TASKS: IndividualTask[] = [
   { key: 'passport', label: 'Passport', icon: FileText, color: 'text-[#03b8fa]', bg: 'bg-[#d9edf4]' },
   { key: 'visa', label: 'Visa', icon: ShieldAlert, color: 'text-[#37c3a5]', bg: 'bg-green-50' },
   { key: 'ticket', label: 'ตั๋วบิน', icon: Plane, color: 'text-purple-500', bg: 'bg-purple-50' },
@@ -93,9 +132,31 @@ const INDIVIDUAL_TASKS = [
 
 
 
+// --- Component Props Types ---
+
+interface AlertBadgeProps {
+  type: 'danger' | 'warning';
+  message: string;
+}
+
+interface SidebarItemProps {
+  icon: LucideIcon;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtext: string;
+  icon: LucideIcon;
+  color?: 'green' | 'blue' | 'cyan';
+}
+
 // --- Components ---
 
-const AlertBadge = ({ type, message }) => {
+const AlertBadge: React.FC<AlertBadgeProps> = ({ type, message }) => {
   const styles = type === 'danger' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-[#fdcf1a]/20 text-[#0279a9] border-[#fdcf1a]/30';
   const Icon = type === 'danger' ? AlertTriangle : UserCheck;
   return (
@@ -106,7 +167,7 @@ const AlertBadge = ({ type, message }) => {
   );
 };
 
-const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, active, onClick }) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${active ? 'bg-[#d9edf4] text-[#03b8fa] border-r-4 border-[#03b8fa]' : 'text-gray-600 hover:bg-gray-50'}`}
@@ -116,7 +177,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   </button>
 );
 
-const StatCard = ({ title, value, subtext, icon: Icon, color }) => (
+const StatCard: React.FC<StatCardProps> = ({ title, value, subtext, icon: Icon, color }) => (
   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between">
     <div>
       <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
@@ -132,105 +193,105 @@ const StatCard = ({ title, value, subtext, icon: Icon, color }) => (
 // --- Main App ---
 
 export default function TourSystemApp() {
-  const [appUsers, setAppUsers] = useState(USERS);
-  const [currentUser, setCurrentUser] = useState(USERS[0]); // Default to Admin
+  const [appUsers, setAppUsers] = useState<User[]>(USERS);
+  const [currentUser, setCurrentUser] = useState<User>(USERS[0]); // Default to Admin
 
   // Lifted MOCK data to state for Manager editing
-  const [routes, setRoutes] = useState(MOCK_ROUTES);
-  const [rounds, setRounds] = useState(MOCK_ROUNDS);
+  const [routes, setRoutes] = useState<Route[]>(MOCK_ROUTES);
+  const [rounds, setRounds] = useState<Round[]>(MOCK_ROUNDS);
 
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
-  const [bookingDetails, setBookingDetails] = useState({ contactName: '', specialRequest: '', discount: 0, tourCode: '' });
-  const [activeTab, setActiveTab] = useState('operation');
+  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails>({ contactName: '', specialRequest: '', discount: 0, tourCode: '' });
+  const [activeTab, setActiveTab] = useState<NavigationTab>('operation');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [customers, setCustomers] = useState(MOCK_CUSTOMERS_DB);
-  const [blacklist, setBlacklist] = useState(INITIAL_BLACKLIST_DATA);
-  const [selectedRoute, setSelectedRoute] = useState(null);
-  const [selectedRound, setSelectedRound] = useState(null);
+  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS_DB);
+  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>(INITIAL_BLACKLIST_DATA);
+  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [bookingStep, setBookingStep] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState(INITIAL_CUSTOMER_STATE);
-  const [formMode, setFormMode] = useState('create');
-  const [alerts, setAlerts] = useState([]);
-  const [crmSubTab, setCrmSubTab] = useState('customers');
+  const [formData, setFormData] = useState<CustomerFormState>(INITIAL_CUSTOMER_STATE);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [crmSubTab, setCrmSubTab] = useState<CrmSubTab>('customers');
   const [isBlacklistFormOpen, setIsBlacklistFormOpen] = useState(false);
   const [blacklistFormData, setBlacklistFormData] = useState({ name: '', passport: '', reason: '' });
-  const [operationView, setOperationView] = useState('list');
-  const [operationTab, setOperationTab] = useState('upcoming'); // 'upcoming' | 'ongoing' | 'completed'
-  const [selectedOpRound, setSelectedOpRound] = useState(null);
+  const [operationView, setOperationView] = useState<OperationView>('list');
+  const [operationTab, setOperationTab] = useState<OperationTab>('upcoming');
+  const [selectedOpRound, setSelectedOpRound] = useState<Round | null>(null);
   const [showTagPreview, setShowTagPreview] = useState(false);
-  const [paxTaskStatus, setPaxTaskStatus] = useState({});
-  const [guideTaskStatus, setGuideTaskStatus] = useState({}); // { [roundId]: { ticket: boolean, hotel: boolean } }
+  const [paxTaskStatus, setPaxTaskStatus] = useState<PaxTaskStatusMap>({});
+  const [guideTaskStatus, setGuideTaskStatus] = useState<GuideTaskStatusMap>({});
   const [blacklistSearchTerm, setBlacklistSearchTerm] = useState('');
   const [showBlacklistSearch, setShowBlacklistSearch] = useState(false);
 
   // Bank Accounts State
-  const [bankAccounts, setBankAccounts] = useState(MOCK_BANK_ACCOUNTS);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(MOCK_BANK_ACCOUNTS);
   const [isBankFormOpen, setIsBankFormOpen] = useState(false);
-  const [bankFormData, setBankFormData] = useState({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600' });
-  const [selectedBankForTransfer, setSelectedBankForTransfer] = useState(''); // For payment modal
-  const [settingsTab, setSettingsTab] = useState('bank'); // 'users' or 'bank'
+  const [bankFormData, setBankFormData] = useState<Partial<BankAccount>>({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600' });
+  const [selectedBankForTransfer, setSelectedBankForTransfer] = useState('');
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('bank');
 
   // Payment Confirmation State
-  const [billingInfo, setBillingInfo] = useState({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({ type: 'individual', name: '', taxId: '', address: '', email: '', phone: '' });
   const [paymentStep, setPaymentStep] = useState(1);
 
   // Payment States
-  const [payments, setPayments] = useState(INITIAL_PAYMENTS);
-  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
+  const [selectedPayments, setSelectedPayments] = useState<number[]>([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const [paymentFormData, setPaymentFormData] = useState({ method: '', amount: 0, receipt: null, note: '' });
-  const [paymentSubTab, setPaymentSubTab] = useState('billing'); // 'billing', 'receipt', 'tax'
+  const [paymentFormData, setPaymentFormData] = useState<PaymentFormData>({ method: '', amount: 0, receipt: null, note: '' });
+  const [paymentSubTab, setPaymentSubTab] = useState<PaymentSubTab>('billing');
 
   // New States for Booking Improvements
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const [selectedPaxForBooking, setSelectedPaxForBooking] = useState([]); // Array of IDs to confirm
-  const [bookingPaxList, setBookingPaxList] = useState([]); // Passengers added to current booking session
-  const [bookingPaxMetadata, setBookingPaxMetadata] = useState({}); // { [paxId]: { addedBy: userId, timestamp: ... } }
+  const [selectedPaxForBooking, setSelectedPaxForBooking] = useState<(number | string)[]>([]);
+  const [bookingPaxList, setBookingPaxList] = useState<Passenger[]>([]);
+  const [bookingPaxMetadata, setBookingPaxMetadata] = useState<Record<number, { addedBy: number; timestamp: number }>>({});
 
   const [isBookingConfirmationModalOpen, setIsBookingConfirmationModalOpen] = useState(false);
-  const [viewingSaleId, setViewingSaleId] = useState(null); // ID of sale user to view details
-  const [viewingPaymentId, setViewingPaymentId] = useState(null); // ID of payment to view details
+  const [viewingSaleId, setViewingSaleId] = useState<number | null>(null);
+  const [viewingPaymentId, setViewingPaymentId] = useState<number | null>(null);
 
   // User Management State
   const [isUserFormModalOpen, setIsUserFormModalOpen] = useState(false);
-  const [userFormData, setUserFormData] = useState({ name: '', role: 'SALE', commissionRank: 2, avatar: 'https://i.pravatar.cc/150?u=99', id: null });
+  const [userFormData, setUserFormData] = useState<Partial<User> & { commissionRank: number | null }>({ name: '', role: 'SALE', commissionRank: 2, avatar: 'https://i.pravatar.cc/150?u=99', id: undefined });
 
   // === Document Management States ===
-  const [billingNotes, setBillingNotes] = useState(INITIAL_BILLING_NOTES);
-  const [receipts, setReceipts] = useState(INITIAL_RECEIPTS);
-  const [taxInvoices, setTaxInvoices] = useState(INITIAL_TAX_INVOICES);
-  const [bookingGroups, setBookingGroups] = useState(MOCK_BOOKING_GROUPS);
+  const [billingNotes, setBillingNotes] = useState<BillingNote[]>(INITIAL_BILLING_NOTES);
+  const [receipts, setReceipts] = useState<Receipt[]>(INITIAL_RECEIPTS);
+  const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>(INITIAL_TAX_INVOICES);
+  const [bookingGroups, setBookingGroups] = useState<BookingGroup[]>(MOCK_BOOKING_GROUPS);
 
   // Booking Type Selection (Individual vs Group)
-  const [bookingAddMode, setBookingAddMode] = useState(null); // 'individual' or 'group'
+  const [bookingAddMode, setBookingAddMode] = useState<BookingAddMode>(null);
   const [showBookingTypeModal, setShowBookingTypeModal] = useState(false);
   const [currentGroupName, setCurrentGroupName] = useState('');
 
   // Document Preview/Creation Modal
-  const [viewingBillingNote, setViewingBillingNote] = useState(null);
+  const [viewingBillingNote, setViewingBillingNote] = useState<BillingNote | null>(null);
   const [selectedBillingBankId, setSelectedBillingBankId] = useState('');
-  const [viewingReceipt, setViewingReceipt] = useState(null);
-  const [viewingTaxInvoice, setViewingTaxInvoice] = useState(null);
+  const [viewingReceipt, setViewingReceipt] = useState<Receipt | null>(null);
+  const [viewingTaxInvoice, setViewingTaxInvoice] = useState<TaxInvoice | null>(null);
   const [isCreatingBillingNote, setIsCreatingBillingNote] = useState(false);
   const [isCreatingReceipt, setIsCreatingReceipt] = useState(false);
   const [isCreatingTaxInvoice, setIsCreatingTaxInvoice] = useState(false);
-  const [selectedItemsForBilling, setSelectedItemsForBilling] = useState([]);
-  const [billingAmount, setBillingAmount] = useState(0); // ยอดที่ต้องการวางบิล
-  const [selectedReceiptForTaxInvoice, setSelectedReceiptForTaxInvoice] = useState(null);
-  const [taxInvoiceFormData, setTaxInvoiceFormData] = useState({ customerType: 'individual' });
+  const [selectedItemsForBilling, setSelectedItemsForBilling] = useState<number[]>([]);
+  const [billingAmount, setBillingAmount] = useState(0);
+  const [selectedReceiptForTaxInvoice, setSelectedReceiptForTaxInvoice] = useState<Receipt | null>(null);
+  const [taxInvoiceFormData, setTaxInvoiceFormData] = useState<TaxInvoiceFormData>({ customerType: 'individual' });
 
   // Commission Ranks State
-  const [commissionRanks, setCommissionRanks] = useState([
+  const [commissionRanks, setCommissionRanks] = useState<CommissionRank[]>([
     { id: 1, name: 'Rank 1 (อาวุโส)', defaultAmount: 500, color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
     { id: 2, name: 'Rank 2 (ทั่วไป)', defaultAmount: 300, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' }
   ]);
   const [isRankModalOpen, setIsRankModalOpen] = useState(false);
-  const [rankFormData, setRankFormData] = useState({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: null });
+  const [rankFormData, setRankFormData] = useState<Partial<CommissionRank>>({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: undefined });
 
-  const getPaxForRound = (roundId) => {
+  const getPaxForRound = (roundId: number): Passenger[] => {
     // Get unique passengers from actual bookings for this round
     // This serves as the Single Source of Truth, preventing duplicates from mixing raw MOCK data with MOCK_BOOKINGS
     const realPax = bookings
@@ -802,7 +863,7 @@ export default function TourSystemApp() {
         }
       });
 
-      const myActiveRounds = Array.from(myRoundsMap.values()).sort((a, b) => new Date(a.round.date) - new Date(b.round.date));
+      const myActiveRounds = Array.from(myRoundsMap.values()).sort((a, b) => new Date(a.round.date).getTime() - new Date(b.round.date).getTime());
 
       return (
         <div className="space-y-6 animate-fade-in">
@@ -879,7 +940,7 @@ export default function TourSystemApp() {
 
                     // Detailed Check Logic
                     let unpaidPax = 0;
-                    const missingSummary = {};
+                    const missingSummary: Record<string, number> = {};
 
                     customers.forEach(c => {
                       const missing = [];
@@ -1263,7 +1324,7 @@ export default function TourSystemApp() {
                   );
                 })}
                 {appUsers.filter(u => u.role === 'SALE').length === 0 && (
-                  <tr><td colSpan="7" className="text-center py-8 text-gray-400">ไม่พบข้อมูลพนักงานขาย</td></tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-gray-400">ไม่พบข้อมูลพนักงานขาย</td></tr>
                 )}
               </tbody>
             </table>
@@ -1342,7 +1403,7 @@ export default function TourSystemApp() {
                                 </tr>
                               );
                             }) : (
-                              <tr><td colSpan="6" className="text-center py-8 text-gray-400">ยังไม่มีรายการขายที่ชำระเงินแล้ว</td></tr>
+                              <tr><td colSpan={6} className="text-center py-8 text-gray-400">ยังไม่มีรายการขายที่ชำระเงินแล้ว</td></tr>
                             )}
                           </tbody>
                         </table>
@@ -1717,7 +1778,7 @@ export default function TourSystemApp() {
 
               {rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
                 const isFull = round.sold >= round.seats;
-                const prices = round.price || selectedRoute.price || {};
+                const prices = (round.price || selectedRoute?.price || {}) as RoundPricing;
 
                 // คำนวณสถานะการชำระจาก pax จริง แทนที่จะใช้ค่า static
                 const allPaxForRound = getPaxForRound(round.id);
@@ -1791,7 +1852,7 @@ export default function TourSystemApp() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <button onClick={() => setBookingStep(2)} className="text-gray-400 hover:text-gray-600">← Back</button>
+                <button onClick={() => setBookingStep(2)} className="text-gray-400 hover:text-gray-600">← ย้อนกลับ</button>
                 <div>
                   <h2 className="font-bold text-lg">ข้อมูลผู้โดยสาร</h2>
                   <div className="text-xs text-gray-500">
@@ -2013,7 +2074,7 @@ export default function TourSystemApp() {
                 if (groupPax.length === 0) return null;
 
                 // Group by groupName
-                const grouped = groupPax.reduce((acc, p) => {
+                const grouped = groupPax.reduce<Record<string, Passenger[]>>((acc, p) => {
                   const name = p.groupName || 'กรุ๊ปไม่มีชื่อ';
                   if (!acc[name]) acc[name] = [];
                   acc[name].push(p);
@@ -2231,7 +2292,7 @@ export default function TourSystemApp() {
                       {(() => {
                         const groupSelect = selectedPaxForBooking.find(s => String(s).startsWith('group:'));
                         if (groupSelect) {
-                          const gName = groupSelect.split(':')[1];
+                          const gName = String(groupSelect).split(':')[1];
                           const gMembers = bookingPaxList.filter(p => p.groupName === gName);
                           const gTotal = gMembers.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0);
                           const gPaid = gMembers.reduce((sum, pax) => sum + (pax.paidAmount || 0), 0);
@@ -2258,7 +2319,7 @@ export default function TourSystemApp() {
                     {(() => {
                       const groupSelect = selectedPaxForBooking.find(s => String(s).startsWith('group:'));
                       if (groupSelect) {
-                        return `ดำเนินการชำระเงิน - กลุ่ม ${groupSelect.split(':')[1]}`;
+                        return `ดำเนินการชำระเงิน - กลุ่ม ${String(groupSelect).split(':')[1]}`;
                       }
                       return selectedPaxForBooking.length === 1
                         ? 'ดำเนินการชำระเงิน - 1 ท่าน'
@@ -2343,7 +2404,7 @@ export default function TourSystemApp() {
             {tabs.map(tab => (
               <button
                 key={tab.key}
-                onClick={() => setOperationTab(tab.key)}
+                onClick={() => setOperationTab(tab.key as OperationTab)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${operationTab === tab.key
                   ? 'bg-[#03b8fa] text-white shadow-sm'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -3028,7 +3089,7 @@ export default function TourSystemApp() {
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">ตำแหน่ง (Role)</label>
-            <select className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none bg-white" value={userFormData.role} onChange={e => setUserFormData({ ...userFormData, role: e.target.value })}>
+            <select className="w-full border p-2 rounded text-sm focus:border-[#03b8fa] outline-none bg-white" value={userFormData.role} onChange={e => setUserFormData({ ...userFormData, role: e.target.value as UserRole })}>
               <option value="SALE">Sale (ฝ่ายขาย)</option>
               <option value="MANAGER">Manager (ผู้จัดการ)</option>
               <option value="GUIDE">Guide (ไกด์/Ops)</option>
@@ -3054,13 +3115,14 @@ export default function TourSystemApp() {
 
             if (userFormData.id) {
               // Update existing user
-              setAppUsers(prev => prev.map(u => u.id === userFormData.id ? userFormData : u));
+              setAppUsers(prev => prev.map(u => u.id === userFormData.id ? (userFormData as User) : u));
             } else {
               // Add new user
               const newUser = {
                 ...userFormData,
+                role: userFormData.role || 'SALE',
                 id: Date.now()
-              };
+              } as User;
               setAppUsers([...appUsers, newUser]);
             }
             setIsUserFormModalOpen(false);
@@ -3248,7 +3310,7 @@ export default function TourSystemApp() {
               </div>
               <button
                 onClick={() => {
-                  setBankFormData({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600', id: null });
+                  setBankFormData({ bank: '', accountName: '', accountNumber: '', branch: '', color: 'bg-blue-600', id: undefined });
                   setIsBankFormOpen(true);
                 }}
                 className="bg-[#03b8fa] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#029bc4]"
@@ -3351,9 +3413,9 @@ export default function TourSystemApp() {
               <button onClick={() => {
                 if (!bankFormData.bank || !bankFormData.accountNumber) return alert("กรุณาระบุเลขที่บัญชีและชื่อธนาคาร");
                 if (bankFormData.id) {
-                  setBankAccounts(prev => prev.map(a => a.id === bankFormData.id ? bankFormData : a));
+                  setBankAccounts(prev => prev.map(a => a.id === bankFormData.id ? (bankFormData as BankAccount) : a));
                 } else {
-                  setBankAccounts([...bankAccounts, { ...bankFormData, id: Date.now() }]);
+                  setBankAccounts([...bankAccounts, { ...bankFormData, id: Date.now() } as BankAccount]);
                 }
                 setIsBankFormOpen(false);
               }} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#0279a9] shadow-lg">บันทึกข้อมูล</button>
@@ -3382,9 +3444,9 @@ export default function TourSystemApp() {
               <button onClick={() => {
                 if (!rankFormData.name) return alert("กรุณาระบุชื่อ Rank");
                 if (rankFormData.id) {
-                  setCommissionRanks(ranks => ranks.map(r => r.id === rankFormData.id ? rankFormData : r));
+                  setCommissionRanks(ranks => ranks.map(r => r.id === rankFormData.id ? (rankFormData as CommissionRank) : r));
                 } else {
-                  const newRank = { ...rankFormData, id: commissionRanks.length > 0 ? Math.max(...commissionRanks.map(r => r.id)) + 1 : 1 };
+                  const newRank = { ...rankFormData, id: commissionRanks.length > 0 ? Math.max(...commissionRanks.map(r => r.id)) + 1 : 1 } as CommissionRank;
                   setCommissionRanks([...commissionRanks, newRank]);
                 }
                 setIsRankModalOpen(false);
@@ -3987,7 +4049,7 @@ export default function TourSystemApp() {
                               // But wait, the original code didn't use state for these inputs! It was just a static view.
                               // We need to add state to make this interactive as requested.
                               // Let's use `paymentFormData` state which already exists in line 157 but wasn't seemingly used here.
-                              setPaymentFormData(prev => ({ ...prev, method: e.target.value }));
+                              setPaymentFormData(prev => ({ ...prev, method: e.target.value as any }));
                             }}
                           >
                             <option value="transfer">โอนเงิน</option>
@@ -4180,7 +4242,7 @@ export default function TourSystemApp() {
                             }
                           }
 
-                          if (billPax.length === 0) return <tr><td colSpan="4" className="text-center py-2 text-gray-400">ไม่พบรายชื่อผู้เดินทาง</td></tr>;
+                          if (billPax.length === 0) return <tr><td colSpan={4} className="text-center py-2 text-gray-400">ไม่พบรายชื่อผู้เดินทาง</td></tr>;
 
                           return billPax.map((p, idx) => {
                             const price = roundForBill?.price?.[p.roomType || 'adultTwin'] || 0;
@@ -4735,14 +4797,14 @@ export default function TourSystemApp() {
                     const subtotal = selectedReceiptForTaxInvoice.receiptAmount / 1.07;
                     const vatAmount = selectedReceiptForTaxInvoice.receiptAmount - subtotal;
 
-                    const newTaxInvoice = {
+                    const newTaxInvoice: TaxInvoice = {
                       id: `TAX-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(taxInvoices.length + 1).padStart(3, '0')}`,
                       runningNumber: runningNumber,
                       receiptIds: [selectedReceiptForTaxInvoice.id],
                       paymentId: selectedReceiptForTaxInvoice.paymentId,
                       roundId: selectedReceiptForTaxInvoice.roundId,
                       routeId: selectedReceiptForTaxInvoice.routeId,
-                      customerType: taxInvoiceFormData.customerType || 'individual',
+                      customerType: (taxInvoiceFormData.customerType as TaxInvoiceCustomerType) || 'individual',
                       customerName: taxInvoiceFormData.customerName || selectedReceiptForTaxInvoice.customerName,
                       taxId: taxInvoiceFormData.taxId || '',
                       address: taxInvoiceFormData.address || '',
@@ -4767,7 +4829,7 @@ export default function TourSystemApp() {
                     alert(`ออกใบกำกับภาษีเรียบร้อย!\nเลขที่: ${runningNumber}`);
                     setIsCreatingTaxInvoice(false);
                     setSelectedReceiptForTaxInvoice(null);
-                    setTaxInvoiceFormData({});
+                    setTaxInvoiceFormData({ customerType: 'individual' });
                     setPaymentSubTab('tax');
                   }}
                   disabled={!taxInvoiceFormData.customerName || !taxInvoiceFormData.taxId}
@@ -4973,12 +5035,12 @@ export default function TourSystemApp() {
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition"
                           placeholder="เช่น ครอบครัวตัวอย่าง"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) setCurrentGroupName(e.target.value.trim());
+                            if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) setCurrentGroupName((e.target as HTMLInputElement).value.trim());
                           }}
                         />
                         <button
                           onClick={() => {
-                            const val = document.getElementById('newGroupNameInput').value;
+                            const val = (document.getElementById('newGroupNameInput') as HTMLInputElement).value;
                             if (val.trim()) setCurrentGroupName(val.trim());
                           }}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold"
@@ -5134,7 +5196,7 @@ export default function TourSystemApp() {
                 {(() => {
                   // Detect group selection
                   const groupSelect = selectedPaxForBooking.find(s => String(s).startsWith('group:'));
-                  const groupName = groupSelect ? groupSelect.split(':')[1] : null;
+                  const groupName = groupSelect ? String(groupSelect).split(':')[1] : null;
 
                   // 1. Calculate Total Amount
                   const selectedPax = groupSelect
@@ -5188,7 +5250,7 @@ export default function TourSystemApp() {
                           <label className="text-sm font-bold text-gray-700 mb-3 block flex justify-between items-center">
                             <span>ระบุยอดที่ต้องการชำระ</span>
                             <span className="text-xs text-blue-500 cursor-pointer hover:underline" onClick={() => {
-                              document.getElementById('manualPaidAmountInput').value = 0;
+                              (document.getElementById('manualPaidAmountInput') as HTMLInputElement).value = '0';
                               document.getElementById('manualPaidAmountInput').dispatchEvent(new Event('input', { bubbles: true }));
                             }}>เคลียร์ค่า (0)</span>
                           </label>
@@ -5197,8 +5259,8 @@ export default function TourSystemApp() {
                           <div className="grid grid-cols-3 gap-2 mb-3">
                             <button
                               onClick={() => {
-                                const input = document.getElementById('manualPaidAmountInput');
-                                input.value = netAmount;
+                                const input = document.getElementById('manualPaidAmountInput') as HTMLInputElement;
+                                input.value = String(netAmount);
                                 input.dispatchEvent(new Event('input', { bubbles: true }));
                               }}
                               className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
@@ -5207,8 +5269,8 @@ export default function TourSystemApp() {
                             </button>
                             <button
                               onClick={() => {
-                                const input = document.getElementById('manualPaidAmountInput');
-                                input.value = Math.floor(netAmount / 2);
+                                const input = document.getElementById('manualPaidAmountInput') as HTMLInputElement;
+                                input.value = String(Math.floor(netAmount / 2));
                                 input.dispatchEvent(new Event('input', { bubbles: true }));
                               }}
                               className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
@@ -5217,8 +5279,8 @@ export default function TourSystemApp() {
                             </button>
                             <button
                               onClick={() => {
-                                const input = document.getElementById('manualPaidAmountInput');
-                                input.value = 0;
+                                const input = document.getElementById('manualPaidAmountInput') as HTMLInputElement;
+                                input.value = '0';
                                 input.dispatchEvent(new Event('input', { bubbles: true }));
                               }}
                               className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs text-gray-600 hover:border-[#03b8fa] hover:text-[#03b8fa] transition"
@@ -5243,7 +5305,7 @@ export default function TourSystemApp() {
                           <button
                             id="btn-confirm-payment"
                             onClick={() => {
-                              const inputAmount = Number(document.getElementById('manualPaidAmountInput').value);
+                              const inputAmount = Number((document.getElementById('manualPaidAmountInput') as HTMLInputElement).value);
 
                               if (inputAmount <= 0) return alert("กรุณาระบุยอดชำระที่มากกว่า 0 บาท");
 
@@ -5254,7 +5316,7 @@ export default function TourSystemApp() {
                               const finalPax = bookingPaxList
                                 .filter(p => {
                                   if (groupSelect) {
-                                    const gName = groupSelect.split(':')[1];
+                                    const gName = String(groupSelect).split(':')[1];
                                     return p.bookingType === 'group' && p.groupName === gName;
                                   }
                                   return selectedPaxForBooking.includes(p.id);
@@ -5286,7 +5348,7 @@ export default function TourSystemApp() {
                               }
 
                               // === BILLING NOTE FLOW === ... (rest stays the same)
-                              const newPayment = {
+                              const newPayment: Payment = {
                                 id: Date.now() + 1,
                                 bookingId: bookingId,
                                 routeId: selectedRoute.id,
@@ -5294,7 +5356,6 @@ export default function TourSystemApp() {
                                 saleId: currentUser.id,
                                 paxIds: finalPax.map(p => p.id),
                                 customerName: payerName,
-                                billingInfo: { name: payerName, type: groupSelect ? 'juridical' : 'individual' },
                                 totalAmount: netAmount,
                                 paidAmount: 0,
                                 status: 'pending',
@@ -5303,25 +5364,27 @@ export default function TourSystemApp() {
                               };
                               setPayments(prev => [newPayment, ...prev]);
 
-                              const newBillingNote = {
+                              const newBillingNote: BillingNote = {
                                 id: `INV-${Date.now()}`,
+                                paymentId: newPayment.id,
+                                roundId: selectedRound.id,
                                 routeId: selectedRoute.id,
+                                groupId: groupSelect ? String(groupSelect).split(':')[1] : null,
+                                bookingId: bookingId,
                                 customerName: payerName,
                                 billingType: groupSelect ? 'group' : 'individual',
-                                totalAmount: netAmount,
-                                billedAmount: inputAmount,
-                                paidAmount: 0,
-                                billingAmount: inputAmount,
-                                previousPaid: previouslyPaid,
-                                dueDate: "",
-                                status: 'pending',
-                                bookingId: bookingId,
-                                paymentId: newPayment.id,
                                 paxIds: finalPax.map(p => p.id),
-                                roundId: selectedRound.id,
-                                saleId: currentUser.id,
-                                saleName: currentUser.name,
-                                createdAt: new Date().toLocaleDateString()
+                                totalAmount: netAmount,
+                                previousPaid: previouslyPaid,
+                                billingAmount: inputAmount,
+                                paidAmount: 0,
+                                status: 'pending',
+                                createdAt: new Date().toISOString().split('T')[0],
+                                createdBy: currentUser.id,
+                                dueDate: "",
+                                paymentMethod: null,
+                                bankAccountId: null,
+                                note: ""
                               };
                               setBillingNotes(prev => [newBillingNote, ...prev]);
 

@@ -1,0 +1,13 @@
+src/App.tsx(3089,212): error TS2304: Cannot find name 'UserRole'.
+src/App.tsx(4049,50): error TS2345: Argument of type '(prev: PaymentFormData) => { method: string; amount: number; receipt: File; note: string; slipFileName?: string; }' is not assignable to parameter of type 'SetStateAction<PaymentFormData>'.
+src/App.tsx(4533,33): error TS2353: Object literal may only specify known properties, and 'slipFile' does not exist in type 'SetStateAction<PaymentFormData>'.
+src/App.tsx(4596,49): error TS2339: Property 'slipFile' does not exist on type 'PaymentFormData'.
+src/App.tsx(4701,110): error TS2353: Object literal may only specify known properties, and 'slipFile' does not exist in type 'SetStateAction<PaymentFormData>'.
+src/App.tsx(4817,36): error TS2345: Argument of type '(prev: TaxInvoice[]) => { id: string; runningNumber: string; receiptIds: string[]; paymentId: number; roundId: number; routeId: number; customerType: TaxInvoiceCustomerType; ... 10 more ...; note: string; }[]' is not assignable to parameter of type 'SetStateAction<TaxInvoice[]>'.
+src/App.tsx(5196,63): error TS2339: Property 'split' does not exist on type 'string | number'.
+src/App.tsx(5250,80): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+src/App.tsx(5260,39): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+src/App.tsx(5270,39): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+src/App.tsx(5280,39): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+src/App.tsx(5305,107): error TS2339: Property 'value' does not exist on type 'HTMLElement'.
+src/App.tsx(5316,63): error TS2339: Property 'split' does not exist on type 'string | number'.
