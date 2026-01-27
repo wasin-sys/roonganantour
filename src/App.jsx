@@ -2911,13 +2911,29 @@ export default function TourSystemApp() {
 
                         // Render Child Cert Button for passport column if child
                         if (task.key === 'passport' && isChildPax) {
+                          const birthCertFile = pax.attachments?.birthCert || status.file;
                           return (
-                            <td key={task.key} className="px-2 py-3 text-center">
-                              <button onClick={() => togglePaxTask(pax.id, task.key)} className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors group relative ${status.checked ? 'text-green-600 bg-green-50' : 'text-gray-400'}`}>
+                            <td key={task.key} className="px-2 py-3 text-center relative">
+                              <button
+                                onClick={() => togglePaxTask(pax.id, task.key)}
+                                className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors group relative ${status.checked ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-500'}`}
+                              >
                                 {status.checked ? <CheckSquare size={20} /> : <Square size={20} />}
-                                <span className="text-[10px] uppercase font-bold mt-0.5">Birth Cert</span>
-                                {status.file && <div className="absolute top-0 right-0 bg-blue-500 w-2 h-2 rounded-full border border-white"></div>}
+                                <span className="text-[10px] uppercase font-bold mt-0.5 text-pink-600">Birth Cert</span>
                               </button>
+                              {/* File attachment indicator - clickable to open file */}
+                              {birthCertFile && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.alert(`📄 เปิดไฟล์สูติบัตร: ${birthCertFile}\n\n(ในระบบจริงจะเปิดดูไฟล์ PDF/รูปภาพ)`);
+                                  }}
+                                  className="absolute top-1 right-2 w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-pink-600 hover:scale-110 transition-all"
+                                  title={`ดูสูติบัตร: ${birthCertFile}`}
+                                >
+                                  <FileText size={10} />
+                                </button>
+                              )}
                             </td>
                           );
                         }
