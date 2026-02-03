@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Receipt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette - Modern Corporate Theme */
+            --primary-color: #1a1f36; /* Midnight Blue */
+            --accent-color: #3b82f6;  /* Royal Blue */
+            --success-color: #059669; /* Green for received status */
+            --text-main: #374151;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+            --border-light: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #e5e5e5;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header Banner --- */
+        .header-banner {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .company-branding h1 {
+            margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .company-branding p {
+            margin: 5px 0 0; font-size: 14px; opacity: 0.8;
+        }
+        .receipt-meta { text-align: right; }
+        .receipt-number { font-size: 28px; font-weight: 300; margin: 0; line-height: 1; }
+        .meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+
+        /* --- Content Body --- */
+        .content { padding: 40px; flex: 1; }
+
+        /* --- Client Info Grid --- */
+        .info-grid {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 30px;
+        }
+        .label {
+            font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; margin-bottom: 8px; display: block;
+        }
+        .value { font-size: 15px; color: var(--text-main); font-weight: 500; line-height: 1.6; }
+
+        /* --- Modern Table --- */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th {
+            text-align: left; padding: 15px 10px; color: var(--text-light); font-size: 11px;
+            text-transform: uppercase; border-bottom: 2px solid var(--border-light); font-weight: 600;
+        }
+        td {
+            padding: 15px 10px; color: var(--text-main); border-bottom: 1px solid var(--border-light);
+            font-size: 14px; vertical-align: top;
+        }
+        .col-right { text-align: right; }
+        .col-center { text-align: center; }
+        .deposit-highlight {
+            color: var(--success-color); font-weight: 600; background-color: #ecfdf5;
+            display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-top: 5px;
+        }
+
+        /* --- Payment & Totals Section --- */
+        .payment-summary-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        /* Payment Method Card */
+        .payment-method-card {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+            width: 45%;
+        }
+        .pm-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .pm-icon { font-size: 20px; color: var(--success-color); margin-right: 10px; }
+        .pm-title { font-weight: 600; color: var(--primary-color); }
+        .pm-detail-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: var(--text-main); }
+        .pm-label { color: var(--text-light); }
+
+        /* Total Amount Card */
+        .total-card {
+            width: 40%;
+            text-align: right;
+        }
+        .total-label { font-size: 14px; color: var(--text-light); margin-bottom: 5px; }
+        .total-amount { font-size: 32px; font-weight: 700; color: var(--primary-color); line-height: 1; }
+        .total-text { font-size: 13px; color: var(--text-light); margin-top: 10px; font-style: italic; }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 40px; background-color: var(--bg-light); border-top: 1px solid var(--border-light);
+            font-size: 12px; color: var(--text-light);
+        }
+        .footer-content { display: flex; justify-content: space-between; align-items: flex-end; }
+        .contact-highlight { color: var(--accent-color); font-weight: 600; }
+        .signature-area { text-align: right; width: 30%; }
+        .sig-line { border-bottom: 1px solid #ccc; height: 40px; margin-bottom: 8px; position: relative; }
+
+        /* --- Print Setting --- */
+        @media print {
+            body { background: none; padding: 0; margin: 0; }
+            .a4-page { box-shadow: none; margin: 0; width: 100%; height: 100%; }
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="a4-page">
+        <div class="header-banner">
+            <div class="company-branding">
+                <div style="font-size:36px; margin-bottom:10px;">⛵</div>
+                <h1>RECEIPT</h1>
+                <p>ใบสำคัญรับเงิน</p>
+            </div>
+            <div class="receipt-meta">
+                <div class="meta-label">RECEIPT NO.</div>
+                <h2 class="receipt-number">#N240169</h2>
+                <div style="margin-top: 5px; font-size: 14px; opacity: 0.8;">Date: 27 Jan 2026</div>
+                <div style="margin-top:10px; display:inline-block; background:rgba(255,255,255,0.2); padding: 3px 8px; border-radius:4px; font-size:11px;">ต้นฉบับ (Original)</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="info-grid">
+                <span class="label">Received From (ได้รับเงินจาก)</span>
+                <div class="value">
+                    คุณจิราพรรณ ตันสัก <br>
+                    <span style="font-size:13px; color:#666;">(เพิ่ม 1 ท่าน)</span><br>
+                    <br>
+                    โทร: 081-980-2103
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 55%;">Description (รายการ)</th>
+                        <th class="col-center" style="width: 10%;">Qty</th>
+                        <th class="col-right" style="width: 17.5%;">Unit Price</th>
+                        <th class="col-right" style="width: 17.5%;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <span style="font-weight: 600; color: var(--primary-color);">Chiang Mai - Hong Kong Disney (3D2N)</span><br>
+                            <span style="font-size: 12px; color: var(--text-light);">Date: 7-9 Mar 2026</span><br>
+                            <span class="deposit-highlight">Deposit Payment (ยอดมัดจำ)</span>
+                        </td>
+                        <td class="col-center">1</td>
+                        <td class="col-right">15,000.00</td>
+                        <td class="col-right" style="font-weight: 600;">15,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="payment-summary-container">
+                
+                <div class="payment-method-card">
+                    <div class="pm-header">
+                        <span class="pm-icon">✓</span> <span class="pm-title">Payment Confirmed</span>
+                    </div>
+                    <div class="pm-detail-row">
+                        <span class="pm-label">Method:</span>
+                        <span>Bank Transfer (เงินโอน)</span>
+                    </div>
+                    <div class="pm-detail-row">
+                        <span class="pm-label">Bank:</span>
+                        <span>CIMB Thai</span>
+                    </div>
+                    <div class="pm-detail-row">
+                        <span class="pm-label">Transfer Date:</span>
+                        <span>24 Jan 2026</span>
+                    </div>
+                </div>
+
+                <div class="total-card">
+                    <div class="total-label">Total Received (รวมรับเงินทั้งสิ้น)</div>
+                    <div class="total-amount">15,000.00 <span style="font-size:16px;">THB</span></div>
+                    <div class="total-text">( หนึ่งหมื่นห้าพันบาทถ้วน )</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <div class="footer-content">
+                <div style="width: 60%;">
+                    <strong>Contact Us:</strong><br>
+                    ต้องการความช่วยเหลือเร่งด่วน ติดต่อออฟฟิศสาขาฟ้าฮ่าม<br>
+                    <span class="contact-highlight">📞 065-5122155, 053-261146 (ฝ่ายขาย น้องเปิ้ล)</span>
+                </div>
+                <div class="signature-area">
+                    <div class="sig-line">
+                        <span style="position: absolute; bottom: 5px; right: 10px; color: #999; font-family: cursive; font-size:18px;">Sign...</span>
+                    </div>
+                    <div><b>Collector / ผู้รับเงิน</b></div>
+                    <div style="font-size: 10px; color: #aaa;">27 Jan 2026</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Invoice Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette สีสไตล์ Modern Corporate */
+            --primary-color: #1a1f36; /* น้ำเงินเข้มเกือบดำ (Midnight Blue) */
+            --accent-color: #3b82f6;  /* ฟ้าสดใส (Royal Blue) */
+            --text-main: #374151;     /* เทาเข้ม */
+            --text-light: #6b7280;    /* เทากลาง */
+            --bg-light: #f9fafb;      /* พื้นหลังเทาจางๆ */
+            --border-light: #e5e7eb;  /* เส้นขอบจาง */
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #e5e5e5;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header Banner Styling --- */
+        .header-banner {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .company-branding h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .company-branding p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .invoice-meta {
+            text-align: right;
+        }
+        .invoice-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            margin-bottom: 5px;
+        }
+        .invoice-number {
+            font-size: 32px;
+            font-weight: 300;
+            margin: 0;
+            line-height: 1;
+        }
+        .invoice-date {
+            margin-top: 5px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* --- Content Body --- */
+        .content {
+            padding: 40px;
+            flex: 1;
+        }
+
+        /* --- Client Info Grid --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 30px;
+        }
+        .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+        .value {
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        /* --- Modern Table --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th {
+            text-align: left;
+            padding: 15px 10px;
+            color: var(--text-light);
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border-light);
+            font-weight: 600;
+        }
+        td {
+            padding: 15px 10px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 14px;
+            vertical-align: top;
+        }
+        .col-right { text-align: right; }
+        .col-center { text-align: center; }
+        
+        /* Highlight specific text */
+        .desc-title { font-weight: 600; color: var(--primary-color); display: block; margin-bottom: 4px; }
+        .desc-sub { font-size: 12px; color: var(--text-light); }
+
+        /* --- Totals Section (Card Style) --- */
+        .totals-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .totals-card {
+            width: 350px;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        .total-row.final {
+            border-top: 1px solid var(--border-light);
+            padding-top: 15px;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .status-badge {
+            display: inline-block;
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 40px;
+            background-color: var(--bg-light);
+            border-top: 1px solid var(--border-light);
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .note-box {
+            width: 60%;
+        }
+        .contact-highlight {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+        .signature-area {
+            text-align: right;
+            width: 30%;
+        }
+        .sig-line {
+            border-bottom: 1px solid #ccc;
+            height: 40px;
+            margin-bottom: 8px;
+        }
+
+        /* --- Print Setting --- */
+        @media print {
+            body { background: none; padding: 0; margin: 0; }
+            .a4-page { box-shadow: none; margin: 0; width: 100%; height: 100%; }
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="a4-page">
+        <div class="header-banner">
+            <div class="company-branding">
+                <div style="font-size:40px; margin-bottom:10px;">⛵</div> <h1>INVOICE</h1>
+                <p>ใบวางบิล / แจ้งหนี้</p>
+            </div>
+            <div class="invoice-meta">
+                <div class="invoice-title">INVOICE NO.</div>
+                <h2 class="invoice-number">#N240169</h2>
+                <div class="invoice-date">Date: 27 Jan 2026</div>
+                <div style="margin-top:10px; display:inline-block; background:rgba(255,255,255,0.2); padding: 4px 10px; border-radius:4px; font-size:12px;">ต้นฉบับ (Original)</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="info-grid">
+                <div>
+                    <span class="label">Billed To (ลูกค้า)</span>
+                    <div class="value">
+                        คุณจิราพรรณ ตันสัก <br>
+                        <span style="font-size:13px; color:#666;">(และผู้ติดตาม 1 ท่าน)</span><br>
+                        <br>
+                        โทร: 081-980-2103
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="label">Due Date (กำหนดชำระ)</span>
+                    <div class="value" style="color: #dc2626; font-weight:700;">13 Feb 2026</div>
+                    
+                    <div style="margin-top: 15px;">
+                        <span class="label">Payment Status</span>
+                        <span class="status-badge">Partial Paid</span>
+                    </div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">Description (รายการ)</th>
+                        <th class="col-center" style="width: 10%;">Qty</th>
+                        <th class="col-right" style="width: 20%;">Price</th>
+                        <th class="col-right" style="width: 20%;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="desc-title">Chiang Mai - Hong Kong Disney (3D2N)</span>
+                            <span class="desc-sub">Trip Date: 7-9 Mar 2026 (All inclusive package)</span>
+                        </td>
+                        <td class="col-center">1</td>
+                        <td class="col-right">26,888.00</td>
+                        <td class="col-right">26,888.00</td>
+                    </tr>
+                    <tr style="background-color: #fffaf0;">
+                        <td>
+                            <span class="desc-title" style="color: #d97706;">Guide & Driver Tips</span>
+                            <span class="desc-sub">ค่าทิปไกด์และคนขับ</span>
+                        </td>
+                        <td class="col-center">1</td>
+                        <td class="col-right">0.00</td>
+                        <td class="col-right" style="color: #d97706;">FREE</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="desc-title">Other Services</span>
+                            <span class="desc-sub">ค่าบริการอื่นๆ</span>
+                        </td>
+                        <td class="col-center">1</td>
+                        <td class="col-right">0.00</td>
+                        <td class="col-right">0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="totals-container">
+                <div class="totals-card">
+                    <div class="total-row">
+                        <span>Subtotal (รวมเป็นเงิน)</span>
+                        <span>26,888.00</span>
+                    </div>
+                    <div class="total-row" style="color: #059669;">
+                        <span>Less: Deposit (หักมัดจำ)</span>
+                        <span>-15,000.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span style="font-size:11px;">Paid via CIMB (27/1/26)</span>
+                    </div>
+                    <div class="total-row final">
+                        <span>Balance Due (ยอดคงเหลือ)</span>
+                        <span>11,888.00</span>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; margin-top: 5px; color: #999;">
+                        (หนึ่งหมื่นหนึ่งพันแปดร้อยแปดสิบแปดบาทถ้วน)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-content">
+                <div class="note-box">
+                    <strong>Note:</strong><br>
+                    Please make the payment before the due date.<br>
+                    ได้รับสินค้า/บริการถูกต้องเรียบร้อยแล้ว<br><br>
+                    <span style="display:block; padding: 8px; background: #e0f2fe; border-radius: 4px; color: #0284c7;">
+                        📞 <b>Urgent Contact:</b> คุณเปิ้ล (Sales) 091-8573340 | Office ฟ้าฮ่าม 053-261146
+                    </span>
+                </div>
+                <div class="signature-area">
+                    <div class="sig-line"></div>
+                    <div>Authorized Signature</div>
+                    <div style="font-size: 10px; color: #aaa;">27 Jan 2026</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

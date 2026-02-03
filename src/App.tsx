@@ -1,4 +1,10 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
+import InvoicePDF from './components/documents/InvoicePDF';
+import ReceiptPDF from './components/documents/ReceiptPDF';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
+import { createRoot } from 'react-dom/client';
+
 import {
   LayoutDashboard,
   Calendar,
@@ -290,6 +296,176 @@ export default function TourSystemApp() {
   ]);
   const [isRankModalOpen, setIsRankModalOpen] = useState(false);
   const [rankFormData, setRankFormData] = useState<Partial<CommissionRank>>({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: undefined });
+
+  // === PDF GENERATION UTILS ===
+  const generatePDF = async (type: 'invoice' | 'receipt', data: any, filename: string) => {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    `;
+    modalOverlay.id = 'pdf-preview-modal';
+
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white; border-radius: 12px; max-width: 900px; width: 100%;
+      max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    `;
+
+    // Modal header
+    const modalHeader = document.createElement('div');
+    modalHeader.style.cssText = `
+      padding: 16px 24px; background: #1e3a8a; color: white;
+      display: flex; justify-content: space-between; align-items: center;
+    `;
+    modalHeader.innerHTML = `
+      <h3 style="margin:0; font-size:18px; font-weight:600;">
+        📄 Preview ${type === 'invoice' ? 'ใบวางบิล (Invoice)' : 'ใบเสร็จ (Receipt)'}
+      </h3>
+      <div id="pdf-action-buttons" style="display: flex; gap: 8px;">
+        <button id="pdf-download-btn" style="
+          background: #10b981; color: white; border: none; padding: 8px 20px;
+          border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;
+          display: flex; align-items: center; gap: 6px;
+        ">⬇ Download PDF</button>
+        <button id="pdf-close-btn" style="
+          background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3);
+          padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
+        ">✕ ปิด</button>
+      </div>
+    `;
+
+    // Preview container (scrollable)
+    const previewContainer = document.createElement('div');
+    previewContainer.style.cssText = `
+      flex: 1; overflow: auto; padding: 20px; background: #f3f4f6;
+      display: flex; justify-content: center;
+    `;
+
+    // PDF content wrapper
+    const pdfWrapper = document.createElement('div');
+    pdfWrapper.style.cssText = `
+      background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      width: 210mm;
+    `;
+    pdfWrapper.id = 'pdf-content-wrapper';
+
+    previewContainer.appendChild(pdfWrapper);
+    modalContent.appendChild(modalHeader);
+    modalContent.appendChild(previewContainer);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    // Find related booking data for context
+    let relatedBooking = bookings.find(b => b.id === data.bookingId);
+    if (!relatedBooking && data.paymentId) {
+      const payment = payments.find(p => p.id === data.paymentId);
+      if (payment) relatedBooking = bookings.find(b => b.id === payment.bookingId);
+    }
+    const relatedRound = rounds.find(r => r.id === (relatedBooking?.roundId || data.roundId));
+    const relatedRoute = routes.find(r => r.id === (relatedRound?.routeId || data.routeId));
+
+    // Render component to the wrapper
+    const root = createRoot(pdfWrapper);
+
+    if (type === 'invoice') {
+      root.render(
+        <InvoicePDF
+          billingNote={data as BillingNote}
+          booking={relatedBooking}
+          round={relatedRound}
+          route={relatedRoute}
+        />
+      );
+    } else {
+      root.render(
+        <ReceiptPDF
+          receipt={data as Receipt}
+          booking={relatedBooking}
+          round={relatedRound}
+          route={relatedRoute}
+        />
+      );
+    }
+
+    // Wait for React to render
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await document.fonts.ready;
+
+    // Setup button handlers
+    const downloadBtn = document.getElementById('pdf-download-btn');
+    const closeBtn = document.getElementById('pdf-close-btn');
+
+    const cleanup = () => {
+      root.unmount();
+      if (document.body.contains(modalOverlay)) {
+        document.body.removeChild(modalOverlay);
+      }
+    };
+
+    closeBtn?.addEventListener('click', cleanup);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) cleanup();
+    });
+
+    downloadBtn?.addEventListener('click', async () => {
+      // Show loading state
+      if (downloadBtn) {
+        downloadBtn.innerHTML = '⏳ กำลังสร้าง PDF...';
+        downloadBtn.style.background = '#6b7280';
+        downloadBtn.style.pointerEvents = 'none';
+      }
+
+      const pdfContent = pdfWrapper.firstElementChild as HTMLElement;
+      if (!pdfContent) {
+        alert('ไม่พบเนื้อหา PDF');
+        return;
+      }
+
+      const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          windowWidth: pdfContent.scrollWidth,
+          windowHeight: pdfContent.scrollHeight,
+          scrollX: 0,
+          scrollY: 0,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      try {
+        await html2pdf().set(opt).from(pdfContent).save();
+        // Show success
+        if (downloadBtn) {
+          downloadBtn.innerHTML = '✅ Download สำเร็จ!';
+          downloadBtn.style.background = '#10b981';
+        }
+        // Auto close after download
+        setTimeout(cleanup, 1500);
+      } catch (err) {
+        console.error("PDF Generation Error", err);
+        alert(`ไม่สามารถสร้าง PDF ได้: ${err instanceof Error ? err.message : String(err)}`);
+        if (downloadBtn) {
+          downloadBtn.innerHTML = '⬇ Download PDF';
+          downloadBtn.style.background = '#10b981';
+          downloadBtn.style.pointerEvents = 'auto';
+        }
+      }
+    });
+  };
 
   const getPaxForRound = (roundId: number): Passenger[] => {
     // Get unique passengers from actual bookings for this round
@@ -1904,14 +2080,17 @@ export default function TourSystemApp() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase">OP Staff ผู้ดูแล</label>
-                  <input
-                    type="text"
+                  <select
                     className={`w-full border p-2 rounded text-sm bg-white ${currentUser.role !== 'MANAGER' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                    placeholder="ระบุชื่อ OP Staff ที่ดูแลเส้นทางนี้"
                     value={bookingDetails.contactName}
                     onChange={(e) => setBookingDetails({ ...bookingDetails, contactName: e.target.value })}
                     disabled={currentUser.role !== 'MANAGER'}
-                  />
+                  >
+                    <option value="">เลือกพนักงานผู้ดูแล</option>
+                    {appUsers.filter(u => u.role !== 'GUIDE').map(u => (
+                      <option key={u.id} value={u.name}>{u.name} ({u.role})</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase">รหัสทัวร์ (ถ้ามี)</label>
@@ -4214,50 +4393,18 @@ export default function TourSystemApp() {
                     </div>
                   </div>
 
-                  {/* Passenger Detail Table */}
+                  {/* Summary of Items */}
                   <div className="mb-6">
-                    <p className="text-xs text-gray-500 uppercase mb-2">รายละเอียดรายการ (Passenger Breakdown)</p>
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-200 text-gray-600 text-xs uppercase font-semibold">
-                        <tr>
-                          <th className="px-2 py-1 text-left">#</th>
-                          <th className="px-2 py-1 text-left">ผู้เดินทาง</th>
-                          <th className="px-2 py-1 text-left">ประเภท</th>
-                          <th className="px-2 py-1 text-right">ราคา</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 border-b border-gray-200 bg-white">
-                        {(() => {
-                          // Calculate pax data for the bill
-                          const roundForBill = rounds.find(r => r.id === viewingBillingNote.roundId);
-                          let billPax = [];
-                          if (roundForBill) {
-                            // Try to find from live bookings first
-                            const booking = bookings.find(b => b.id === viewingBillingNote.bookingId);
-                            if (booking && booking.pax) {
-                              billPax = booking.pax;
-                            } else if (viewingBillingNote.paxIds) {
-                              const allPax = getPaxForRound(roundForBill.id) || [];
-                              billPax = allPax.filter(p => viewingBillingNote.paxIds.includes(p.id));
-                            }
-                          }
-
-                          if (billPax.length === 0) return <tr><td colSpan={4} className="text-center py-2 text-gray-400">ไม่พบรายชื่อผู้เดินทาง</td></tr>;
-
-                          return billPax.map((p, idx) => {
-                            const price = roundForBill?.price?.[p.roomType || 'adultTwin'] || 0;
-                            return (
-                              <tr key={p.id}>
-                                <td className="px-2 py-1.5 text-gray-500">{idx + 1}</td>
-                                <td className="px-2 py-1.5 font-medium">{p.firstNameEn} {p.lastNameEn}</td>
-                                <td className="px-2 py-1.5 text-gray-500 text-xs">{p.roomType}</td>
-                                <td className="px-2 py-1.5 text-right font-mono">฿{price.toLocaleString()}</td>
-                              </tr>
-                            );
-                          });
-                        })()}
-                      </tbody>
-                    </table>
+                    <p className="text-xs text-gray-500 uppercase mb-2">รายการ (Description)</p>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-gray-800">ชำระค่าแพ็กเกจทัวร์</p>
+                          <p className="text-xs text-gray-500">จำนวนผู้เดินทาง: {viewingBillingNote.paxIds?.length || 0} ท่าน</p>
+                        </div>
+                        <p className="font-mono font-bold text-gray-700">฿{viewingBillingNote.totalAmount.toLocaleString()}</p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -4325,8 +4472,8 @@ export default function TourSystemApp() {
               </div>
               <div className="bg-gray-50 px-6 py-4 flex justify-between border-t">
                 <button onClick={() => setViewingBillingNote(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิด</button>
-                <button onClick={() => alert('กำลังดาวน์โหลด PDF...')} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#029bc4] flex items-center gap-2">
-                  <Download size={16} /> ดาวน์โหลด PDF
+                <button onClick={() => generatePDF('invoice', viewingBillingNote, `Invoice-${viewingBillingNote.id}.pdf`)} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#029bc4] flex items-center gap-2">
+                  <FileText size={16} /> ดู PDF
                 </button>
               </div>
             </div>
@@ -4385,8 +4532,8 @@ export default function TourSystemApp() {
               </div>
               <div className="bg-gray-50 px-6 py-4 flex justify-between border-t">
                 <button onClick={() => setViewingReceipt(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิด</button>
-                <button onClick={() => alert('กำลังดาวน์โหลด PDF...')} className="px-6 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 flex items-center gap-2">
-                  <Download size={16} /> ดาวน์โหลด PDF
+                <button onClick={() => generatePDF('receipt', viewingReceipt, `Receipt-${viewingReceipt.id}.pdf`)} className="px-6 py-2 bg-[#37c3a5] text-white rounded-lg font-bold hover:bg-green-600 flex items-center gap-2">
+                  <FileText size={16} /> ดู PDF
                 </button>
               </div>
             </div>
