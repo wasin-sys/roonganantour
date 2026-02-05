@@ -1,3 +1,4 @@
+import React from 'react';
 import { Receipt, Booking, Round, Route } from '../../types';
 import logo from '../../assets/roonganan_logo.png';
 
@@ -89,7 +90,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             marginBottom: '30px',
-            borderBottom: `4px solid ${PRIMARY}`,
+            borderBottom: `2px solid ${PRIMARY}`,
             paddingBottom: '20px',
         },
         logoContainer: {
@@ -157,10 +158,10 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             display: 'block',
         },
         infoCard: {
-            backgroundColor: BACKGROUND,
+            backgroundColor: 'transparent',
             padding: '15px',
             borderRadius: '8px',
-            border: `1px solid ${PRIMARY}20`,
+            border: `1px solid ${PRIMARY}30`,
         },
         table: {
             width: '100%',
@@ -168,7 +169,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             marginBottom: '20px',
         },
         thead: {
-            backgroundColor: '#f1f5f9',
+            backgroundColor: 'transparent',
             borderTop: '1px solid #e2e8f0',
             borderBottom: '1px solid #e2e8f0',
         },
@@ -190,23 +191,40 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             justifyContent: 'flex-end',
             marginBottom: '40px',
         },
-        totalBox: {
-            backgroundColor: PRIMARY,
-            color: 'white',
-            padding: '20px 30px',
-            borderRadius: '8px',
+        summaryTable: {
+            width: '400px',
+            borderCollapse: 'collapse' as const,
+        },
+        summaryLabel: {
+            padding: '6px 10px',
+            fontSize: '13px',
+            color: TEXT_MUTED,
             textAlign: 'right' as const,
-            minWidth: '320px',
+            whiteSpace: 'nowrap' as const,
         },
-        totalLabel: {
-            fontSize: '14px',
-            textTransform: 'uppercase' as const,
-            opacity: 0.8,
-            marginBottom: '5px',
-        },
-        totalValue: {
-            fontSize: '28px',
+        summaryValue: {
+            padding: '6px 10px',
+            textAlign: 'right' as const,
             fontWeight: 'bold',
+            whiteSpace: 'nowrap' as const,
+        },
+        grandTotalRow: {
+            borderTop: `1.5px solid ${PRIMARY}`,
+            color: PRIMARY,
+        },
+        grandTotalLabel: {
+            padding: '12px 15px',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textAlign: 'right' as const,
+            whiteSpace: 'nowrap' as const,
+        },
+        grandTotalValue: {
+            padding: '12px 15px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            textAlign: 'right' as const,
+            whiteSpace: 'nowrap' as const,
         },
         bahtText: {
             marginTop: '8px',
@@ -239,7 +257,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
                 </div>
                 <div style={styles.docInfoBox}>
                     <div style={styles.docTitle}>RECEIPT</div>
-                    <div style={styles.docSubtitle}>ใบเสร็จรับเงิน</div>
+                    <div style={styles.docSubtitle}>ใบรับเงิน</div>
                     <table style={styles.docMetaTable}>
                         <tbody>
                             <tr>
@@ -255,25 +273,25 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
                 </div>
             </div>
 
-            {/* Trip Info */}
+            {/* Customer Info Box */}
             <div style={styles.tripBox}>
-                <span style={styles.sectionTitle}>เส้นทาง / โปรแกรมทัวร์</span>
-                <div style={{ fontWeight: 'bold', color: PRIMARY, fontSize: '15px' }}>
-                    {route?.code} - {route?.name}
-                </div>
-                <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '4px' }}>
-                    🗓 รอบการเดินทาง: {round?.date || '-'}
-                </div>
+                <span style={styles.sectionTitle}>ได้รับเงินจาก (RECEIVED FROM)</span>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: PRIMARY }}>{receipt.customerName}</div>
             </div>
 
-            <div style={{ marginBottom: '20px', display: 'flex', gap: '30px' }}>
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '40px' }}>
                 <div style={{ flex: 1 }}>
-                    <span style={styles.sectionTitle}>ได้รับเงินจาก (RECEIVED FROM)</span>
-                    <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{receipt.customerName}</div>
+                    <span style={styles.sectionTitle}>เส้นทาง / โปรแกรมทัวร์ (TOUR PROGRAM)</span>
+                    <div style={{ fontWeight: 'bold', color: TEXT_MAIN, fontSize: '15px' }}>
+                        {route?.code} - {route?.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '4px' }}>
+                        🗓 รอบการเดินทาง: {round?.date || '-'}
+                    </div>
                 </div>
-                <div style={{ width: '200px' }}>
+                <div style={{ width: '220px' }}>
                     <span style={styles.sectionTitle}>วิธีชำระเงิน (PAYMENT METHOD)</span>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{receipt.paymentMethod}</div>
+                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '14px' }}>{receipt.paymentMethod}</div>
                     {receipt.note && <div style={{ fontSize: '11px', color: TEXT_MUTED }}>*{receipt.note}</div>}
                 </div>
             </div>
@@ -306,10 +324,14 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             {/* Total Section */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
                 <div>
-                    <div style={styles.totalBox}>
-                        <div style={styles.totalLabel}>ยอดรวมรับเงินทั้งสิ้น (GRAND TOTAL)</div>
-                        <div style={styles.totalValue}>฿{formatCurrency(receipt.receiptAmount)}</div>
-                    </div>
+                    <table style={styles.summaryTable}>
+                        <tbody>
+                            <tr style={styles.grandTotalRow}>
+                                <td style={styles.grandTotalLabel}>ยอดรวมรับเงินทั้งสิ้น (Grand Total):</td>
+                                <td style={styles.grandTotalValue}>฿{formatCurrency(receipt.receiptAmount)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <div style={styles.bahtText}>
                         ( {bahtText(receipt.receiptAmount)} )
                     </div>
@@ -318,14 +340,14 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
 
             {/* Footer */}
             <div style={styles.footer}>
-                <div style={{ width: '60%', fontSize: '11px', color: TEXT_MUTED, lineHeight: '1.8' }}>
+                <div style={{ width: '55%', fontSize: '11px', color: TEXT_MUTED, lineHeight: '1.6' }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: PRIMARY, marginBottom: '8px' }}>หมายเหตุ:</div>
                     เอกสารนี้ถูกสร้างขึ้นด้วยระบบคอมพิวเตอร์ และมีผลสมบูรณ์ตามกฎหมาย<br />
                     กรุณาเก็บรักษาไว้เพื่อเป็นหลักฐานการชำระเงิน
                 </div>
-                <div style={{ width: '200px', textAlign: 'center' }}>
+                <div style={{ width: '180px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: '5px' }}>ผู้รับเงิน / เจ้าหน้าที่</div>
-                    <div style={{ borderBottom: '1px solid #e2e8f0', height: '50px', marginBottom: '10px' }}></div>
+                    <div style={{ borderBottom: '1px solid #e2e8f0', height: '45px', marginBottom: '8px' }}></div>
                     <div style={{ fontWeight: 'bold' }}>บจก. รุ่งอนันต์ ทัวร์</div>
                 </div>
             </div>

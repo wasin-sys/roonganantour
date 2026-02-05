@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Tax Invoice / Receipt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette - Consistent with previous documents */
+            --primary-color: #1a1f36; /* Midnight Blue */
+            --accent-color: #3b82f6;  /* Royal Blue */
+            --text-main: #374151;     /* Charcoal */
+            --text-light: #6b7280;    /* Gray */
+            --bg-light: #f9fafb;      /* Light Gray Background */
+            --border-light: #e5e7eb;  /* Light Border */
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #e5e5e5;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            color: var(--text-main);
+        }
+
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header Banner --- */
+        .header-banner {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .company-branding h1 {
+            margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .document-title {
+            text-align: right;
+        }
+        .document-title h2 {
+            margin: 0; font-size: 26px; font-weight: 300; text-transform: uppercase;
+        }
+        .document-meta {
+            margin-top: 10px; font-size: 13px; opacity: 0.9;
+        }
+        .meta-row { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+        .meta-label { margin-right: 10px; font-weight: 500; }
+
+        /* --- Content Structure --- */
+        .content { padding: 40px; flex: 1; }
+
+        .two-col-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;
+        }
+        .info-box h3 {
+            font-size: 14px; font-weight: 700; color: var(--primary-color); margin: 0 0 10px 0; text-transform: uppercase;
+        }
+        .info-box p {
+            margin: 0 0 6px 0; font-size: 13px; line-height: 1.5;
+        }
+        .label { color: var(--text-light); font-weight: 500; margin-right: 5px; }
+
+        /* --- Sales Meta Data Grid --- */
+        .sales-meta-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px;
+            background-color: var(--bg-light); padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid var(--border-light);
+        }
+        .meta-item span.label { display: block; font-size: 11px; margin-bottom: 4px; }
+        .meta-item span.value { display: block; font-size: 13px; font-weight: 600; }
+
+        /* --- Table Style --- */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th {
+            text-align: left; padding: 12px 10px; color: var(--text-light); font-size: 11px;
+            text-transform: uppercase; border-bottom: 2px solid var(--border-light); font-weight: 600;
+        }
+        td {
+            padding: 12px 10px; border-bottom: 1px solid var(--border-light); font-size: 13px; vertical-align: top;
+        }
+        .col-center { text-align: center; }
+        .col-right { text-align: right; }
+
+        /* --- Summary Section --- */
+        .summary-section {
+            display: flex; justify-content: flex-end; margin-bottom: 30px;
+        }
+        .summary-table {
+            width: 400px; border-collapse: collapse;
+        }
+        .summary-table td {
+            padding: 8px 10px; border-bottom: 1px solid var(--border-light); font-size: 13px;
+        }
+        .summary-label { font-weight: 500; color: var(--text-main); }
+        .summary-value { text-align: right; font-weight: 600; }
+        .grand-total-row td {
+            background-color: var(--primary-color); color: white; font-size: 16px; font-weight: 700; border: none; padding: 15px 10px;
+        }
+        .baht-text {
+            text-align: right; font-size: 12px; font-style: italic; color: var(--text-light); margin-top: 8px;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 30px 40px; background-color: var(--bg-light); border-top: 1px solid var(--border-light); font-size: 12px;
+        }
+        .footer-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px;
+        }
+        .payment-info h3, .signature-box h3 {
+            font-size: 12px; font-weight: 700; margin-bottom: 10px; color: var(--primary-color);
+        }
+        .checkbox-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .checkbox { width: 12px; height: 12px; border: 1px solid var(--text-light); margin-right: 8px; display: flex; justify-content: center; align-items: center; font-size: 10px;}
+        .sig-line {
+            border-bottom: 1px solid var(--border-light); height: 30px; margin-bottom: 8px;
+        }
+        .sig-role { text-align: center; color: var(--text-light); font-size: 11px; }
+
+        /* --- Print Setting --- */
+        @media print {
+            body { background: none; padding: 0; margin: 0; }
+            .a4-page { box-shadow: none; margin: 0; width: 100%; height: auto; }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="a4-page">
+        <div class="header-banner">
+            <div class="company-branding">
+                <div style="font-size:32px; margin-bottom:5px;">⛵</div>
+                <h1>บริษัท โปรซอฟท์ ซีอาร์เอ็ม จำกัด</h1>
+                <p style="font-size:12px; margin:5px 0 0; opacity:0.8;">(สำนักงานใหญ่) เลขประจำตัวผู้เสียภาษี 0105550012345</p>
+            </div>
+            <div class="document-title">
+                <h2>ใบกำกับภาษี / ใบเสร็จรับเงิน</h2>
+                <h3 style="margin:0; font-size:14px; font-weight:300; opacity:0.8;">TAX INVOICE / RECEIPT</h3>
+                <div class="document-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">เลขที่ (No.):</span>
+                        <span>INV65011</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">วันที่ (Date):</span>
+                        <span>08/02/2565</span>
+                    </div>
+                    <div style="text-align: right; margin-top: 8px;">
+                        <span style="background:rgba(255,255,255,0.15); padding: 3px 8px; border-radius:4px; font-size:11px;">ต้นฉบับ (Original)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="two-col-grid">
+                <div class="info-box" style="border-right: 1px solid var(--border-light); padding-right: 30px;">
+                    <h3>ผู้ขาย (Seller)</h3>
+                    <p><strong>บริษัท โปรซอฟท์ ซีอาร์เอ็ม จำกัด</strong></p>
+                    <p>287 ซอย 7 หมู่ 5 สันทรายน้อย สันทราย เชียงใหม่ 50210</p>
+                    <p><span class="label">โทร:</span> 02-123-4567 <span class="label" style="margin-left:10px;">แฟกซ์:</span> 02-123-4568</p>
+                </div>
+                <div class="info-box" style="padding-left: 10px;">
+                    <h3>ลูกค้า (Customer)</h3>
+                    <p><span class="label">รหัส:</span> C-00123</p>
+                    <p><strong>บริษัท เอเค จำกัด (สำนักงานใหญ่)</strong></p>
+                    <p>124 นวมินทร์ แขวงสายไหม เขตสายไหม กรุงเทพฯ 50100</p>
+                    <p><span class="label">เลขผู้เสียภาษี:</span> 1155001550012</p>
+                    <p><span class="label">โทร:</span> 089-635-5412</p>
+                </div>
+            </div>
+
+            <div class="sales-meta-grid">
+                <div class="meta-item"><span class="label">ใบสั่งขายเลขที่</span><span class="value">SO-2202001</span></div>
+                <div class="meta-item"><span class="label">อ้างอิงเลขที่</span><span class="value">PO-AK6502</span></div>
+                <div class="meta-item"><span class="label">วันครบกำหนด</span><span class="value">08/03/2565</span></div>
+                <div class="meta-item"><span class="label">ขนส่งโดย</span><span class="value">Kerry Express</span></div>
+                <div class="meta-item"><span class="label">พนักงานขาย</span><span class="value">จุฑาทิพย์ มหานันท์</span></div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-center" style="width: 5%;">#</th>
+                        <th style="width: 15%;">รหัสสินค้า</th>
+                        <th style="width: 35%;">รายการ (Description)</th>
+                        <th class="col-center" style="width: 10%;">จำนวน</th>
+                        <th class="col-center" style="width: 10%;">หน่วย</th>
+                        <th class="col-right" style="width: 12%;">ราคา/หน่วย</th>
+                        <th class="col-right" style="width: 13%;">จำนวนเงิน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-center">1</td>
+                        <td>001-07</td>
+                        <td>จอภาพ LED SAMSUNG 24"</td>
+                        <td class="col-center">2.00</td>
+                        <td class="col-center">เครื่อง</td>
+                        <td class="col-right">2,690.00</td>
+                        <td class="col-right">5,380.00</td>
+                    </tr>
+                    <tr>
+                        <td class="col-center">2</td>
+                        <td>001-11</td>
+                        <td>จอภาพ LED ACER 21.5"</td>
+                        <td class="col-center">2.00</td>
+                        <td class="col-center">เครื่อง</td>
+                        <td class="col-right">2,490.00</td>
+                        <td class="col-right">4,980.00</td>
+                    </tr>
+                    <tr>
+                        <td class="col-center">3</td>
+                        <td>001-17</td>
+                        <td>LED Downlight slim a square 6w</td>
+                        <td class="col-center">1.00</td>
+                        <td class="col-center">หลอด</td>
+                        <td class="col-right">2,600.00</td>
+                        <td class="col-right">2,600.00</td>
+                    </tr>
+                    <tr>
+                        <td class="col-center">4</td>
+                        <td>001-18</td>
+                        <td>LED Floodlight 100w RGB</td>
+                        <td class="col-center">1.00</td>
+                        <td class="col-center">ชุด</td>
+                        <td class="col-right">650.00</td>
+                        <td class="col-right">650.00</td>
+                    </tr>
+                    <tr style="height: 50px;"><td colspan="7"></td></tr>
+                </tbody>
+            </table>
+
+            <div class="summary-section">
+                <div>
+                    <table class="summary-table">
+                        <tr>
+                            <td class="summary-label">รวมเงิน (Subtotal)</td>
+                            <td class="summary-value">13,610.00</td>
+                        </tr>
+                        <tr>
+                            <td class="summary-label">หักส่วนลด (Discount) <span style="font-size:11px; color:var(--text-light);">(10%)</span></td>
+                            <td class="summary-value">-1,361.00</td>
+                        </tr>
+                        <tr>
+                            <td class="summary-label">มูลค่าหลังหักส่วนลด</td>
+                            <td class="summary-value">12,249.00</td>
+                        </tr>
+                        <tr>
+                            <td class="summary-label">ภาษีมูลค่าเพิ่ม (VAT) 7%</td>
+                            <td class="summary-value">857.43</td>
+                        </tr>
+                        <tr class="grand-total-row">
+                            <td class="summary-label" style="color:white;">จำนวนเงินทั้งสิ้น (Grand Total)</td>
+                            <td class="summary-value" style="color:white;">13,106.43</td>
+                        </tr>
+                    </table>
+                    <div class="baht-text">( หนึ่งหมื่นสามพันหนึ่งร้อยหกบาทสี่สิบสามสตางค์ )</div>
+                </div>
+            </div>
+
+        </div> <div class="footer">
+            <div class="footer-grid">
+                <div class="payment-info">
+                    <h3>การชำระเงิน (Payment Details)</h3>
+                    <div class="checkbox-item"><div class="checkbox"></div> เงินสด (Cash)</div>
+                    <div class="checkbox-item"><div class="checkbox"></div> เช็คธนาคาร (Cheque) <span style="border-bottom:1px dotted #ccc; width:80px; margin-left:5px;"></span></div>
+                    <div class="checkbox-item"><div class="checkbox">✓</div> เงินโอน (Transfer)</div>
+                    <div style="margin-left: 22px; font-size: 11px;">ธ.กสิกรไทย สาขา... เลขที่...</div>
+                </div>
+
+                <div class="signature-box">
+                    <div style="display:flex; gap:20px;">
+                        <div style="flex:1;">
+                            <div class="sig-line"></div>
+                            <div class="sig-role">ผู้รับของ (Receiver)</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div class="sig-line"></div>
+                            <div class="sig-role">ผู้ส่งของ (Deliverer)</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <div class="sig-line"></div>
+                        <div class="sig-role">ได้รับสินค้าตามรายการข้างบนไว้ถูกต้องแล้ว</div>
+                    </div>
+                </div>
+
+                <div class="signature-box">
+                    <div style="display:flex; gap:20px;">
+                        <div style="flex:1;">
+                            <div class="sig-line"></div>
+                            <div class="sig-role">ผู้จัดทำ (Prepared By)</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div class="sig-line">
+                                 <span style="position:absolute; margin-top:-15px; margin-left:20px; color:#999; font-family:cursive;">Approved.</span>
+                            </div>
+                            <div class="sig-role">ผู้อนุมัติ (Approved By)</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; text-align: right; font-size: 11px; color: var(--text-light);">
+                        เอกสารนี้จัดทำโดยระบบคอมพิวเตอร์
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

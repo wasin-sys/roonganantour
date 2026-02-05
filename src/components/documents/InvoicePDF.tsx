@@ -1,3 +1,4 @@
+import React from 'react';
 import { BillingNote, Booking, Round, Route } from '../../types';
 import logo from '../../assets/roonganan_logo.png';
 
@@ -92,7 +93,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             marginBottom: '30px',
-            borderBottom: `4px solid ${PRIMARY}`,
+            borderBottom: `2px solid ${PRIMARY}`,
             paddingBottom: '20px',
         },
         logoContainer: {
@@ -144,11 +145,11 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
             fontSize: '14px',
         },
         tripBox: {
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${PRIMARY}40`,
             borderRadius: '8px',
             padding: '12px 15px',
             marginBottom: '25px',
-            backgroundColor: '#f8fafc',
+            backgroundColor: 'transparent',
         },
         sectionTitle: {
             fontSize: '10px',
@@ -165,7 +166,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
             marginBottom: '20px',
         },
         thead: {
-            backgroundColor: '#f1f5f9',
+            backgroundColor: 'transparent',
             borderTop: '1px solid #e2e8f0',
             borderBottom: '1px solid #e2e8f0',
         },
@@ -188,34 +189,39 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
             marginTop: '10px',
         },
         summaryTable: {
-            width: '320px',
+            width: '400px',
             borderCollapse: 'collapse' as const,
         },
         summaryLabel: {
-            padding: '6px 0',
+            padding: '6px 10px',
             fontSize: '13px',
             color: TEXT_MUTED,
-            textAlign: 'left' as const,
+            textAlign: 'right' as const,
+            whiteSpace: 'nowrap' as const,
         },
         summaryValue: {
-            padding: '6px 0',
+            padding: '6px 10px',
             textAlign: 'right' as const,
             fontWeight: 'bold',
+            whiteSpace: 'nowrap' as const,
         },
         billingRow: {
-            borderTop: `2px solid ${PRIMARY}`,
+            borderTop: `1.5px solid ${PRIMARY}`,
             color: PRIMARY,
         },
         billingLabel: {
-            padding: '12px 0',
-            fontSize: '16px',
-            fontWeight: 'bold',
-        },
-        billingValue: {
-            padding: '12px 0',
-            fontSize: '20px',
+            padding: '12px 10px',
+            fontSize: '14px',
             fontWeight: 'bold',
             textAlign: 'right' as const,
+            whiteSpace: 'nowrap' as const,
+        },
+        billingValue: {
+            padding: '12px 10px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            textAlign: 'right' as const,
+            whiteSpace: 'nowrap' as const,
         },
         bahtText: {
             marginTop: '5px',
@@ -257,24 +263,21 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                 </div>
             </div>
 
-            {/* Trip Info */}
+            {/* Customer Info Box */}
             <div style={styles.tripBox}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div style={{ flex: 1 }}>
-                        <span style={styles.sectionTitle}>เส้นทาง / โปรแกรมทัวร์</span>
-                        <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '15px' }}>
-                            {route?.code} - {route?.name}
-                        </div>
-                        <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '4px' }}>
-                            🗓 รอบการเดินทาง: {round?.date || '-'}
-                        </div>
-                    </div>
-                </div>
+                <span style={styles.sectionTitle}>ลูกค้า / กลุ่ม (CUSTOMER / GROUP)</span>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: PRIMARY }}>{billingNote.customerName}</div>
             </div>
 
-            <div style={{ marginBottom: '15px' }}>
-                <span style={styles.sectionTitle}>ลูกค้า / กลุ่ม</span>
-                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{billingNote.customerName}</div>
+            {/* Trip Info */}
+            <div style={{ marginBottom: '20px' }}>
+                <span style={styles.sectionTitle}>เส้นทาง / โปรแกรมทัวร์ (TOUR PROGRAM)</span>
+                <div style={{ fontWeight: 'bold', color: TEXT_MAIN, fontSize: '15px' }}>
+                    {route?.code} - {route?.name}
+                </div>
+                <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '4px' }}>
+                    🗓 รอบการเดินทาง: {round?.date || '-'}
+                </div>
             </div>
 
             {/* Passenger Table */}
@@ -317,25 +320,12 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                                 <td style={styles.summaryLabel}>ชำระแล้ว (Previously Paid):</td>
                                 <td style={{ ...styles.summaryValue, color: '#059669' }}>฿{formatCurrency(billingNote.previousPaid)}</td>
                             </tr>
+                            <tr style={styles.billingRow}>
+                                <td style={styles.billingLabel}>ยอดวางบิลครั้งนี้ (Grand Total):</td>
+                                <td style={styles.billingValue}>฿{formatCurrency(billingNote.billingAmount)}</td>
+                            </tr>
                         </tbody>
                     </table>
-
-                    <div style={{
-                        marginTop: '15px',
-                        backgroundColor: PRIMARY,
-                        color: 'white',
-                        padding: '15px 25px',
-                        borderRadius: '8px',
-                        textAlign: 'right' as const,
-                        minWidth: '320px'
-                    }}>
-                        <div style={{ fontSize: '12px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '4px' }}>
-                            ยอดวางบิลครั้งนี้ (BILLING AMOUNT)
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                            ฿{formatCurrency(billingNote.billingAmount)}
-                        </div>
-                    </div>
 
                     <div style={styles.bahtText}>
                         ( {bahtText(billingNote.billingAmount)} )
@@ -346,7 +336,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
             {/* Footer */}
             <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div style={{ width: '60%', fontSize: '11px', color: TEXT_MUTED, lineHeight: '1.8' }}>
+                    <div style={{ width: '55%', fontSize: '11px', color: TEXT_MUTED, lineHeight: '1.6' }}>
                         <div style={{ fontSize: '12px', fontWeight: 'bold', color: PRIMARY, marginBottom: '8px' }}>ข้อมูลการชำระเงิน:</div>
                         ธนาคาร: กสิกรไทย (KBank) | เลขบัญชี: 123-4-56789-0<br />
                         ชื่อบัญชี: บจก. รุ่งอนันต์ ทัวร์<br />
@@ -354,9 +344,9 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                             * กรุณาแนบใบโอนเงินเข้าระบบหลังจากชำระเรียบร้อยแล้ว
                         </span>
                     </div>
-                    <div style={{ width: '200px', textAlign: 'center' }}>
+                    <div style={{ width: '180px', textAlign: 'center' }}>
                         <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: '5px' }}>ผู้ออกเอกสาร</div>
-                        <div style={{ borderBottom: '1px solid #e2e8f0', height: '50px', marginBottom: '10px' }}></div>
+                        <div style={{ borderBottom: '1px solid #e2e8f0', height: '45px', marginBottom: '8px' }}></div>
                         <div style={{ fontWeight: 'bold' }}>เจ้าหน้าที่ บจก. รุ่งอนันต์ ทัวร์</div>
                     </div>
                 </div>

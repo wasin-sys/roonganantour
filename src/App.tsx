@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import InvoicePDF from './components/documents/InvoicePDF';
 import ReceiptPDF from './components/documents/ReceiptPDF';
+import TaxInvoicePDF from './components/documents/TaxInvoicePDF';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { createRoot } from 'react-dom/client';
@@ -298,7 +299,7 @@ export default function TourSystemApp() {
   const [rankFormData, setRankFormData] = useState<Partial<CommissionRank>>({ name: '', defaultAmount: 0, color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', id: undefined });
 
   // === PDF GENERATION UTILS ===
-  const generatePDF = async (type: 'invoice' | 'receipt', data: any, filename: string) => {
+  const generatePDF = async (type: 'invoice' | 'receipt' | 'tax_invoice', data: any, filename: string) => {
     // Create modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.style.cssText = `
@@ -325,7 +326,7 @@ export default function TourSystemApp() {
     `;
     modalHeader.innerHTML = `
       <h3 style="margin:0; font-size:18px; font-weight:600;">
-        📄 Preview ${type === 'invoice' ? 'ใบวางบิล (Invoice)' : 'ใบเสร็จ (Receipt)'}
+        📄 Preview ${type === 'invoice' ? 'ใบวางบิล (Invoice)' : type === 'tax_invoice' ? 'ใบเสร็จ/ใบกำกับภาษี' : 'ใบรับเงิน'}
       </h3>
       <div id="pdf-action-buttons" style="display: flex; gap: 8px;">
         <button id="pdf-download-btn" style="
@@ -377,6 +378,18 @@ export default function TourSystemApp() {
       root.render(
         <InvoicePDF
           billingNote={data as BillingNote}
+          booking={relatedBooking}
+          round={relatedRound}
+          route={relatedRoute}
+        />
+      );
+    } else if (type === 'tax_invoice') {
+      const taxInvoiceData = data as TaxInvoice;
+      const relatedReceipts = receipts.filter(r => taxInvoiceData.receiptIds.includes(r.id));
+      root.render(
+        <TaxInvoicePDF
+          taxInvoice={taxInvoiceData}
+          receipts={relatedReceipts}
           booking={relatedBooking}
           round={relatedRound}
           route={relatedRoute}
@@ -4485,7 +4498,7 @@ export default function TourSystemApp() {
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden">
               <header className="bg-[#37c3a5] text-white px-6 py-4 flex justify-between items-center">
-                <h3 className="font-bold text-lg flex items-center gap-2"><FileCheck size={20} /> ใบรับเงิน (Receipt)</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2"><FileCheck size={20} /> ใบรับเงิน</h3>
                 <button onClick={() => setViewingReceipt(null)}><X size={20} /></button>
               </header>
               <div className="p-6">
@@ -4545,7 +4558,7 @@ export default function TourSystemApp() {
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden">
               <header className="bg-purple-600 text-white px-6 py-4 flex justify-between items-center">
-                <h3 className="font-bold text-lg flex items-center gap-2"><ShieldCheck size={20} /> ใบกำกับภาษี (Tax Invoice)</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2"><ShieldCheck size={20} /> ใบเสร็จ/ใบกำกับภาษี (Receipt/Tax Invoice)</h3>
                 <button onClick={() => setViewingTaxInvoice(null)}><X size={20} /></button>
               </header>
               <div className="p-6">
@@ -4557,7 +4570,7 @@ export default function TourSystemApp() {
                       <p className="text-sm text-gray-500">123/45 ถนนพหลโยธิน แขวงลาดยาว กรุงเทพฯ 10900</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">เลขที่ใบกำกับภาษี</p>
+                      <p className="text-sm text-gray-500">เลขที่ใบเสร็จ/ใบกำกับภาษี</p>
                       <p className="font-mono font-bold text-xl text-purple-600">{viewingTaxInvoice.runningNumber}</p>
                       <p className="text-sm text-gray-400 mt-1">วันที่ออก: {viewingTaxInvoice.issuedAt}</p>
                     </div>
@@ -4598,7 +4611,7 @@ export default function TourSystemApp() {
               </div>
               <div className="bg-gray-50 px-6 py-4 flex justify-between border-t">
                 <button onClick={() => setViewingTaxInvoice(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิด</button>
-                <button onClick={() => alert('กำลังดาวน์โหลด PDF...')} className="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 flex items-center gap-2">
+                <button onClick={() => generatePDF('tax_invoice', viewingTaxInvoice, `TaxInvoice-${viewingTaxInvoice.runningNumber}.pdf`)} className="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 flex items-center gap-2">
                   <Download size={16} /> ดาวน์โหลด PDF
                 </button>
               </div>
