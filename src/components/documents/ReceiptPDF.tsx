@@ -10,31 +10,22 @@ interface ReceiptPDFProps {
 }
 
 const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route }) => {
-    // --- FORMATTERS ---
+
+    // Helper functions
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('th-TH', {
-            style: 'decimal',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
+        return new Intl.NumberFormat('th-TH', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
     };
 
     const formatDate = (dateString: string) => {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        return date.toLocaleDateString('th-TH', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
+        return date.toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
     };
 
-    // Thai Baht Text Function
     const bahtText = (num: number) => {
         if (!num || num === 0) return 'ศูนย์บาทถ้วน';
         const numberText = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
         const unitText = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
-
         const convert = (n: number) => {
             let res = '';
             const nStr = n.toString();
@@ -53,304 +44,404 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
             }
             return res;
         };
-
         const [intPart, decPart] = num.toFixed(2).split('.');
         const intNum = parseInt(intPart);
         const decNum = parseInt(decPart);
-
         let result = intNum === 0 ? 'ศูนย์บาท' : convert(intNum) + 'บาท';
         if (decNum === 0) result += 'ถ้วน';
         else result += convert(decNum) + 'สตางค์';
-
         return result;
     };
 
-    // --- COLORS & STYLES ---
-    const PRIMARY = '#0f766e'; // Teal
-    const TEXT_MAIN = '#1f2937';
-    const TEXT_MUTED = '#6b7280';
-    const BACKGROUND = '#f0fdfa';
+    // Color palette - Green theme for receipt
+    const CI = {
+        50: '#f0fdf4',
+        100: '#dcfce7',
+        500: '#22c55e',
+        600: '#16a34a',
+        700: '#15803d',
+        800: '#166534',
+        900: '#14532d',
+    };
 
-    const styles = {
+    const isCash = receipt.paymentMethod === 'CASH' || receipt.paymentMethod === 'cash';
+
+    const s = {
         page: {
             width: '210mm',
-            height: '296.5mm', // Slightly less than 297mm to prevent blank page
-            padding: '15mm',
+            minHeight: '296mm',
             backgroundColor: '#ffffff',
-            fontFamily: "'Sarabun', sans-serif",
-            color: TEXT_MAIN,
+            fontFamily: "'Sarabun', 'Noto Sans Thai', sans-serif",
+            fontSize: '11px',
+            lineHeight: '1.4',
+            color: '#1f2937',
+            padding: '25px 35px',
+            paddingBottom: '30px',
             boxSizing: 'border-box' as const,
-            fontSize: '14px',
-            lineHeight: '1.6',
+            display: 'flex',
+            flexDirection: 'column' as const,
             position: 'relative' as const,
-            overflow: 'hidden' as const,
+            pageBreakAfter: 'always' as const
         },
         header: {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: '30px',
-            borderBottom: `2px solid ${PRIMARY}`,
-            paddingBottom: '20px',
+            borderBottom: `2px solid ${CI[900]}`,
+            paddingBottom: '12px',
+            marginBottom: '14px',
         },
-        logoContainer: {
-            width: '60%',
-        },
-        logo: {
-            height: '60px',
-            marginBottom: '10px',
-            objectFit: 'contain' as const,
-        },
-        companyTitle: {
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: PRIMARY,
-        },
-        companyInfo: {
-            fontSize: '11px',
-            color: TEXT_MUTED,
-            marginTop: '2px',
-        },
-        docInfoBox: {
-            textAlign: 'right' as const,
-            width: '40%',
-        },
-        docTitle: {
-            fontSize: '28px',
-            fontWeight: 'bold',
-            color: PRIMARY,
-            marginBottom: '5px',
-        },
-        docSubtitle: {
-            fontSize: '12px',
-            color: TEXT_MUTED,
-            marginBottom: '10px',
-        },
-        docMetaTable: {
-            float: 'right' as const,
-            borderCollapse: 'collapse' as const,
-        },
-        docMetaLabel: {
-            color: TEXT_MUTED,
-            fontSize: '12px',
-            textAlign: 'right' as const,
-            paddingRight: '12px',
-        },
-        docMetaValue: {
-            textAlign: 'right' as const,
-            fontWeight: 'bold',
-            fontSize: '14px',
-        },
-        tripBox: {
+        headerTitle: { fontSize: '24px', fontWeight: 'bold', color: CI[900], marginBottom: '4px', lineHeight: '1' },
+        headerSubtitle: { fontSize: '16px', fontWeight: 500, color: '#64748b', marginBottom: '4px' },
+        customerBox: {
+            padding: '10px',
+            backgroundColor: 'white',
+            borderRadius: '6px',
             border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            padding: '12px 15px',
-            marginBottom: '25px',
-            backgroundColor: BACKGROUND,
+            position: 'relative' as const,
+            overflow: 'hidden',
+            marginBottom: '16px'
         },
-        sectionTitle: {
+        customerBoxLabel: {
             fontSize: '10px',
             fontWeight: 'bold',
-            color: PRIMARY,
+            color: '#6b7280',
             textTransform: 'uppercase' as const,
-            letterSpacing: '1px',
-            marginBottom: '8px',
-            display: 'block',
-        },
-        infoCard: {
-            backgroundColor: 'transparent',
-            padding: '15px',
-            borderRadius: '8px',
-            border: `1px solid ${PRIMARY}30`,
-        },
-        table: {
-            width: '100%',
-            borderCollapse: 'collapse' as const,
-            marginBottom: '20px',
-        },
-        thead: {
-            backgroundColor: 'transparent',
-            borderTop: '1px solid #e2e8f0',
-            borderBottom: '1px solid #e2e8f0',
+            marginBottom: '6px',
+            borderBottom: '1px solid #f3f4f6',
+            paddingBottom: '4px',
+            paddingLeft: '6px',
         },
         th: {
-            padding: '10px',
-            fontSize: '12px',
-            fontWeight: 'bold',
+            padding: '6px 8px',
             textAlign: 'left' as const,
-            color: '#475569',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase' as const,
+            color: '#111827',
+            borderTop: '1px solid #374151',
+            borderBottom: '1px solid #374151',
+            whiteSpace: 'nowrap' as const
         },
         td: {
-            padding: '12px 10px',
-            fontSize: '13px',
-            borderBottom: '1px solid #f1f5f9',
-            verticalAlign: 'middle' as const,
-        },
-        totalSection: {
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: '40px',
-        },
-        summaryTable: {
-            width: '400px',
-            borderCollapse: 'collapse' as const,
-        },
-        summaryLabel: {
-            padding: '6px 10px',
-            fontSize: '13px',
-            color: TEXT_MUTED,
-            textAlign: 'right' as const,
-            whiteSpace: 'nowrap' as const,
-        },
-        summaryValue: {
-            padding: '6px 10px',
-            textAlign: 'right' as const,
-            fontWeight: 'bold',
-            whiteSpace: 'nowrap' as const,
-        },
-        grandTotalRow: {
-            borderTop: `1.5px solid ${PRIMARY}`,
-            color: PRIMARY,
-        },
-        grandTotalLabel: {
-            padding: '12px 15px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            textAlign: 'right' as const,
-            whiteSpace: 'nowrap' as const,
-        },
-        grandTotalValue: {
-            padding: '12px 15px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            textAlign: 'right' as const,
-            whiteSpace: 'nowrap' as const,
-        },
-        bahtText: {
-            marginTop: '8px',
-            textAlign: 'right' as const,
-            fontSize: '13px',
-            color: PRIMARY,
-            fontStyle: 'italic',
-            fontWeight: 'bold',
-        },
-        footer: {
-            marginTop: 'auto',
-            paddingTop: '30px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
+            padding: '8px',
+            verticalAlign: 'top' as const,
+            borderBottom: '1px solid #f3f4f6'
         }
     };
 
-    return (
-        <div style={styles.page}>
-            {/* Header Section */}
-            <div style={styles.header}>
-                <div style={styles.logoContainer}>
-                    <img src={logo} alt="Logo" style={styles.logo} />
-                    <div style={styles.companyTitle}>บจก. รุ่งอนันต์ ทัวร์</div>
-                    <div style={styles.companyInfo}>
-                        123/45 ถนนพหลโยธิน แขวงลาดยาว กรุงเทพฯ 10900<br />
-                        เลขประจำตัวผู้เสียภาษี: 0105566012345
-                    </div>
-                </div>
-                <div style={styles.docInfoBox}>
-                    <div style={styles.docTitle}>RECEIPT</div>
-                    <div style={styles.docSubtitle}>ใบรับเงิน</div>
-                    <table style={styles.docMetaTable}>
-                        <tbody>
-                            <tr>
-                                <td style={styles.docMetaLabel}>เลขที่เอกสาร:</td>
-                                <td style={styles.docMetaValue}>{receipt.id}</td>
-                            </tr>
-                            <tr>
-                                <td style={styles.docMetaLabel}>วันที่:</td>
-                                <td style={styles.docMetaValue}>{formatDate(receipt.createdAt)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Customer Info Box */}
-            <div style={styles.tripBox}>
-                <span style={styles.sectionTitle}>ได้รับเงินจาก (RECEIVED FROM)</span>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: PRIMARY }}>{receipt.customerName}</div>
-            </div>
-
-            <div style={{ marginBottom: '20px', display: 'flex', gap: '40px' }}>
-                <div style={{ flex: 1 }}>
-                    <span style={styles.sectionTitle}>เส้นทาง / โปรแกรมทัวร์ (TOUR PROGRAM)</span>
-                    <div style={{ fontWeight: 'bold', color: TEXT_MAIN, fontSize: '15px' }}>
-                        {route?.code} - {route?.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: TEXT_MUTED, marginTop: '4px' }}>
-                        🗓 รอบการเดินทาง: {round?.date || '-'}
-                    </div>
-                </div>
-                <div style={{ width: '220px' }}>
-                    <span style={styles.sectionTitle}>วิธีชำระเงิน (PAYMENT METHOD)</span>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '14px' }}>{receipt.paymentMethod}</div>
-                    {receipt.note && <div style={{ fontSize: '11px', color: TEXT_MUTED }}>*{receipt.note}</div>}
-                </div>
-            </div>
-
-            {/* Items Table */}
-            <table style={styles.table}>
-                <thead style={styles.thead}>
-                    <tr>
-                        <th style={{ ...styles.th, width: '40px', textAlign: 'center' }}>#</th>
-                        <th style={styles.th}>รายการ (Description)</th>
-                        <th style={{ ...styles.th, width: '120px', textAlign: 'right' }}>จำนวนเงิน</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style={{ ...styles.td, textAlign: 'center' }}>1</td>
-                        <td style={styles.td}>
-                            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>ชำระค่าแพ็กเกจทัวร์</div>
-                            <div style={{ fontSize: '11px', color: TEXT_MUTED, marginTop: '4px' }}>
-                                อ้างอิง: {booking?.details?.tourCode || '-'} | จำนวนผู้เดินทาง: {receipt.paxIds?.length || 1} ท่าน
+    const ReceiptPage = ({ isOriginal }: { isOriginal: boolean }) => (
+        <div style={{ ...s.page, pageBreakAfter: isOriginal ? 'always' : 'auto' }}>
+            {/* Content Wrapper */}
+            <div>
+                {/* Header */}
+                <div style={s.header}>
+                    {/* Left: Logo and Company Info */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div style={{
+                            width: '60px',
+                            height: '60px',
+                            minWidth: '60px',
+                            minHeight: '60px',
+                            flexShrink: 0,
+                            backgroundColor: 'white',
+                            border: `1px solid ${CI[500]}`,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden'
+                        }}>
+                            <img src={logo} alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                        </div>
+                        <div style={{ paddingTop: '2px' }}>
+                            <div style={{ fontSize: '15px', fontWeight: 'bold', color: CI[800], textTransform: 'uppercase', lineHeight: '1.2' }}>
+                                ROONG A NAN TOUR
                             </div>
-                        </td>
-                        <td style={{ ...styles.td, textAlign: 'right', fontWeight: 'bold' }}>
-                            {formatCurrency(receipt.receiptAmount)}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            <div style={{ fontSize: '13px', fontWeight: 'bold', color: CI[600] }}>
+                                บจก. รุ่งอนันต์ ทัวร์
+                            </div>
+                            <div style={{ fontSize: '10px', fontWeight: 'bold', color: CI[800], marginTop: '2px' }}>
+                                NO 21/00645
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#4b5563', marginTop: '4px', lineHeight: '1.3' }}>
+                                <div>123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ 10900</div>
+                                <div><span style={{ fontWeight: 600 }}>เลขประจำตัวผู้เสียภาษี:</span> 0105566012345</div>
+                            </div>
+                        </div>
+                    </div>
 
-            {/* Total Section */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <div>
-                    <table style={styles.summaryTable}>
+                    {/* Right: Document Info */}
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: '2px' }}>
+                        <div style={s.headerTitle}>
+                            ใบเสร็จรับเงิน
+                        </div>
+                        <div style={{ ...s.headerSubtitle, color: isOriginal ? '#111827' : '#4b5563' }}>
+                            {isOriginal ? 'ต้นฉบับ (Original)' : 'สำเนา (Copy)'}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '2px 8px', textAlign: 'right', alignItems: 'center' }}>
+                            <div style={{ color: '#6b7280', fontWeight: 600, fontSize: '10px' }}>เลขที่เอกสาร:</div>
+                            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#111827' }}>{receipt.id}</div>
+                            <div style={{ color: '#6b7280', fontWeight: 600, fontSize: '10px' }}>วันที่:</div>
+                            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#111827' }}>{formatDate(receipt.createdAt)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Customer Info Box */}
+                <div style={s.customerBox}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', backgroundColor: CI[500] }}></div>
+                    <div style={s.customerBoxLabel}>
+                        ได้รับเงินจาก (RECEIVED FROM)
+                    </div>
+                    <div style={{ paddingLeft: '8px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}>
+                            {receipt.customerName}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#4b5563', lineHeight: '1.4' }}>
+                            {booking?.details?.customerAddress && (
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '1px' }}>
+                                    <span style={{ color: '#9ca3af', minWidth: '30px' }}>ที่อยู่:</span>
+                                    <span>{booking.details.customerAddress}</span>
+                                </div>
+                            )}
+                            {booking?.details?.customerPhone && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ color: '#9ca3af', minWidth: '30px' }}>โทร:</span>
+                                    <span>{booking.details.customerPhone}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div style={{ marginBottom: '16px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr>
+                                <th style={{ ...s.th, textAlign: 'center' as const, width: '30px' }}>#</th>
+                                <th style={s.th}>รายการ (Description)</th>
+                                <th style={{ ...s.th, textAlign: 'center' as const, width: '60px' }}>จำนวน</th>
+                                <th style={{ ...s.th, textAlign: 'right' as const, width: '90px' }}>ราคา/หน่วย</th>
+                                <th style={{ ...s.th, textAlign: 'right' as const, width: '90px' }}>จำนวนเงิน</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <tr style={styles.grandTotalRow}>
-                                <td style={styles.grandTotalLabel}>ยอดรวมรับเงินทั้งสิ้น (Grand Total):</td>
-                                <td style={styles.grandTotalValue}>฿{formatCurrency(receipt.receiptAmount)}</td>
+                            <tr>
+                                <td style={{ ...s.td, textAlign: 'center', color: '#6b7280' }}>1</td>
+                                <td style={s.td}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1f2937', marginBottom: '2px' }}>
+                                        {route?.name || 'ชำระค่าแพ็กเกจทัวร์'}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span>เดินทาง: {round?.date || '-'}</span>
+                                    </div>
+                                </td>
+                                <td style={{ ...s.td, textAlign: 'center', color: '#111827' }}>
+                                    {receipt.paxIds?.length || 1} ท่าน
+                                </td>
+                                <td style={{ ...s.td, textAlign: 'right', fontFamily: 'monospace', color: '#111827' }}>
+                                    {receipt.paxIds && receipt.paxIds.length > 0 ? formatCurrency(receipt.receiptAmount / receipt.paxIds.length) : formatCurrency(receipt.receiptAmount)}
+                                </td>
+                                <td style={{ ...s.td, textAlign: 'right', fontFamily: 'monospace', color: '#111827' }}>
+                                    {formatCurrency(receipt.receiptAmount)}
+                                </td>
+                            </tr>
+                            <tr style={{ height: '30px' }}>
+                                <td colSpan={5} style={{ borderBottom: '1px solid #f3f4f6' }}></td>
                             </tr>
                         </tbody>
                     </table>
-                    <div style={styles.bahtText}>
-                        ( {bahtText(receipt.receiptAmount)} )
+                </div>
+
+                {/* Totals Section */}
+                <div style={{ marginBottom: '16px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+                    {/* Baht Text */}
+                    <div style={{ flex: '1' }}>
+                        <div style={{
+                            backgroundColor: '#f9fafb',
+                            border: `1px solid #e5e7eb`,
+                            padding: '8px 10px',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                        }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#374151' }}>
+                                ( {bahtText(receipt.receiptAmount)} )
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Totals */}
+                    <div style={{ width: '220px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `2px solid ${CI[700]}`, paddingTop: '8px' }}>
+                            <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '12px' }}>ยอดรับเงินทั้งสิ้น:</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 'bold', color: '#111827' }}>฿{formatCurrency(receipt.receiptAmount)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Dashed Divider */}
+                <div style={{ borderBottom: '1px dashed #e5e7eb', marginBottom: '16px' }}></div>
+
+                {/* Payment & Contact Section */}
+                <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
+                    {/* Payment Info */}
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            padding: '10px',
+                            height: '100%',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            backgroundColor: 'white',
+                        }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: CI[500] }}></div>
+                            <div style={{
+                                fontWeight: 'bold',
+                                color: '#374151',
+                                borderBottom: '1px solid #f3f4f6',
+                                paddingBottom: '4px',
+                                marginBottom: '6px',
+                                fontSize: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                            }}>
+                                การชำระเงิน (Payment Method)
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#374151', paddingLeft: '6px' }}>
+                                {/* Cash Option */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        border: isCash ? `2px solid ${CI[600]}` : '1px solid #9ca3af',
+                                        borderRadius: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: isCash ? CI[600] : 'white',
+                                        color: 'white',
+                                    }}>
+                                        {isCash && <div style={{ width: '6px', height: '6px', backgroundColor: 'white', borderRadius: '1px' }}></div>}
+                                    </div>
+                                    <span>เงินสด (Cash)</span>
+                                </div>
+
+                                {/* Transfer Option */}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        border: !isCash ? `2px solid ${CI[600]}` : '1px solid #9ca3af',
+                                        borderRadius: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: !isCash ? CI[600] : 'white',
+                                        color: 'white',
+                                        marginTop: '2px',
+                                    }}>
+                                        {!isCash && <div style={{ width: '6px', height: '6px', backgroundColor: 'white', borderRadius: '1px' }}></div>}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <span style={{ fontWeight: 600, color: '#111827' }}>เงินโอน (Transfer)</span>
+                                        {!isCash && (
+                                            <div style={{
+                                                marginTop: '4px',
+                                                fontSize: '9px',
+                                                color: '#6b7280',
+                                            }}>
+                                                <div>ธนาคาร: <span style={{ color: '#111827' }}>กสิกรไทย</span> เลขบัญชี: <span style={{ fontFamily: 'monospace' }}>123-4-56789-0</span></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            padding: '10px',
+                            height: '100%',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            backgroundColor: 'white',
+                        }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: CI[500] }}></div>
+                            <div style={{
+                                fontWeight: 'bold',
+                                color: '#374151',
+                                borderBottom: '1px solid #f3f4f6',
+                                paddingBottom: '4px',
+                                marginBottom: '6px',
+                                fontSize: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                            }}>
+                                สอบถามข้อมูลเพิ่มเติม
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#374151', paddingLeft: '4px' }}>
+                                <div style={{ marginBottom: '4px' }}>
+                                    <div style={{ color: '#6b7280', fontSize: '9px', marginBottom: '1px' }}>สาขาที่ดูแล:</div>
+                                    <div style={{ fontWeight: 600, color: '#111827' }}>สาขาฟ้าฮ่าม (เชียงใหม่)</div>
+                                </div>
+                                <div style={{ marginBottom: '4px' }}>
+                                    <div style={{ color: '#6b7280', fontSize: '9px', marginBottom: '1px' }}>เบอร์โทรศัพท์:</div>
+                                    <div style={{ fontFamily: 'monospace', color: '#111827' }}>065-512-2155, 053-261-146</div>
+                                </div>
+                                <div>
+                                    <div style={{ color: '#6b7280', fontSize: '9px', marginBottom: '1px' }}>ฝ่ายขาย:</div>
+                                    <div style={{ color: '#111827' }}>คุณวิภาดา (089-999-8888)</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Footer */}
-            <div style={styles.footer}>
-                <div style={{ width: '55%', fontSize: '11px', color: TEXT_MUTED, lineHeight: '1.6' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: PRIMARY, marginBottom: '8px' }}>หมายเหตุ:</div>
-                    เอกสารนี้ถูกสร้างขึ้นด้วยระบบคอมพิวเตอร์ และมีผลสมบูรณ์ตามกฎหมาย<br />
-                    กรุณาเก็บรักษาไว้เพื่อเป็นหลักฐานการชำระเงิน
-                </div>
-                <div style={{ width: '180px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: '5px' }}>ผู้รับเงิน / เจ้าหน้าที่</div>
-                    <div style={{ borderBottom: '1px solid #e2e8f0', height: '45px', marginBottom: '8px' }}></div>
-                    <div style={{ fontWeight: 'bold' }}>บจก. รุ่งอนันต์ ทัวร์</div>
+            {/* Footer / Signature Section - Moved UP */}
+            <div style={{ marginTop: '10px', borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 10px' }}>
+                    {/* Customer Signature */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '200px' }}>
+                        <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '24px', width: '100%', textAlign: 'left', fontWeight: 500, paddingLeft: '4px' }}>
+                            ในนาม ลูกค้า / ผู้ชำระเงิน:
+                        </div>
+                        <div style={{ width: '100%', borderBottom: '1px dotted #9ca3af', marginBottom: '4px', height: '16px' }}></div>
+                        <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '10px' }}>
+                            ( ........................................................... )
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '2px' }}>ผู้ชำระเงิน</div>
+                    </div>
+
+                    {/* Company Signature */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '200px' }}>
+                        <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '24px', width: '100%', textAlign: 'right', fontWeight: 500 }}>
+                            ในนาม บจก. รุ่งอนันต์ ทัวร์:
+                        </div>
+                        <div style={{ width: '100%', borderBottom: '1px dotted #9ca3af', marginBottom: '4px', height: '16px' }}></div>
+                        <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '10px' }}>
+                            ( นางสาววิภาดา รักบริการ )
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '2px' }}>ผู้รับเงิน</div>
+                    </div>
                 </div>
             </div>
+        </div>
+    );
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <ReceiptPage isOriginal={true} />
+            <ReceiptPage isOriginal={false} />
         </div>
     );
 };

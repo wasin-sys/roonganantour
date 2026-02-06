@@ -82,6 +82,8 @@ export interface BillingNote {
     groupId: string | null;
     bookingId?: number;
     customerName: string;
+    customerTaxId?: string;
+    customerAddress?: string;
     billingType: BookingType;
     paxIds: number[];
     totalAmount: number;

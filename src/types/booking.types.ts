@@ -37,6 +37,8 @@ export interface BookingDetails {
     specialRequest: string;
     discount: number;
     tourCode: string;
+    customerAddress?: string;
+    customerPhone?: string;
 }
 
 /** Booking type constants */

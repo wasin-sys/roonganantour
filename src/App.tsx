@@ -449,16 +449,16 @@ export default function TourSystemApp() {
       const opt = {
         margin: 0,
         filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1.0 },
         html2canvas: {
-          scale: 2,
+          scale: 3, // Higher scale for better quality
           useCORS: true,
           logging: false,
           letterRendering: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
-          windowWidth: pdfContent.scrollWidth,
-          windowHeight: pdfContent.scrollHeight,
+          // Use fixed width for A4 (210mm at 96 DPI = 794px)
+          windowWidth: 794,
           scrollX: 0,
           scrollY: 0,
         },
@@ -4389,89 +4389,114 @@ export default function TourSystemApp() {
                   <h3 className="font-bold text-lg flex items-center gap-2"><FileText size={20} /> ใบวางบิล (Billing Note)</h3>
                   <button onClick={() => setViewingBillingNote(null)}><X size={20} /></button>
                 </header>
-                <div className="p-6">
+                <div className="p-0">
                   {/* PDF Preview Style */}
-                  <div className="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 relative">
+                  {/* PDF Preview Style (Compact Mode) */}
+                  <div className="bg-gray-50 p-5 relative min-h-[400px]">
                     {(() => {
                       const roundForBill = rounds.find(r => r.id === viewingBillingNote.roundId);
                       const routeForBill = routes.find(r => r.id === roundForBill?.routeId);
                       return (
-                        <div className="flex justify-between mb-6">
+                        <div className="flex justify-between items-start mb-4 border-b border-gray-200 pb-4">
                           <div>
-                            <h2 className="text-2xl font-bold text-gray-800">บจก. รุ่งอนันต์ ทัวร์</h2>
-                            <p className="text-sm text-gray-500">123/45 ถนนพหลโยธิน แขวงลาดยาว กรุงเทพฯ 10900</p>
+                            <h2 className="text-lg font-bold text-gray-800 leading-tight">บจก. รุ่งอนันต์ ทัวร์</h2>
+                            <p className="text-[10px] text-gray-500 mb-1">เลขที่เอกสาร: <span className="font-bold text-[#03b8fa]">{viewingBillingNote.id}</span> | วันที่: {viewingBillingNote.createdAt}</p>
 
-                            {/* Route Info */}
-                            <div className="mt-4 bg-white/50 border border-gray-200 rounded-lg px-3 py-2 inline-block">
-                              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">เส้นทาง / โปรแกรมทัวร์</div>
-                              <div className="text-sm font-bold text-[#03b8fa]">{routeForBill?.code || 'N/A'} - {routeForBill?.name || '-'}</div>
-                              <div className="text-[11px] text-gray-600 flex items-center gap-2">
-                                <Calendar size={12} className="text-gray-400" />
-                                รอบการเดินทาง: <span className="font-bold">{roundForBill?.date || '-'}</span>
-                              </div>
+                            {/* Compact Route Info */}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-[#03b8fa] font-bold">
+                                {routeForBill?.code || 'N/A'}
+                              </span>
+                              <span className="text-[10px] text-gray-600 font-medium truncate max-w-[200px]">{routeForBill?.name || '-'}</span>
+                              <span className="text-[10px] text-gray-500 border-l pl-2 ml-1">เดินทาง: {roundForBill?.date || '-'}</span>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">เลขที่ใบวางบิล</p>
-                            <p className="font-mono font-bold text-xl text-[#03b8fa]">{viewingBillingNote.id}</p>
-                            <p className="text-sm text-gray-400 mt-1">วันที่: {viewingBillingNote.createdAt}</p>
                           </div>
                         </div>
                       );
                     })()}
 
-                    <div className="border-t border-b border-gray-300 py-4 my-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-bold">ลูกค้า / กลุ่ม</p>
-                          <p className="font-bold text-gray-800 text-lg uppercase">{viewingBillingNote.customerName}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary of Items */}
-                    <div className="mb-6">
-                      <p className="text-xs text-gray-500 uppercase mb-2">รายการ (Description)</p>
-                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-bold text-gray-800">ชำระค่าแพ็กเกจทัวร์</p>
-                            <p className="text-xs text-gray-500">จำนวนผู้เดินทาง: {viewingBillingNote.paxIds?.length || 0} ท่าน</p>
+                    <div className="mb-5">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-baseline">
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-xs text-gray-500 uppercase font-bold">ลูกค้า:</p>
+                            <p className="font-bold text-gray-800 text-sm uppercase">{viewingBillingNote.customerName}</p>
                           </div>
-                          <p className="font-mono font-bold text-gray-700">฿{viewingBillingNote.totalAmount.toLocaleString()}</p>
+                        </div>
+
+                        {/* Horizontal Input Layout - Bigger & Clickable */}
+                        <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                          <div className="w-full sm:w-[35%]">
+                            <label className="text-[11px] text-gray-500 font-bold uppercase block mb-1">เลขประจำตัวผู้เสียภาษี (Tax ID)</label>
+                            <input
+                              type="text"
+                              className="w-full text-sm border-gray-300 rounded focus:ring-[#03b8fa] focus:border-[#03b8fa] px-3 py-2 transition-all"
+                              placeholder="ระบุเลขผู้เสียภาษี..."
+                              value={viewingBillingNote.customerTaxId || ''}
+                              onChange={(e) => setViewingBillingNote({ ...viewingBillingNote, customerTaxId: e.target.value })}
+                            />
+                          </div>
+                          <div className="w-full sm:flex-1">
+                            <label className="text-[11px] text-gray-500 font-bold uppercase block mb-1">ที่อยู่ (Address)</label>
+                            <textarea
+                              className="w-full text-sm border-gray-300 rounded focus:ring-[#03b8fa] focus:border-[#03b8fa] px-3 py-2 min-h-[42px] resize-y leading-snug transition-all"
+                              style={{ height: '42px' }}
+                              placeholder="ระบุที่อยู่..."
+                              rows={1}
+                              value={viewingBillingNote.customerAddress || ''}
+                              onChange={(e) => setViewingBillingNote({ ...viewingBillingNote, customerAddress: e.target.value })}
+                              onFocus={(e) => e.target.style.height = '80px'}
+                              onBlur={(e) => e.target.style.height = '42px'}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">ยอดรวมทั้งหมด:</span>
-                        <span className="font-mono">฿{viewingBillingNote.totalAmount.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">ชำระแล้ว:</span>
-                        <span className="font-mono text-green-600">฿{viewingBillingNote.previousPaid.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
-                        <span>ยอดวางบิลครั้งนี้:</span>
-                        <span className="text-[#03b8fa]">฿{viewingBillingNote.billingAmount.toLocaleString()}</span>
+                    {/* Item Summary - Medium Size */}
+                    <div className="mb-5 bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                      <div className="flex justify-between items-center px-2">
+                        <div>
+                          <span className="font-bold text-gray-700 block text-sm">ค่าแพ็กเกจทัวร์</span>
+                          <span className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
+                            จำนวนผู้เดินทาง: {viewingBillingNote.paxIds?.length || 0} ท่าน
+                          </span>
+                        </div>
+                        <span className="font-mono font-bold text-gray-800 text-base">฿{viewingBillingNote.totalAmount.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    {/* Footer: Bank Details */}
-                    <div className="mt-8 pt-4 border-t border-dashed border-gray-300 animate-fade-in">
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">ช่องทางการชำระเงิน (PAYMENT CHANNEL)</p>
-                        <div className="flex items-center gap-2 bg-[#d9edf4] px-2 py-1 rounded border border-[#03b8fa]/30">
-                          <label className="text-[10px] font-bold text-[#03b8fa] whitespace-nowrap uppercase">เลือกบัญชี:</label>
+                    <div className="flex flex-col sm:flex-row justify-end gap-4 sm:gap-8 text-sm mb-6 items-center sm:items-end border-b border-gray-200 pb-5 px-2">
+                      <div className="flex justify-between w-full sm:w-auto sm:block text-right">
+                        <span className="text-gray-500 block text-xs mb-1">ยอดรวม</span>
+                        <span className="font-mono text-gray-700 font-medium">฿{viewingBillingNote.totalAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between w-full sm:w-auto sm:block text-right">
+                        <span className="text-gray-500 block text-xs mb-1">ชำระแล้ว</span>
+                        <span className="font-mono text-green-600 font-medium">฿{viewingBillingNote.previousPaid.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between w-full sm:w-auto sm:block text-right bg-[#f0f9ff] px-4 py-2 rounded-lg border border-[#bae6fd] shadow-sm">
+                        <span className="text-[#0369a1] font-bold block text-xs mb-1">ยอดวางบิลสุทธิ</span>
+                        <span className="font-mono font-bold text-[#0284c7] text-xl">฿{viewingBillingNote.billingAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer: Bank Details (Medium) */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2 px-1">
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <span className="w-1 h-3 bg-[#03b8fa] rounded-full inline-block"></span>
+                          ช่องทางการชำระเงิน
+                        </p>
+                        <div className="relative">
                           <select
-                            className="text-[10px] bg-transparent border-none focus:ring-0 font-bold text-[#0279a9] cursor-pointer outline-none p-0"
+                            className="text-xs bg-white border border-gray-300 rounded px-3 py-1.5 focus:ring-[#03b8fa] focus:border-[#03b8fa] font-bold text-[#0279a9] cursor-pointer outline-none shadow-sm pr-8 hover:bg-gray-50 transition-colors"
                             value={selectedBillingBankId || (bankAccounts[0]?.id)}
                             onChange={(e) => setSelectedBillingBankId(e.target.value)}
                           >
-                            <option value="">-- เลือกบัญชี --</option>
                             {bankAccounts.map(b => (
-                              <option key={b.id} value={b.id}>{b.bank} - {b.accountNumber}</option>
+                              <option key={b.id} value={b.id}>{b.bank} {b.accountNumber}</option>
                             ))}
                           </select>
                         </div>
@@ -4480,36 +4505,74 @@ export default function TourSystemApp() {
                         const bankToShow = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId)) || bankAccounts[0];
                         if (bankToShow) {
                           return (
-                            <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200 shadow-sm transition-all">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-inner ${bankToShow.color || 'bg-gray-500'}`}>
+                            <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm ${bankToShow.color || 'bg-gray-500'}`}>
                                 {bankToShow.bank}
                               </div>
-                              <div>
-                                <p className="font-black text-[#0279a9] text-sm uppercase">{bankToShow.bank} - {bankToShow.accountNumber}</p>
-                                <p className="text-xs text-gray-500 font-medium">{bankToShow.accountName} (สาขา {bankToShow.branch})</p>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-[#0279a9] text-base">{bankToShow.bank} - {bankToShow.accountNumber}</span>
+                                <span className="text-xs text-gray-500">{bankToShow.accountName} (สาขา {bankToShow.branch})</span>
                               </div>
                             </div>
                           );
                         }
-                        return (
-                          <div className="p-3 border-2 border-dashed border-red-200 rounded-lg text-red-400 text-center text-xs font-bold">
-                            กรุณาเลือกบัญชีธนาคารสำหรับรับโอนเงิน
-                          </div>
-                        );
+                        return null;
                       })()}
                     </div>
 
-                    {viewingBillingNote.note && (
-                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                        <strong>หมายเหตุ:</strong> {viewingBillingNote.note}
+                    <div className="flex justify-end gap-4 text-xs mb-3 items-end border-b border-dashed pb-3">
+                      <div className="text-right">
+                        <span className="text-gray-400 block text-[10px]">ยอดรวม</span>
+                        <span className="font-mono text-gray-600">฿{viewingBillingNote.totalAmount.toLocaleString()}</span>
                       </div>
-                    )}
+                      <div className="text-right">
+                        <span className="text-gray-400 block text-[10px]">ชำระแล้ว</span>
+                        <span className="font-mono text-green-600">฿{viewingBillingNote.previousPaid.toLocaleString()}</span>
+                      </div>
+                      <div className="text-right bg-[#f0f9ff] px-2 py-1 rounded border border-[#bae6fd]">
+                        <span className="text-[#0369a1] font-bold block text-[10px]">ยอดวางบิลสุทธิ</span>
+                        <span className="font-mono font-bold text-[#0284c7] text-sm">฿{viewingBillingNote.billingAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Compact Footer: Bank Details */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">Payment Channel</p>
+                        <select
+                          className="text-[10px] bg-transparent border-none focus:ring-0 font-bold text-[#0279a9] cursor-pointer outline-none py-0 pl-0 pr-0 text-right"
+                          value={selectedBillingBankId || (bankAccounts[0]?.id)}
+                          onChange={(e) => setSelectedBillingBankId(e.target.value)}
+                        >
+                          {bankAccounts.map(b => (
+                            <option key={b.id} value={b.id}>{b.bank} {b.accountNumber}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {(() => {
+                        const bankToShow = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId)) || bankAccounts[0];
+                        if (bankToShow) {
+                          return (
+                            <div className="flex items-center gap-2 bg-white p-2 rounded border border-gray-200">
+                              <div className={`w-6 h-6 rounded flex items-center justify-center text-white font-bold text-[9px] ${bankToShow.color || 'bg-gray-500'}`}>
+                                {bankToShow.bank}
+                              </div>
+                              <div className="flex flex-col leading-none">
+                                <span className="font-bold text-[#0279a9] text-[11px]">{bankToShow.bank} - {bankToShow.accountNumber}</span>
+                                <span className="text-[9px] text-gray-500 mt-0.5">{bankToShow.accountName}</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
                 </div>
-                <div className="bg-gray-50 px-6 py-4 flex justify-between border-t">
-                  <button onClick={() => setViewingBillingNote(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ปิด</button>
-                  <button onClick={() => generatePDF('invoice', viewingBillingNote, `Invoice-${viewingBillingNote.id}.pdf`)} className="px-6 py-2 bg-[#03b8fa] text-white rounded-lg font-bold hover:bg-[#029bc4] flex items-center gap-2">
-                    <FileText size={16} /> ดู PDF
+                <div className="bg-gray-50 px-4 py-2 flex justify-between border-t items-center">
+                  <button onClick={() => setViewingBillingNote(null)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 font-medium">ปิด</button>
+                  <button onClick={() => generatePDF('invoice', viewingBillingNote, `Invoice-${viewingBillingNote.id}.pdf`)} className="px-4 py-1.5 bg-[#03b8fa] text-white text-xs rounded font-bold hover:bg-[#029bc4] flex items-center gap-1">
+                    <FileText size={14} /> ดู PDF
                   </button>
                 </div>
               </div>
