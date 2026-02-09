@@ -97,10 +97,11 @@ export interface BillingNote {
     paymentMethod: PaymentMethod | null;
     bankAccountId: number | null;
     paidAt?: string;
+    isDeposit?: boolean;
     note: string;
 }
 
-/** Receipt (ใบรับเงิน) */
+/** Receipt (ใบเสร็จรับเงิน) */
 export interface Receipt {
     id: string;
     billingNoteId: string | null;
@@ -125,6 +126,7 @@ export interface Receipt {
     usedForTaxInvoice: boolean;
     taxInvoiceId: string | null;
     rejectionReason?: string | null;
+    isDeposit?: boolean;
     verifiedBy?: number | null;
     verifiedAt?: string | null;
 }

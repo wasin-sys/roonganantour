@@ -1,3 +1,0 @@
-src/components/documents/InvoicePDF.tsx(3,18): error TS2307: Cannot find module '../../assets/roonganan_logo.png' or its corresponding type declarations.
-src/components/documents/ReceiptPDF.tsx(3,18): error TS2307: Cannot find module '../../assets/roonganan_logo.png' or its corresponding type declarations.
-src/components/documents/TaxInvoicePDF.tsx(3,18): error TS2307: Cannot find module '../../assets/roonganan_logo.png' or its corresponding type declarations.

@@ -5,32 +5,32 @@
 /* CSS Variables for Theme */
 :root {
   /* Primary Colors */
-  --rt-blue: #03b8fa;
-  --rt-sky: #6bc8e9;
-  --rt-light: #d9edf4;
-  --rt-mint: #37c3a5;
+  --rt-blue: #008ac5;
+  --rt-sky: #61cbe5;
+  --rt-light: #e6f7fc;
+  --rt-mint: #16809a;
   --rt-yellow: #fdcf1a;
-  --rt-dark: #0279a9;
-  
+  --rt-dark: #0174aa;
+
   /* Surface Colors */
   --surface-bg: #f8fafc;
   --surface-card: #ffffff;
   --surface-hover: #f1f5f9;
-  
+
   /* Text Colors */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  
+
   /* Borders */
   --border-light: #e2e8f0;
   --border-default: #cbd5e1;
-  
+
   /* Shadows */
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
   --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
@@ -88,7 +88,7 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--rt-blue) !important;
-  box-shadow: 0 0 0 3px rgba(3, 184, 250, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(0, 138, 197, 0.1) !important;
 }
 
 /* Button Transitions */
@@ -124,38 +124,30 @@ button:active:not(:disabled) {
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* Gradient Text */
+/* Gradient Text - Converted to Solid */
 .gradient-text {
-  background: linear-gradient(135deg, var(--rt-blue) 0%, var(--rt-mint) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--rt-blue);
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: inherit;
+  background-clip: unset;
 }
 
-/* Subtle Background Pattern */
+/* Subtle Background Pattern - Converted to Solid/None */
 .bg-pattern {
-  background-image: 
-    radial-gradient(circle at 25px 25px, rgba(3, 184, 250, 0.03) 2%, transparent 0%),
-    radial-gradient(circle at 75px 75px, rgba(55, 195, 165, 0.03) 2%, transparent 0%);
-  background-size: 100px 100px;
+  background-color: var(--surface-bg);
+  background-image: none;
 }
 
-/* Animated Gradient Border */
+/* Animated Gradient Border - Converted to Solid Border */
 .gradient-border {
   position: relative;
+  border: 1px solid var(--rt-blue);
+  border-radius: inherit;
 }
 
 .gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, var(--rt-blue), var(--rt-mint));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  display: none;
 }
 
 /* Status Badge Improvements */
@@ -182,7 +174,7 @@ button:active:not(:disabled) {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--rt-blue), var(--rt-mint));
+  background: var(--rt-blue);
   border-radius: 2px 2px 0 0;
 }
 
@@ -206,18 +198,18 @@ button:active:not(:disabled) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: rgba(255, 255, 255, 0.2);
   animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Checkbox Custom Styling */
@@ -227,6 +219,6 @@ input[type="checkbox"] {
 
 /* Selection Color */
 ::selection {
-  background: rgba(3, 184, 250, 0.2);
+  background: rgba(0, 138, 197, 0.2);
   color: var(--text-primary);
 }

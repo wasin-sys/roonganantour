@@ -55,13 +55,13 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
 
     // Color palette - Green theme for receipt
     const CI = {
-        50: '#f0fdf4',
-        100: '#dcfce7',
-        500: '#22c55e',
-        600: '#16a34a',
-        700: '#15803d',
-        800: '#166534',
-        900: '#14532d',
+        50: '#f0fcfd',
+        100: '#cff5fa',
+        500: '#16809a',
+        600: '#136f86',
+        700: '#105e71',
+        800: '#0d4d5d',
+        900: '#0a3c48',
     };
 
     const isCash = receipt.paymentMethod === 'CASH' || receipt.paymentMethod === 'cash';
@@ -232,10 +232,15 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
                                 <td style={{ ...s.td, textAlign: 'center', color: '#6b7280' }}>1</td>
                                 <td style={s.td}>
                                     <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1f2937', marginBottom: '2px' }}>
-                                        {route?.name || 'ชำระค่าแพ็กเกจทัวร์'}
+                                        {route?.name || 'ชำระค่าแพ็กเกจทัวร์'} {receipt.isDeposit ? '(มัดจำ)' : ''}
                                     </div>
                                     <div style={{ fontSize: '10px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span>เดินทาง: {round?.date || '-'}</span>
+                                        {receipt.isDeposit && (
+                                            <span style={{ backgroundColor: '#f0fdf4', color: '#16a34a', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold', border: '1px solid #dcfce7' }}>
+                                                ชำระมัดจำ
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td style={{ ...s.td, textAlign: 'center', color: '#111827' }}>

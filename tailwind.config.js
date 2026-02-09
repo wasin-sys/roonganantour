@@ -7,12 +7,14 @@ export default {
     theme: {
         extend: {
             colors: {
-                'rt-blue': '#03b8fa',
-                'rt-sky': '#6bc8e9',
-                'rt-light': '#d9edf4',
-                'rt-mint': '#37c3a5',
+                'rt-blue': '#008ac5',     // Primary
+                'rt-sky': '#61cbe5',      // Light/Cyan
+                'rt-mid': '#3896d3',      // Mid Blue
+                'rt-dark': '#0174aa',     // Dark Blue
+                'rt-teal': '#16809a',     // Teal
+                'rt-light': '#e6f7fc',    // Very light derived from sky
+                'rt-mint': '#16809a',     // Mapping old mint to new teal for compatibility
                 'rt-yellow': '#fdcf1a',
-                'rt-dark': '#0279a9',
                 // Modern additions
                 'surface': {
                     50: '#fafbfc',
@@ -20,16 +22,16 @@ export default {
                     200: '#e9ecef',
                 },
                 'accent': {
-                    light: '#e0f4ff',
-                    DEFAULT: '#03b8fa',
-                    dark: '#0279a9',
+                    light: '#e6f7fc',
+                    DEFAULT: '#008ac5',
+                    dark: '#0174aa',
                 },
             },
             backgroundImage: {
-                'rt-gradient': 'linear-gradient(135deg, #03b8fa 0%, #37c3a5 100%)',
-                'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
-                'subtle-gradient': 'linear-gradient(180deg, #fafbfc 0%, #f4f6f8 100%)',
-                'card-shine': 'linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 70%)',
+                'rt-gradient': 'none',
+                'glass-gradient': 'none',
+                'subtle-gradient': 'none',
+                'card-shine': 'none',
             },
             boxShadow: {
                 'soft': '0 2px 8px rgba(0, 0, 0, 0.04)',

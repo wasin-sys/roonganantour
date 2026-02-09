@@ -97,13 +97,13 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
     };
 
     const CI = {
-        50: '#f0f9ff',
-        100: '#e0f2fe',
-        500: '#0ea5e9',
-        600: '#0284c7',
-        700: '#0369a1',
-        800: '#075985',
-        900: '#0c4a6e',
+        50: '#e6f7fc',
+        100: '#bcebf9',
+        500: '#008ac5',
+        600: '#0174aa',
+        700: '#015d88',
+        800: '#014b6e',
+        900: '#013b56',
     };
 
     const s = {
@@ -281,10 +281,15 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                                 <td style={{ ...s.td, textAlign: 'center', color: '#6b7280' }}>1</td>
                                 <td style={s.td}>
                                     <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1f2937', marginBottom: '2px' }}>
-                                        {route?.name || 'แพ็กเกจทัวร์'}
+                                        {route?.name || 'แพ็กเกจทัวร์'} {billingNote.isDeposit ? '(มัดจำ)' : ''}
                                     </div>
                                     <div style={{ fontSize: '10px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span>เดินทาง: {round?.date || '-'}</span>
+                                        {billingNote.isDeposit && (
+                                            <span style={{ backgroundColor: '#fff7ed', color: '#c2410c', padding: '0 4px', borderRadius: '2px', fontWeight: 'bold', border: '1px solid #ffedd5' }}>
+                                                ชำระมัดจำ
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td style={{ ...s.td, textAlign: 'center', color: '#111827' }}>
