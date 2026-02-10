@@ -28,10 +28,14 @@ export default {
                 },
             },
             backgroundImage: {
-                'rt-gradient': 'none',
-                'glass-gradient': 'none',
-                'subtle-gradient': 'none',
-                'card-shine': 'none',
+                'rt-gradient-primary': 'var(--rt-gradient-primary)',
+                'rt-gradient-premium': 'var(--rt-gradient-premium)',
+                'rt-gradient-glass': 'var(--rt-gradient-glass)',
+                'rt-gradient-glow': 'var(--rt-gradient-glow)',
+                'rt-gradient': 'linear-gradient(135deg, #008ac5 0%, #0174aa 100%)',
+                'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                'subtle-gradient': 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                'card-shine': 'linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.1) 50%, transparent 75%)',
             },
             boxShadow: {
                 'soft': '0 2px 8px rgba(0, 0, 0, 0.04)',
@@ -41,8 +45,8 @@ export default {
                 'glow': '0 0 20px rgba(3, 184, 250, 0.15)',
                 'glow-mint': '0 0 20px rgba(55, 195, 165, 0.15)',
                 'inner-soft': 'inset 0 1px 2px rgba(0, 0, 0, 0.04)',
-                'card': '0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04)',
-                'card-hover': '0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06)',
+                'card': '0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+                'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
             },
             animation: {
                 'fade-in': 'fadeIn 0.3s ease-out',
@@ -99,6 +103,10 @@ export default {
             borderRadius: {
                 '2xl': '1rem',
                 '3xl': '1.5rem',
+            },
+            fontFamily: {
+                sans: ['Outfit', 'Sarabun', 'sans-serif'],
+                thai: ['Sarabun', 'sans-serif'],
             },
         },
     },

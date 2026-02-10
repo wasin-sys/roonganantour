@@ -3,8 +3,9 @@ import { MessageCircle, ArrowRight, ShieldCheck, Globe, Star } from 'lucide-reac
 
 const CustomerLogin: React.FC = () => {
     const handleLineLogin = () => {
-        // This will be implemented later as per user request
-        console.log('Line login initiated');
+        // Mock Liff Login and navigate to dashboard
+        window.history.pushState({}, '', '/customer');
+        window.dispatchEvent(new PopStateEvent('popstate'));
     };
 
     return (

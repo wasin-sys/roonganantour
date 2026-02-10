@@ -410,8 +410,8 @@ export const MOCK_BOOKING_GROUPS: BookingGroup[] = [
 const getPax = (start: number, count: number): Customer[] => MOCK_CUSTOMERS_DB.slice(start, start + count);
 
 export const MOCK_PAX_IN_ROUND_101: Passenger[] = [
-    { ...MOCK_CUSTOMERS_DB[0], customerNote: MOCK_CUSTOMERS_DB[0].remark, remark: 'ขอที่นั่งหน้าสุดในรถบัส', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'ครอบครัวใจดี' },
-    { ...MOCK_CUSTOMERS_DB[1], customerNote: MOCK_CUSTOMERS_DB[1].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'ครอบครัวใจดี' },
+    { ...MOCK_CUSTOMERS_DB[0], customerNote: MOCK_CUSTOMERS_DB[0].remark, remark: 'ขอที่นั่งหน้าสุดในรถบัส', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '1-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
+    { ...MOCK_CUSTOMERS_DB[1], customerNote: MOCK_CUSTOMERS_DB[1].remark, remark: '', roomType: 'adultTwin', bookedBy: 2, paymentStatus: 'partial', paymentDate: '2025-09-21', uniqueId: '2-101', groupId: 'GRP-101-001', bookingType: 'group', groupName: 'SOMCHAI JAIDEE GROUP' },
     { ...MOCK_CUSTOMERS_DB[2], customerNote: MOCK_CUSTOMERS_DB[2].remark, remark: 'ขอ Wheelchair Service ที่สนามบิน', roomType: 'childNoBed', bookedBy: 3, paymentStatus: 'pending', paymentDate: null, uniqueId: '3-101', groupId: null, bookingType: 'individual', attachments: { birthCert: 'lucy_liu_birth_certificate.pdf', passport: 'lucy_passport.pdf' } },
 ];
 

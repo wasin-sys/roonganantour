@@ -29,7 +29,7 @@ export interface AlertBadgeProps {
 }
 
 /** Navigation tabs */
-export type NavigationTab = 'dashboard' | 'booking' | 'operation' | 'crm' | 'payment' | 'settings';
+export type NavigationTab = 'dashboard' | 'booking' | 'operation' | 'crm' | 'payment' | 'settings' | 'customer-dashboard';
 
 /** CRM sub-tab */
 export type CrmSubTab = 'customers' | 'blacklist';

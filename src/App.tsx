@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 import CustomerLogin from './pages/CustomerLogin';
 import InvoicePDF from './components/documents/InvoicePDF';
 import ReceiptPDF from './components/documents/ReceiptPDF';
@@ -69,7 +69,7 @@ import {
 import type {
   User,
   UserRole,
-  Route,
+  Route as TourRoute,
   Round,
   RoundPricing,
   Customer,
@@ -210,17 +210,37 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtext, icon: Icon, 
 
 // --- Main App ---
 
+import CustomerDashboard from './pages/CustomerDashboard';
+
+// Basic navigation helper
+export const navigate = (to: string) => {
+  window.history.pushState({}, '', to);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+};
+
 export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<CustomerLogin />} />
-        <Route path="/staff" element={<TourSystemApp />} />
-        {/* Redirect for any sub-routes of staff if needed, but here simple /staff is enough */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
-  );
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // Separate Path for Customer Login
+  if (path === '/login') {
+    return <CustomerLogin />;
+  }
+
+  // Path for Customer Dashboard (After Login)
+  if (path === '/customer') {
+    return <CustomerDashboard />;
+  }
+
+  // Default and Staff path for the main system
+  return <TourSystemApp />;
 }
 
 function TourSystemApp() {
@@ -228,16 +248,18 @@ function TourSystemApp() {
   const [currentUser, setCurrentUser] = useState<User>(USERS[0]); // Default to Admin
 
   // Lifted MOCK data to state for Manager editing
-  const [routes, setRoutes] = useState<Route[]>(MOCK_ROUTES);
+  const [routes, setRoutes] = useState<TourRoute[]>(MOCK_ROUTES);
   const [rounds, setRounds] = useState<Round[]>(MOCK_ROUNDS);
 
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [bookingDetails, setBookingDetails] = useState<BookingDetails>({ contactName: '', specialRequest: '', discount: 0, tourCode: '' });
   const [activeTab, setActiveTab] = useState<NavigationTab>('operation');
+  const [viewingCustomerId, setViewingCustomerId] = useState<number | null>(null);
+  const [previousTab, setPreviousTab] = useState<NavigationTab>('crm');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS_DB);
   const [blacklist, setBlacklist] = useState<BlacklistEntry[]>(INITIAL_BLACKLIST_DATA);
-  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<TourRoute | null>(null);
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [bookingStep, setBookingStep] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -296,6 +318,7 @@ function TourSystemApp() {
   const [receipts, setReceipts] = useState<Receipt[]>(INITIAL_RECEIPTS);
   const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>(INITIAL_TAX_INVOICES);
   const [bookingGroups, setBookingGroups] = useState<BookingGroup[]>(MOCK_BOOKING_GROUPS);
+  const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
 
   // Booking Type Selection (Individual vs Group)
   const [bookingAddMode, setBookingAddMode] = useState<BookingAddMode>(null);
@@ -734,8 +757,36 @@ function TourSystemApp() {
       setCustomers(prev => [...prev, newCustomer]);
 
       // If we are in booking step 3, add with attachments to the booking session
+      // If we are in booking step 3, add with attachments to the booking session
       if (bookingStep === 3 && selectedRound) {
-        const paxWithAttachments = { ...newCustomer, attachments: attachments || {}, roundId: selectedRound.id };
+        const existingGroup = bookingGroups.find(g => g.name === currentGroupName);
+        let targetGroupId = null;
+
+        if (bookingAddMode === 'group') {
+          targetGroupId = existingGroup?.groupId || `GRP-${selectedRound.id}-${Date.now()}`;
+          // Auto-create group if missing (e.g. manually typed but not confirmed)
+          if (!existingGroup && currentGroupName) {
+            setBookingGroups(prev => [...prev, {
+              groupId: targetGroupId,
+              name: currentGroupName,
+              roundId: selectedRound.id,
+              totalAmount: 0,
+              paidAmount: 0,
+              balance: 0,
+              bookingType: 'group'
+            }]);
+          }
+        }
+
+        const paxWithAttachments = {
+          ...newCustomer,
+          attachments: attachments || {},
+          roundId: selectedRound.id,
+          bookingType: bookingAddMode || 'individual',
+          groupId: targetGroupId,
+          groupName: bookingAddMode === 'group' ? currentGroupName : null,
+          paidAmount: 0
+        };
         setBookingPaxList(prev => [...prev, paxWithAttachments]);
         setSelectedPaxForBooking(prev => [...prev, newId]);
       }
@@ -963,7 +1014,23 @@ function TourSystemApp() {
                           <span className="text-gray-300">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right"><div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all"><button onClick={() => openCustomerForm(customer)} className="p-2 text-rt-blue hover:bg-rt-light rounded-lg transition-colors"><Edit2 size={16} /></button><button onClick={() => deleteCustomer(customer.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button></div></td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={() => {
+                              setViewingCustomerId(customer.id);
+                              setPreviousTab(activeTab);
+                              setActiveTab('customer-dashboard');
+                            }}
+                            className="p-2 text-rt-mint hover:bg-rt-mint/10 rounded-lg transition-colors"
+                            title="ดูหน้า Dashboard ลูกค้า"
+                          >
+                            <Globe size={16} />
+                          </button>
+                          <button onClick={() => openCustomerForm(customer)} className="p-2 text-rt-blue hover:bg-rt-light rounded-lg transition-colors"><Edit2 size={16} /></button>
+                          <button onClick={() => deleteCustomer(customer.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1435,20 +1502,35 @@ function TourSystemApp() {
                   const route = routes.find(r => r.id === round.routeId);
                   const progress = round.status === 'Completed' ? 100 : calculateEstimatedProgress(round.id);
                   const approver = appUsers.find(u => u.id === round.approvedBy);
+                  const paxPercent = (round.sold / (round.seats || 1)) * 100;
+
                   return (
                     <tr key={round.id} className="hover:bg-gray-50/80 cursor-pointer group transition-all duration-200" onClick={() => { setSelectedOpRound(round); setOperationView('detail'); setActiveTab('operation'); }} title="Click to view passenger manifest">
                       <td className="px-6 py-4 font-semibold text-gray-800 group-hover:text-rt-blue transition-colors">{route?.code}</td>
                       <td className="px-6 py-4 text-gray-600">{round.date}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${round.sold === round.seats ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {round.sold}/{round.seats}
-                        </span>
+                        {(() => {
+                          let colors = 'bg-rose-50 text-rose-600 border border-rose-100'; // Low (< 40%)
+                          if (paxPercent >= 100) colors = 'bg-emerald-50 text-emerald-600 border border-emerald-100'; // Full
+                          else if (paxPercent >= 40) colors = 'bg-amber-50 text-amber-600 border border-amber-100'; // Medium (>= 40%)
+                          return (
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${colors}`}>
+                              {round.sold}/{round.seats}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-gray-600">{round.head}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div className={`h-2 rounded-full transition-all duration-500 ${progress > 80 ? 'bg-rt-mint' : progress > 50 ? 'bg-rt-yellow' : 'bg-rt-blue'}`} style={{ width: `${progress}%` }}></div>
+                            <div
+                              className={`h-2 rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' :
+                                progress > 70 ? 'bg-rt-blue' :
+                                  progress > 30 ? 'bg-amber-400' : 'bg-rose-400'
+                                }`}
+                              style={{ width: `${progress}%` }}
+                            ></div>
                           </div>
                           <span className="text-xs text-gray-500 font-medium">{progress}%</span>
                         </div>
@@ -1456,10 +1538,10 @@ function TourSystemApp() {
                       <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                         {round.approved ? (
                           <div className="flex flex-col items-center gap-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                              <CheckCircle size={12} /> อนุมัติแล้ว
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100/50">
+                              <CheckCircle size={10} /> อนุมัติแล้ว
                             </span>
-                            <span className="text-[10px] text-gray-400">โดย {approver?.name || 'Admin'}</span>
+                            <span className="text-[9px] text-gray-400 font-medium italic">โดย {approver?.name || 'Admin'}</span>
                           </div>
                         ) : (
                           <button
@@ -1467,9 +1549,10 @@ function TourSystemApp() {
                               e.stopPropagation();
                               handleApproveRound(round.id);
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-black border border-slate-200 bg-white text-slate-700 hover:border-slate-900 hover:text-white hover:bg-slate-900 transition-all duration-300 shadow-sm group"
                           >
-                            <ShieldCheck size={14} /> อนุมัติทัวร์
+                            <ShieldCheck size={14} className="text-slate-400 group-hover:text-white transition-colors" />
+                            <span>อนุมัติทัวร์</span>
                           </button>
                         )}
                       </td>
@@ -2002,9 +2085,25 @@ function TourSystemApp() {
 
                 // คำนวณสถานะการชำระจาก pax จริง แทนที่จะใช้ค่า static
                 const allPaxForRound = getPaxForRound(round.id);
-                const dynamicPaidCount = allPaxForRound.filter(p => p.paymentStatus === 'paid').length;
-                const dynamicPendingCount = allPaxForRound.filter(p => p.paymentStatus === 'pending' || !p.paymentStatus).length;
-                const dynamicPartialCount = allPaxForRound.filter(p => p.paymentStatus === 'partial').length;
+                const dynamicPaidCount = allPaxForRound.filter(p => {
+                  const total = prices[p.roomType || 'adultTwin'] || 0;
+                  const paid = p.paidAmount || 0;
+                  // Check explicit status OR calculated amount
+                  return (p.paymentStatus === 'paid') || (paid >= (total - 1) && total > 0);
+                }).length;
+
+                const dynamicPartialCount = allPaxForRound.filter(p => {
+                  const total = prices[p.roomType || 'adultTwin'] || 0;
+                  const paid = p.paidAmount || 0;
+                  const isPaid = (p.paymentStatus === 'paid') || (paid >= (total - 1) && total > 0);
+                  if (isPaid) return false;
+
+                  // Partial MUST have paid amount > 0
+                  return paid > 0;
+                }).length;
+
+                // Pending is the rest
+                const dynamicPendingCount = allPaxForRound.length - dynamicPaidCount - dynamicPartialCount;
                 const dynamicSoldCount = allPaxForRound.length;
 
                 return (
@@ -2097,7 +2196,12 @@ function TourSystemApp() {
               <div className="flex gap-3 relative">
                 {/* Add Customer Button - Opens Modal */}
                 <button
-                  onClick={() => setShowBookingTypeModal(true)}
+                  onClick={() => {
+                    setBookingAddMode(null);
+                    setCurrentGroupName('');
+                    setCustomerSearchTerm('');
+                    setShowBookingTypeModal(true);
+                  }}
                   className="bg-rt-blue text-white px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2 hover:bg-rt-dark hover:shadow-glow-blue transition-all duration-500 transform hover:-translate-y-0.5 shadow-soft"
                 >
                   <Plus size={18} strokeWidth={3} /> เพิ่มลูกค้า
@@ -2110,8 +2214,14 @@ function TourSystemApp() {
               const getPaxStatus = (p: Passenger) => {
                 const total = selectedRound.price?.[p.roomType || 'adultTwin'] || 0;
                 const paid = p.paidAmount || 0;
+
+                // Priority 1: Check Paid
+                if (p.paymentStatus === 'paid') return 'paid';
                 if (paid >= (total - 1) && total > 0) return 'paid';
+
+                // Priority 2: Check Partial - MUST have paid amount > 0
                 if (paid > 0) return 'partial';
+
                 return 'pending';
               };
 
@@ -2270,348 +2380,118 @@ function TourSystemApp() {
 
 
 
-            {/* === INDIVIDUAL PASSENGERS TABLE === */}
-            {bookingPaxList.filter(p => p.bookingType === 'individual').length > 0 && (
-              <div className="mb-8 border border-gray-200/60 rounded-2xl overflow-hidden shadow-card hover:shadow-lg transition-all duration-300">
-                <div className="bg-rt-blue/5 px-5 py-3 text-sm font-bold text-rt-dark flex justify-between items-center border-b border-gray-100">
-                  <span className="flex items-center gap-2">
-                    <UserIcon size={16} className="text-rt-blue" /> รายชื่อลูกค้าเดี่ยว ({bookingPaxList.filter(p => p.bookingType === 'individual').length} ท่าน)
-                  </span>
-                  <span className="text-[10px] uppercase tracking-widest font-black text-rt-blue/60 bg-white px-2 py-0.5 rounded-md shadow-sm">Individual Booking</span>
-                </div>
-                <div className="bg-white overflow-x-auto">
-                  <table className="w-full text-left text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50/80 text-gray-400 border-b border-gray-100">
-                        <th className="px-5 py-4 w-14 text-center"></th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider">ลำดับ</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider">ผู้เดินทาง</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider">ประเภทห้อง</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider">หมายเหตุ / รีเควส</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider text-right">ยอดจอง</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider text-right">ยอดคงเหลือ</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider text-center">สถานะการเงิน</th>
-                        <th className="px-5 py-4 font-black text-[10px] uppercase tracking-wider text-center">วันที่ชำระ</th>
-                        <th className="px-5 py-4 w-12 text-center"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {bookingPaxList.filter(p => p.bookingType === 'individual').map((pax, idx) => {
-                        const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                        const paid = pax.paidAmount || 0;
-                        const balance = total - paid;
-                        const isFullyPaid = paid >= (total - 1) && total > 0;
-                        const isSelected = selectedPaxForBooking.includes(pax.id) && selectedPaxForBooking.length === 1;
-
-
-                        // Status logic based on billingNoteId and paymentStatus:
-                        // - No billingNoteId = "จองแล้ว" (gray, just added, no billing note yet)
-                        // - Has billingNoteId with paymentStatus 'pending' = "รอชำระ" (orange, billing created but not paid)
-                        // - Has billingNoteId with paymentStatus 'partial' = "บางส่วน" (yellow)
-                        // - Has billingNoteId with paymentStatus 'paid' = "ชำระแล้ว" (green, receipt issued)
-                        let statusText = 'จองแล้ว';
-                        let statusClass = 'bg-gray-100 text-gray-600';
-
-                        if (pax.billingNoteId || pax.paymentStatus) {
-                          // Has billing note created or starting payment
-                          if (pax.paymentStatus === 'paid' || isFullyPaid) {
-                            statusText = 'ชำระแล้ว';
-                            statusClass = 'bg-green-100 text-green-700';
-                          } else if (pax.paymentStatus === 'partial' || (paid > 0 && !isFullyPaid)) {
-                            statusText = 'ชำระมัดจำแล้ว';
-                            statusClass = 'bg-yellow-100 text-yellow-700';
-                          } else {
-                            statusText = 'รอชำระ';
-                            statusClass = 'bg-orange-100 text-orange-700';
-                          }
-                        }
-
-                        return (
-                          <tr key={`ind-${pax.id}-${idx}`} className={`group/row transition-all duration-200 ${isSelected ? 'bg-rt-blue/[0.03]' : 'hover:bg-gray-50/80'} ${isFullyPaid ? 'opacity-80' : ''}`}>
-                            <td className="px-4 py-4 text-center">
-                              <div className="flex justify-center">
-                                <div
-                                  onClick={() => !isFullyPaid && setSelectedPaxForBooking([pax.id])}
-                                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isFullyPaid ? 'opacity-20 cursor-not-allowed' : isSelected ? 'border-rt-blue bg-rt-blue shadow-glow-blue scale-110' : 'border-gray-300 bg-white hover:border-rt-blue/50'}`}
-                                >
-                                  {isSelected && <div className="w-2 h-2 rounded-full bg-white animate-scale-in" />}
-                                  <input
-                                    type="radio"
-                                    name="selectedBooking"
-                                    className="sr-only"
-                                    checked={isSelected}
-                                    disabled={isFullyPaid}
-                                    onChange={() => !isFullyPaid && setSelectedPaxForBooking([pax.id])}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-gray-400 font-medium">{idx + 1}</td>
-                            <td className="px-4 py-4">
-                              <div className="font-black text-gray-800 tracking-tight">{pax.firstNameEn} {pax.lastNameEn}</div>
-                              <div className="text-[10px] font-bold text-gray-400 mt-0.5">{pax.passportNo || 'NO PASSPORT'}</div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <select
-                                className="text-xs font-bold border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white hover:border-rt-blue/30 focus:border-rt-blue outline-none transition-all"
-                                value={pax.roomType || 'adultTwin'}
-                                disabled={isFullyPaid}
-                                onChange={(e) => setBookingPaxList(prev => prev.map(c => c.id === pax.id ? { ...c, roomType: e.target.value } : c))}
-                              >
-                                <option value="adultTwin">Adult (Twin)</option>
-                                <option value="adultSingle">Adult (Single)</option>
-                                <option value="adultTriple">Adult (Triple)</option>
-                                <option value="childBed">Child (Extra Bed)</option>
-                                <option value="childNoBed">Child (No Bed)</option>
-                              </select>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-1.5 max-w-[200px]">
-                                {pax.customerNote && (
-                                  <div className="text-[10px] text-gray-500 flex items-center gap-1.5 bg-amber-50/50 px-2 py-1 rounded border border-amber-100/50 leading-tight">
-                                    <Pin size={10} className="text-amber-500 rotate-45" /> {pax.customerNote}
-                                  </div>
-                                )}
-                                <div className="relative">
-                                  <input
-                                    type="text"
-                                    className="w-full bg-transparent border-b border-gray-100 focus:border-rt-blue outline-none text-[11px] py-1 transition-all placeholder:text-gray-300"
-                                    placeholder="เพิ่มรีเควส..."
-                                    value={pax.remark || ''}
-                                    onChange={(e) => {
-                                      const newVal = e.target.value;
-                                      setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: newVal } : p));
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-right font-black text-rt-blue">฿{total.toLocaleString()}</td>
-                            <td className={`px-4 py-4 text-right font-black ${balance > 0 ? 'text-red-500' : 'text-rt-mint'}`}>
-                              {balance > 0 ? `฿${balance.toLocaleString()}` : 'ชำระครบแล้ว'}
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight border ${statusClass}`}>
-                                {statusText === 'ชำระแล้ว' && <CheckCircle size={10} />}
-                                {statusText === 'รอชำระ' && <Clock size={10} />}
-                                {statusText === 'ชำระมัดจำแล้ว' && <DollarSign size={10} />}
-                                {statusText}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-center font-bold text-[10px] text-gray-400">
-                              {pax.paymentDate || '-'}
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              {!isFullyPaid && (
-                                <button
-                                  onClick={() => setBookingPaxList(prev => prev.filter(c => c.id !== pax.id))}
-                                  className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                  title="ลบผู้เดินทาง"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* === GROUP BOOKINGS TABLE (Multiple Groups Supported) === */}
-            {(() => {
-              const groupPax = bookingPaxList.filter(p => p.bookingType === 'group');
-              if (groupPax.length === 0) return null;
-
-              // Group by groupName
-              const grouped = groupPax.reduce<Record<string, Passenger[]>>((acc, p) => {
-                const name = p.groupName || 'กรุ๊ปไม่มีชื่อ';
-                if (!acc[name]) acc[name] = [];
-                acc[name].push(p);
-                return acc;
-              }, {});
-
-              return Object.entries(grouped).map(([groupName, members]) => {
-                const groupTotal = members.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0);
-                const groupPaid = members.reduce((sum, pax) => sum + (pax.paidAmount || 0), 0);
-                const groupBalance = groupTotal - groupPaid;
-
-                // Status Logic - consistent with summary
-                const isFullyPaid = groupPaid >= (groupTotal - 1) && groupTotal > 0;
-                let statusText = 'จองแล้ว';
-                let statusColor = 'bg-gray-100 text-gray-600';
-
-                if (members.some(m => m.billingNoteId || m.paymentStatus)) {
-                  if (isFullyPaid) {
-                    statusText = 'ชำระแล้ว';
-                    statusColor = 'bg-rt-mint/10 text-rt-mint border-rt-mint/20';
-                  } else if (groupPaid > 0) {
-                    statusText = 'ชำระมัดจำแล้ว';
-                    statusColor = 'bg-rt-yellow/10 text-rt-yellow border-rt-yellow/20';
-                  } else {
-                    statusText = 'รอชำระ';
-                    statusColor = 'bg-orange-50 text-orange-600 border-orange-100';
-                  }
-                }
-
-
-                const isSelected = selectedPaxForBooking.includes(`group:${groupName}`);
+            {/* === PASSENGER TABLE AREA (DESIGN FROM IMAGE 2) === */}
+            <div className="space-y-6 mt-6">
+              {/* Individual Passengers Section */}
+              {(() => {
+                const indivPax = bookingPaxList.filter(p => !p.groupId);
+                if (indivPax.length === 0) return null;
 
                 return (
-                  <div key={groupName} className={`mb-8 border rounded-2xl overflow-hidden shadow-soft transition-all duration-300 ${isSelected ? 'border-purple-300 ring-4 ring-purple-500/10' : 'border-gray-200/60'}`}>
-                    {/* Group Header - Selection moved here */}
-                    <div
-                      onClick={() => {
-                        setSelectedPaxForBooking([`group:${groupName}`]);
-                        setCurrentGroupName(groupName);
-                        setBookingAddMode('group');
-                      }}
-                      className={`cursor-pointer px-6 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b transition-colors ${isSelected ? 'bg-purple-50 border-purple-100' : 'bg-gray-50 border-gray-100 hover:bg-purple-50'}`}
-                    >
-                      <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                        {/* Radio indicator in header */}
-                        <div className="flex items-center justify-center">
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-purple-600 bg-purple-600 shadow-glow-purple' : 'border-gray-300 bg-white'}`}>
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-white animate-scale-in" />}
-                          </div>
-                        </div>
-
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 shadow-sm border border-purple-200/50">
-                          <Users size={20} />
-                        </div>
-                        <div className="flex-1 md:flex-none">
-                          <div className="text-[9px] font-black text-purple-400 uppercase tracking-[0.2em] mb-0.5">GROUP BOOKING</div>
-                          <div className="relative group/edit flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={groupName}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                const newName = e.target.value;
-                                if (!newName) return;
-                                setBookingPaxList(prev => prev.map(p => p.groupName === groupName ? { ...p, groupName: newName } : p));
-                                if (currentGroupName === groupName) setCurrentGroupName(newName);
-                                if (isSelected) setSelectedPaxForBooking([`group:${newName}`]);
-                              }}
-                              className="bg-transparent border-b border-dashed border-purple-200 focus:border-purple-500 focus:border-solid outline-none py-0.5 text-xl font-black text-purple-900 leading-tight transition-all"
-                            />
-                            <Edit2 size={14} className="text-purple-300 opacity-40" />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 h-fit">
-                          <span className="bg-purple-100/80 text-purple-700 px-2.5 py-1 rounded-lg text-[10px] font-black">{members.length} ท่าน</span>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight border shadow-sm ${statusColor}`}>
-                            {statusText}
-                          </span>
-                        </div>
+                  <div className="border border-blue-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <div className="bg-blue-50/50 px-5 py-3 border-b border-blue-100 flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-blue-800 font-bold">
+                        <UserIcon size={18} />
+                        <span>รายชื่อลูกค้าเดี่ยว ({indivPax.length} ท่าน)</span>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-3 pl-10 md:pl-0">
-                        <div className="flex flex-col items-end px-4 py-2 rounded-xl bg-white/60 border border-gray-100 shadow-sm">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">ยอดรวม</span>
-                          <span className="text-sm font-black text-gray-800 tracking-tight">฿{groupTotal.toLocaleString()}</span>
-                        </div>
-                        <div className={`flex flex-col items-end px-4 py-2 rounded-xl border shadow-sm ${groupBalance > 0 ? 'bg-red-50/80 border-red-100 text-red-600' : 'bg-rt-mint/10 border-rt-mint/20 text-rt-mint'}`}>
-                          <span className="text-[9px] font-black opacity-60 uppercase tracking-widest mb-0.5">ค้างชำระ</span>
-                          <span className="text-sm font-black tracking-tight">฿{groupBalance.toLocaleString()}</span>
-                        </div>
-                      </div>
+                      <div className="text-[10px] text-blue-500 font-bold">เลือกได้ทีละ 1 รายการเท่านั้น</div>
                     </div>
-
-                    {/* Group Members Table - Simple list without rowSpan */}
-                    <div className="bg-white overflow-x-auto">
-                      <table className="w-full text-left text-sm border-collapse">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="bg-gray-50/80 text-gray-400 border-b border-gray-100">
-                            <th className="px-6 py-4 font-black text-[10px] uppercase tracking-wider w-16 text-center">ลำดับ</th>
-                            <th className="px-6 py-4 font-black text-[10px] uppercase tracking-wider">ผู้เดินทาง</th>
-                            <th className="px-6 py-4 font-black text-[10px] uppercase tracking-wider">ห้องพัก</th>
-                            <th className="px-6 py-4 font-black text-[10px] uppercase tracking-wider">หมายเหตุ / คอร์ส</th>
-                            <th className="px-6 py-4 font-black text-[10px] uppercase tracking-wider text-right">ราคา</th>
-                            <th className="px-6 py-4 w-12 text-center"></th>
+                          <tr className="bg-gray-50/50 text-gray-400 border-b border-gray-100">
+                            <th className="px-4 py-3 w-10"></th>
+                            <th className="px-4 py-3 w-10 text-center font-bold">#</th>
+                            <th className="px-4 py-3 font-bold">ชื่อ-นามสกุล</th>
+                            <th className="px-4 py-3 font-bold">ประเภทห้อง</th>
+                            <th className="px-4 py-3 font-bold">หมายเหตุ</th>
+                            <th className="px-4 py-3 font-bold text-right">ยอดจอง</th>
+                            <th className="px-4 py-3 font-bold text-right">ค้างชำระ</th>
+                            <th className="px-4 py-3 font-bold text-center">สถานะ</th>
+                            <th className="px-4 py-3 font-bold text-center">วันที่ชำระ</th>
+                            <th className="px-4 py-3 w-10"></th>
                           </tr>
                         </thead>
-
-                        <tbody className="divide-y divide-gray-100">
-                          {members.map((pax, idx) => {
+                        <tbody className="divide-y divide-gray-50">
+                          {indivPax.map((pax, idx) => {
                             const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
-                            const paid = pax.paidAmount || 0;
-                            const isFullyPaid = paid >= total && total > 0;
+                            // Fix: if status is paid but amount is 0 (legacy data), treat as full paid
+                            const paid = pax.paidAmount || (pax.paymentStatus === 'paid' ? total : 0);
+                            const balance = total - paid;
+                            const isSelected = selectedPaxForBooking.includes(pax.id);
 
-                            // Status logic per member
-                            let memberStatus = 'จองแล้ว';
-                            let memberStatusClass = 'bg-gray-100 text-gray-600';
+                            // Status tag logic
+                            let statusText = 'รอชำระ';
+                            let statusClass = 'bg-orange-100 text-orange-600';
 
-                            if (pax.billingNoteId || pax.paymentStatus) {
-                              if (pax.paymentStatus === 'paid' || isFullyPaid) {
-                                memberStatus = 'ชำระแล้ว';
-                                memberStatusClass = 'bg-green-100 text-green-700';
-                              } else if (pax.paymentStatus === 'partial' || (paid > 0 && !isFullyPaid)) {
-                                memberStatus = 'ชำระมัดจำแล้ว';
-                                memberStatusClass = 'bg-yellow-100 text-yellow-700';
-                              } else {
-                                memberStatus = 'รอชำระ';
-                                memberStatusClass = 'bg-orange-100 text-orange-700';
-                              }
+                            const isPaid = (pax.paymentStatus === 'paid') || (paid >= total && total > 0);
+                            const isPartial = !isPaid && (paid > 0);
+
+                            if (isPaid) {
+                              statusText = 'ชำระแล้ว';
+                              statusClass = 'bg-green-100 text-green-600';
+                            } else if (isPartial) {
+                              statusText = 'บางส่วน';
+                              statusClass = 'bg-yellow-100 text-yellow-600';
                             }
 
                             return (
-                              <tr key={pax.id} className={`group/row transition-all duration-200 ${isSelected ? 'bg-purple-50/10' : 'hover:bg-gray-50'}`}>
-                                <td className="px-6 py-4 text-center text-gray-400 font-bold">{idx + 1}</td>
-                                <td className="px-6 py-4">
-                                  <div className="font-black text-gray-800 tracking-tight">{pax.firstNameEn} {pax.lastNameEn}</div>
-                                  <div className="text-[10px] font-bold text-gray-400 mt-0.5">{pax.passportNo || 'NO PASSPORT'}</div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <select
-                                    className={`text-xs font-bold border border-gray-200 rounded-lg px-2.5 py-1.5 bg-transparent hover:border-purple-300 focus:border-purple-500 outline-none transition-all ${groupPaid >= groupTotal && groupTotal > 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                    value={pax.roomType || 'adultTwin'}
-                                    disabled={groupPaid >= groupTotal && groupTotal > 0}
-                                    onChange={(e) => {
-                                      setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, roomType: e.target.value } : p));
-                                    }}
+                              <tr key={pax.id} className={`hover:bg-blue-50/30 transition-colors ${isSelected ? 'bg-blue-50/50' : ''}`}>
+                                <td className="px-4 py-3">
+                                  <div
+                                    onClick={() => setSelectedPaxForBooking([pax.id])}
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'}`}
                                   >
-                                    <option value="adultTwin">Adult (Twin)</option>
-                                    <option value="adultSingle">Adult (Single)</option>
-                                    <option value="childBed">Child (Extra Bed)</option>
-                                    <option value="childNoBed">Child (No Bed)</option>
+                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-400 font-medium">{idx + 1}</td>
+                                <td className="px-4 py-3">
+                                  <div className="font-bold text-gray-800 uppercase">{pax.firstNameEn} {pax.lastNameEn}</div>
+                                  <div className="text-[10px] text-gray-400 uppercase">{pax.passportNo || 'NO PASSPORT'}</div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <select
+                                    className="bg-transparent border border-gray-200 rounded px-2 py-1 outline-none text-[11px] font-medium"
+                                    value={pax.roomType || 'adultTwin'}
+                                    onChange={(e) => setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, roomType: e.target.value } : p))}
+                                  >
+                                    <option value="adultTwin">ผู้ใหญ่ (พักคู่)</option>
+                                    <option value="adultSingle">ผู้ใหญ่ (พักเดี่ยว)</option>
+                                    <option value="childBed">เด็ก (มีเตียง)</option>
+                                    <option value="childNoBed">เด็ก (ไม่มีเตียง)</option>
                                   </select>
                                 </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col gap-1.5 max-w-[200px]">
+                                <td className="px-4 py-3">
+                                  <div className="space-y-1">
                                     {pax.customerNote && (
-                                      <div className="text-[10px] text-gray-500 flex items-center gap-1.5 bg-purple-100/30 px-2 py-1 rounded border border-purple-200/30 leading-tight">
-                                        <Pin size={10} className="text-purple-500 rotate-45" /> {pax.customerNote}
-                                      </div>
+                                      <div className="text-[10px] text-gray-400 italic">📌 {pax.customerNote}</div>
                                     )}
-                                    <div className="relative">
+                                    <div className="flex items-center gap-1 text-[10px]">
+                                      <Edit2 size={10} className="text-blue-400" />
                                       <input
                                         type="text"
-                                        className="w-full bg-transparent border-b border-gray-100 focus:border-purple-400 outline-none text-[11px] py-1 transition-all placeholder:text-gray-300"
-                                        placeholder="เพิ่มรีเควส..."
+                                        className="bg-transparent border-b border-gray-100 focus:border-blue-400 outline-none w-full"
+                                        placeholder="เพิ่มหมายเหตุ..."
                                         value={pax.remark || ''}
-                                        onChange={(e) => {
-                                          const newVal = e.target.value;
-                                          setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: newVal } : p));
-                                        }}
+                                        onChange={(e) => setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: e.target.value } : p))}
                                       />
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 text-right font-black text-purple-800">฿{total.toLocaleString()}</td>
-                                <td className="px-6 py-4 text-center">
-                                  {!(groupPaid >= groupTotal && groupTotal > 0) && (
-                                    <button
-                                      onClick={() => setBookingPaxList(prev => prev.filter(c => c.id !== pax.id))}
-                                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                      title="ลบจากกลุ่ม"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  )}
+                                <td className="px-4 py-3 text-right font-bold text-blue-600">฿{total.toLocaleString()}</td>
+                                <td className="px-4 py-3 text-right font-bold text-rose-500">฿{balance.toLocaleString()}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusClass}`}>{statusText}</span>
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-400 text-[10px] font-bold">-</td>
+                                <td className="px-4 py-3 text-center">
+                                  <button
+                                    onClick={() => setBookingPaxList(prev => prev.filter(p => p.id !== pax.id))}
+                                    className="text-gray-300 hover:text-rose-500 transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -2621,60 +2501,181 @@ function TourSystemApp() {
                     </div>
                   </div>
                 );
-              });
-            })()}
+              })()}
 
-            {/* Bottom Bar - Selected Item Summary */}
-            {(selectedPaxForBooking.length > 0 || (bookingAddMode && bookingPaxList.length > 0)) && (
-              <div className="pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-lg font-bold mt-3 text-[#008ac5] mb-4">
-                  <span>
-                    {selectedPaxForBooking.some(s => String(s).startsWith('group:'))
-                      ? 'ยอดกลุ่มที่ต้องชำระ:'
-                      : selectedPaxForBooking.length === 1
-                        ? 'ยอดที่ต้องชำระ:'
-                        : 'กรุณาเลือก 1 รายการเพื่อชำระ'}
-                  </span>
-                  <span>
-                    {(() => {
-                      const groupSelect = selectedPaxForBooking.find(s => String(s).startsWith('group:'));
-                      if (groupSelect) {
-                        const gName = String(groupSelect).split(':')[1];
-                        const gMembers = bookingPaxList.filter(p => p.groupName === gName);
-                        const gTotal = gMembers.reduce((sum, pax) => sum + (selectedRound.price?.[pax.roomType || 'adultTwin'] || 0), 0);
-                        const gPaid = gMembers.reduce((sum, pax) => sum + (pax.paidAmount || 0), 0);
-                        const gBalance = gTotal - gPaid;
-                        return `฿${gBalance.toLocaleString()}`;
-                      } else if (selectedPaxForBooking.length === 1) {
-                        const pax = bookingPaxList.find(c => c.id === selectedPaxForBooking[0]);
-                        if (pax) {
+              {/* Group Section */}
+              {selectedRound && bookingGroups
+                .filter(g => g.roundId === selectedRound.id)
+                .filter(group => {
+                  // Only show groups that have members
+                  const hasMembers = bookingPaxList.some(p =>
+                    p.bookingType === 'group' &&
+                    (p.groupName === group.name || (group.groupId && p.groupId === group.groupId))
+                  );
+                  return hasMembers;
+                })
+                .map(group => {
+                  const groupMembers = bookingPaxList.filter(p =>
+                    p.bookingType === 'group' &&
+                    (p.groupName === group.name || (group.groupId && p.groupId === group.groupId))
+                  );
+                  const groupTotal = groupMembers.reduce((sum, p) => sum + (selectedRound.price?.[p.roomType || 'adultTwin'] || 0), 0);
+                  const groupPaid = groupMembers.reduce((sum, p) => {
+                    const pTotal = selectedRound.price?.[p.roomType || 'adultTwin'] || 0;
+                    const pPaid = p.paidAmount || (p.paymentStatus === 'paid' ? pTotal : 0);
+                    return sum + pPaid;
+                  }, 0);
+                  const groupBalance = groupTotal - groupPaid;
+                  const isSelected = selectedPaxForBooking.includes(`group:${group.name}`);
+
+                  return (
+                    <div key={group.groupId || group.name} className="border border-purple-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                      <div className="bg-purple-50/50 px-5 py-3 border-b border-purple-100 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div
+                            onClick={() => setSelectedPaxForBooking([`group:${group.name}`])}
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-gray-300 bg-white'}`}
+                          >
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <div className="flex items-center gap-2 text-purple-800 font-bold">
+                            <Users size={18} />
+                            <span>กลุ่ม: {group.name}</span>
+                            <span className="text-[10px] text-purple-500 font-normal">({groupMembers.length} ท่าน)</span>
+                            <span className="bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold">รอชำระ</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-[11px] font-bold">
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 uppercase">ยอดจอง:</span>
+                            <span className="text-gray-700">฿{groupTotal.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-400 uppercase">ค้างชำระ:</span>
+                            <span className="text-rose-500">฿{groupBalance.toLocaleString()}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`ยืนยันการลบกลุ่ม "${group.name}" และผู้เดินทางทั้งหมดในกลุ่ม?`)) {
+                                setBookingGroups(prev => prev.filter(g => g.name !== group.name && g.groupId !== group.groupId));
+                                setBookingPaxList(prev => prev.filter(p => p.groupName !== group.name && p.groupId !== group.groupId));
+                                setSelectedPaxForBooking(prev => prev.filter(id => id !== `group:${group.name}`));
+                              }
+                            }}
+                            className="text-gray-300 hover:text-rose-500 ml-2"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50/30 text-gray-400 border-b border-gray-100">
+                              <th className="px-4 py-2 w-10 text-center font-bold">#</th>
+                              <th className="px-4 py-2 font-bold">ชื่อ-นามสกุล</th>
+                              <th className="px-4 py-2 font-bold">ประเภทห้อง</th>
+                              <th className="px-4 py-2 font-bold">หมายเหตุ</th>
+                              <th className="px-4 py-2 font-bold text-right">ยอดจอง</th>
+                              <th className="px-4 py-2 w-10"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {groupMembers.map((pax, idx) => {
+                              const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                              return (
+                                <tr key={pax.id} className="hover:bg-purple-50/10">
+                                  <td className="px-4 py-2.5 text-center text-gray-400 font-medium">{idx + 1}</td>
+                                  <td className="px-4 py-2.5">
+                                    <div className="font-bold text-gray-800 uppercase">{pax.firstNameEn} {pax.lastNameEn}</div>
+                                    <div className="text-[10px] text-gray-400 uppercase">{pax.passportNo || 'AA1234567'}</div>
+                                  </td>
+                                  <td className="px-4 py-2.5">
+                                    <select
+                                      className="bg-transparent border border-gray-100 rounded px-2 py-1 outline-none text-[11px] font-medium"
+                                      value={pax.roomType || 'adultTwin'}
+                                      onChange={(e) => setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, roomType: e.target.value } : p))}
+                                    >
+                                      <option value="adultTwin">ผู้ใหญ่ (พักคู่)</option>
+                                      <option value="adultSingle">ผู้ใหญ่ (พักเดี่ยว)</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-4 py-2.5">
+                                    <div className="space-y-1">
+                                      <div className="text-[10px] text-gray-400 italic">💬 {pax.customerNote || 'ไม่มีหมายเหตุความต้องการพิเศษ'}</div>
+                                      <div className="flex items-center gap-1 text-[10px]">
+                                        <Edit2 size={10} className="text-purple-400" />
+                                        <input
+                                          type="text"
+                                          className="bg-transparent border-b border-gray-100 focus:border-purple-400 outline-none w-full"
+                                          placeholder="เพิ่มหมายเหตุ..."
+                                          value={pax.remark || ''}
+                                          onChange={(e) => setBookingPaxList(prev => prev.map(p => p.id === pax.id ? { ...p, remark: e.target.value } : p))}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right font-bold text-gray-700">฿{total.toLocaleString()}</td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <button
+                                      onClick={() => setBookingPaxList(prev => prev.filter(p => p.id !== pax.id))}
+                                      className="text-gray-200 hover:text-rose-500 transition-colors"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {/* Summary Bottom Bar */}
+              <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                <div className="text-xl font-black text-rt-blue uppercase tracking-tight">
+                  ยอดรวมโดยประมาณ:
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="text-4xl font-black text-rt-blue drop-shadow-sm">
+                    ฿{(selectedPaxForBooking.reduce((sum: number, selId: number | string) => {
+                      if (String(selId).startsWith('group:')) {
+                        const gName = String(selId).split(':')[1];
+                        const group = bookingGroups.find(g => g.name === gName);
+                        if (!group) return sum;
+
+                        const gMembers = bookingPaxList.filter(p =>
+                          p.groupName === gName ||
+                          (group.id && p.groupId === group.id) ||
+                          (group.groupId && p.groupId === group.groupId)
+                        );
+
+                        return sum + gMembers.reduce((gSum, pax) => {
                           const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
                           const paid = pax.paidAmount || 0;
-                          const balance = total - paid;
-                          return `฿${balance.toLocaleString()}`;
-                        }
+                          return gSum + (total - paid);
+                        }, 0);
                       }
-                      return '-';
-                    })()}
-                  </span>
+                      const pax = bookingPaxList.find(c => c.id === selId);
+                      if (!pax) return sum;
+                      const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
+                      const paid = pax.paidAmount || 0;
+                      return sum + (total - paid);
+                    }, 0)).toLocaleString()}
+                  </div>
+                  <button
+                    className="mt-6 px-16 py-4 bg-rt-blue text-white rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-rt-dark transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-xl shadow-blue-200"
+                    disabled={selectedPaxForBooking.length === 0}
+                    onClick={() => setIsBookingConfirmationModalOpen(true)}
+                  >
+                    ดำเนินการวางบิล
+                  </button>
                 </div>
-                <button
-                  className="w-full bg-rt-blue text-white py-3 rounded-lg font-bold hover:bg-rt-dark shadow-lg transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  disabled={selectedPaxForBooking.length === 0}
-                  onClick={() => setIsBookingConfirmationModalOpen(true)}
-                >
-                  {(() => {
-                    const groupSelect = selectedPaxForBooking.find(s => String(s).startsWith('group:'));
-                    if (groupSelect) {
-                      return `ดำเนินการชำระเงิน - กลุ่ม ${String(groupSelect).split(':')[1]}`;
-                    }
-                    return selectedPaxForBooking.length === 1
-                      ? 'ดำเนินการชำระเงิน - 1 ท่าน'
-                      : 'กรุณาเลือกรายการที่ต้องการชำระ';
-                  })()}
-                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -2820,7 +2821,17 @@ function TourSystemApp() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">ที่นั่ง:</span>
-                        <span className="font-medium text-gray-800">{round.sold}/{round.seats}</span>
+                        {(() => {
+                          const paxPercent = (round.sold / (round.seats || 1)) * 100;
+                          let colors = 'bg-rose-50 text-rose-600 border border-rose-100'; // Low
+                          if (paxPercent >= 100) colors = 'bg-emerald-50 text-emerald-600 border border-emerald-100'; // Full
+                          else if (paxPercent >= 40) colors = 'bg-amber-50 text-amber-600 border border-amber-100'; // Medium
+                          return (
+                            <span className={`px-2 py-0.5 rounded-md font-bold text-xs ${colors}`}>
+                              {round.sold}/{round.seats}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">สถานะอนุมัติ:</span>
@@ -2914,9 +2925,9 @@ function TourSystemApp() {
             {currentUser.role === 'MANAGER' && !selectedOpRound.approved && (
               <button
                 onClick={() => handleApproveRound(selectedOpRound.id)}
-                className="bg-amber-500 text-white px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-amber-600 shadow-sm"
+                className="bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all duration-300 shadow-md shadow-slate-200 active:scale-95"
               >
-                <ShieldCheck size={16} /> อนุมัติทัวร์นี้
+                <ShieldCheck size={18} /> อนุมัติทัวร์นี้
               </button>
             )}
             <button
@@ -5291,14 +5302,33 @@ function TourSystemApp() {
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <div className="h-16 bg-white/80 backdrop-blur-lg border-b border-gray-100/50 flex items-center px-4 lg:hidden shadow-soft"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button></div>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in">{activeTab === 'dashboard' && renderDashboard()}{activeTab === 'booking' && renderBooking()}{activeTab === 'operation' && renderOperation()}{activeTab === 'payment' && renderPayment()}{activeTab === 'crm' && renderCRM()}{activeTab === 'settings' && renderSettings()}</div>
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in">
+          {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'booking' && renderBooking()}
+          {activeTab === 'operation' && renderOperation()}
+          {activeTab === 'payment' && renderPayment()}
+          {activeTab === 'crm' && renderCRM()}
+          {activeTab === 'settings' && renderSettings()}
+          {activeTab === 'customer-dashboard' && (
+            <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+              <CustomerDashboard
+                targetCustomerId={viewingCustomerId || 4}
+                isAdmin={true}
+                onBack={() => {
+                  setActiveTab(previousTab);
+                  setViewingCustomerId(null);
+                }}
+              />
+            </div>
+          )}
+        </div>
         {isFormOpen && renderCustomerFormModal()}
         {isUserFormModalOpen && renderUserFormModal()}
 
         {/* Add Customer Modal - Multi-step */}
         {showBookingTypeModal && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden max-h-[90vh] overflow-y-auto">
 
               {/* Step 1: Choose Booking Type (if not selected yet) */}
               {!bookingAddMode && (
@@ -5343,7 +5373,10 @@ function TourSystemApp() {
               {bookingAddMode === 'group' && !currentGroupName && (
                 <>
                   <header className="bg-purple-600 text-white px-6 py-4 flex justify-between items-center">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><Users size={20} /> ระบุชื่อกรุ๊ปทัวร์</h3>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setBookingAddMode(null)} className="hover:bg-purple-500 p-1 rounded-full"><ArrowLeft size={20} /></button>
+                      <h3 className="font-bold text-lg flex items-center gap-2"><Users size={20} /> ระบุชื่อกรุ๊ปทัวร์</h3>
+                    </div>
                     <button onClick={() => { setShowBookingTypeModal(false); setBookingAddMode(null); }}><X size={20} /></button>
                   </header>
                   <div className="p-6 space-y-4">
@@ -5351,36 +5384,37 @@ function TourSystemApp() {
                       <label className="text-xs font-bold text-gray-500 uppercase block mb-2">เลือกกรุ๊ปที่มีอยู่แล้ว</label>
                       <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
                         {(() => {
-                          // Get unique existing group names from bookingPaxList
+                          // Get unique existing groups for current round from bookingGroups state
+                          const relevantGroups = bookingGroups.filter(g => g.roundId === selectedRound?.id);
                           const groupPassengers = bookingPaxList.filter(p => p.bookingType === 'group');
-                          const existingGroupNames = [...new Set(groupPassengers.map(p => p.groupName).filter(Boolean))];
 
-                          // Also check if there's a group without a name (from currentGroupName state)
-                          const hasUnnamedGroup = groupPassengers.length > 0 && groupPassengers.some(p => !p.groupName);
-
-                          if (existingGroupNames.length === 0 && !hasUnnamedGroup) {
-                            return <div className="text-sm text-gray-400 text-center py-2">ไม่มีกรุ๊ปที่สร้างไว้</div>;
+                          if (relevantGroups.length === 0) {
+                            return <div className="text-sm text-gray-400 text-center py-2">ไม่มีกรุ๊ปที่สร้างไว้ในรอบนี้</div>;
                           }
 
                           return (
                             <>
-                              {/* Existing named groups */}
-                              {existingGroupNames.map(name => {
-                                const count = groupPassengers.filter(p => p.groupName === name).length;
+                              {/* Existing named groups from state */}
+                              {relevantGroups.map(group => {
+                                const count = groupPassengers.filter(p =>
+                                  p.groupName === group.name ||
+                                  p.groupId === group.groupId ||
+                                  p.groupId === group.id
+                                ).length;
                                 return (
                                   <button
-                                    key={name}
-                                    onClick={() => setCurrentGroupName(name)}
+                                    key={group.groupId || group.name}
+                                    onClick={() => setCurrentGroupName(group.name)}
                                     className="w-full text-left px-3 py-2 hover:bg-purple-50 rounded text-purple-700 font-bold text-sm transition flex justify-between items-center"
                                   >
-                                    <span>{name}</span>
+                                    <span>{group.name}</span>
                                     <span className="bg-purple-100 text-[10px] px-2 py-0.5 rounded-full">{count} ท่าน</span>
                                   </button>
                                 );
                               })}
 
                               {/* Unnamed group (active currentGroupName) */}
-                              {hasUnnamedGroup && (
+                              {groupPassengers.some(p => !p.groupName) && (
                                 <button
                                   onClick={() => {
                                     // Use existing passengers' implicit group - prompt user to name it
@@ -5426,13 +5460,42 @@ function TourSystemApp() {
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition"
                           placeholder="เช่น ครอบครัวตัวอย่าง"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) setCurrentGroupName((e.target as HTMLInputElement).value.trim());
+                            if (e.key === 'Enter') {
+                              const val = (e.currentTarget as HTMLInputElement).value.trim();
+                              if (val) {
+                                setCurrentGroupName(val);
+                                if (!bookingGroups.find(g => g.name === val)) {
+                                  setBookingGroups(prev => [...prev, {
+                                    groupId: `GRP-${selectedRound?.id}-${Date.now()}`,
+                                    name: val,
+                                    roundId: selectedRound?.id || 0,
+                                    totalAmount: 0,
+                                    paidAmount: 0,
+                                    balance: 0,
+                                    bookingType: 'group'
+                                  }]);
+                                }
+                              }
+                            }
                           }}
                         />
                         <button
                           onClick={() => {
-                            const val = (document.getElementById('newGroupNameInput') as HTMLInputElement).value;
-                            if (val.trim()) setCurrentGroupName(val.trim());
+                            const val = (document.getElementById('newGroupNameInput') as HTMLInputElement).value.trim();
+                            if (val) {
+                              setCurrentGroupName(val);
+                              if (!bookingGroups.find(g => g.name === val)) {
+                                setBookingGroups(prev => [...prev, {
+                                  groupId: `GRP-${selectedRound?.id}-${Date.now()}`,
+                                  name: val,
+                                  roundId: selectedRound?.id || 0,
+                                  totalAmount: 0,
+                                  paidAmount: 0,
+                                  balance: 0,
+                                  bookingType: 'group'
+                                }]);
+                              }
+                            }
                           }}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold"
                         >
@@ -5441,6 +5504,11 @@ function TourSystemApp() {
                       </div>
                     </div>
                   </div>
+                  <div className="bg-gray-50 px-6 py-4 border-t flex items-center justify-start">
+                    <button onClick={() => { setBookingAddMode(null); }} className="text-sm text-gray-500 hover:text-gray-800 font-medium underline">
+                      ← เปลี่ยนประเภท
+                    </button>
+                  </div>
                 </>
               )}
 
@@ -5448,10 +5516,24 @@ function TourSystemApp() {
               {bookingAddMode && (bookingAddMode === 'individual' || (bookingAddMode === 'group' && currentGroupName)) && (
                 <>
                   <header className={`${bookingAddMode === 'individual' ? 'bg-blue-500' : 'bg-purple-600'} text-white px-6 py-4 flex justify-between items-center`}>
-                    <h3 className="font-bold text-lg flex items-center gap-2">
-                      {bookingAddMode === 'individual' ? <UserIcon size={20} /> : <Users size={20} />}
-                      {bookingAddMode === 'individual' ? 'เพิ่มลูกค้าเดี่ยว' : `กลุ่ม: ${currentGroupName}`}
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          if (bookingAddMode === 'group') {
+                            setCurrentGroupName(''); // Back to Group Name Selection
+                          } else {
+                            setBookingAddMode(null); // Back to Type Selection
+                          }
+                        }}
+                        className="hover:bg-white/20 p-1 rounded-full"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
+                      <h3 className="font-bold text-lg flex items-center gap-2">
+                        {bookingAddMode === 'individual' ? <UserIcon size={20} /> : <Users size={20} />}
+                        {bookingAddMode === 'individual' ? 'เพิ่มลูกค้าเดี่ยว' : `กลุ่ม: ${currentGroupName}`}
+                      </h3>
+                    </div>
                     <button onClick={() => { setShowBookingTypeModal(false); }}><X size={20} /></button>
                   </header>
                   <div className="p-6 space-y-4">
@@ -5496,6 +5578,32 @@ function TourSystemApp() {
                                   alert('ลูกค้านี้ถูกเพิ่มในรายการแล้ว');
                                   return;
                                 }
+                                const existingGroup = bookingGroups.find(g => g.name === currentGroupName);
+                                let targetGroupId = existingGroup?.groupId;
+
+                                if (bookingAddMode === 'group') {
+                                  // 1. Try to find ID from existing group
+                                  // 2. Try to find ID from other peers in the same group (in case group not yet in bookingGroups state)
+                                  // 3. Generate new ID
+                                  const peerPax = bookingPaxList.find(p => p.groupName === currentGroupName && p.groupId);
+                                  targetGroupId = targetGroupId || peerPax?.groupId || `GRP-${selectedRound?.id || 0}-${Date.now()}`;
+
+                                  if (!existingGroup && currentGroupName) {
+                                    setBookingGroups(prev => {
+                                      if (prev.find(g => g.name === currentGroupName)) return prev;
+                                      return [...prev, {
+                                        groupId: targetGroupId,
+                                        name: currentGroupName,
+                                        roundId: selectedRound?.id || 0,
+                                        totalAmount: 0,
+                                        paidAmount: 0,
+                                        balance: 0,
+                                        bookingType: 'group'
+                                      }];
+                                    });
+                                  }
+                                }
+
                                 const newPax = {
                                   ...c,
                                   customerNote: c.remark || '', // Copy original DB remark to customerNote
@@ -5503,7 +5611,7 @@ function TourSystemApp() {
                                   // NO paymentStatus initially - will be set after payment process
                                   // bookingId will be set after confirmation
                                   bookingType: bookingAddMode,
-                                  groupId: bookingAddMode === 'group' ? `GRP-${selectedRound?.id || 0}-${Date.now()}` : null,
+                                  groupId: targetGroupId,
                                   groupName: bookingAddMode === 'group' ? currentGroupName : null,
                                   paidAmount: 0 // Initialize paid amount
                                 };
