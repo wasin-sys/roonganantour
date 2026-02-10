@@ -212,30 +212,49 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtext, icon: Icon, 
 
 import CustomerDashboard from './pages/CustomerDashboard';
 
+const BASE_URL = import.meta.env.BASE_URL;
+
 // Basic navigation helper
 export const navigate = (to: string) => {
-  window.history.pushState({}, '', to);
+  // Handle root path navigation
+  let targetPath = to;
+  if (to.startsWith('/')) {
+    targetPath = to.substring(1);
+  }
+
+  const fullPath = `${BASE_URL}${targetPath}`;
+  window.history.pushState({}, '', fullPath);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
 export default function App() {
-  const [path, setPath] = useState(window.location.pathname);
+  const [path, setPath] = useState(() => {
+    const p = window.location.pathname;
+    if (p.startsWith(BASE_URL) && BASE_URL !== '/') {
+      return '/' + p.substring(BASE_URL.length);
+    }
+    return p;
+  });
 
   useEffect(() => {
     const handleLocationChange = () => {
-      setPath(window.location.pathname);
+      let p = window.location.pathname;
+      if (p.startsWith(BASE_URL) && BASE_URL !== '/') {
+        p = '/' + p.substring(BASE_URL.length);
+      }
+      setPath(p);
     };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
   // Separate Path for Customer Login
-  if (path === '/login') {
+  if (path === '/login' || path === '/login/') {
     return <CustomerLogin />;
   }
 
   // Path for Customer Dashboard (After Login)
-  if (path === '/customer') {
+  if (path === '/customer' || path === '/customer/') {
     return <CustomerDashboard />;
   }
 

@@ -4,7 +4,9 @@ import { MessageCircle, ArrowRight, ShieldCheck, Globe, Star } from 'lucide-reac
 const CustomerLogin: React.FC = () => {
     const handleLineLogin = () => {
         // Mock Liff Login and navigate to dashboard
-        window.history.pushState({}, '', '/customer');
+        const baseUrl = import.meta.env.BASE_URL;
+        const targetPath = baseUrl.endsWith('/') ? `${baseUrl}customer` : `${baseUrl}/customer`;
+        window.history.pushState({}, '', targetPath);
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
 

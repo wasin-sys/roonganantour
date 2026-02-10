@@ -195,7 +195,16 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ targetCustomerId 
             </div>
 
             <button
-                onClick={() => { if (onBack) onBack(); else window.location.href = '/login'; }}
+                onClick={() => {
+                    if (onBack) {
+                        onBack();
+                    } else {
+                        const baseUrl = import.meta.env.BASE_URL;
+                        const targetPath = baseUrl.endsWith('/') ? `${baseUrl}login` : `${baseUrl}/login`;
+                        window.history.pushState({}, '', targetPath);
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                    }
+                }}
                 className="w-full bg-slate-100/80 text-slate-500 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-rose-50 hover:text-rose-600 transition-all"
             >
                 <LogOut size={16} /> {isAdmin ? 'ออกจากการดูหน้าลูกค้า' : 'ออกจากระบบ'}
