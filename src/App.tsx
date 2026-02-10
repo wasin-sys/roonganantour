@@ -2079,7 +2079,7 @@ function TourSystemApp() {
                 <div className="flex-1 min-w-[60px] text-right">สถานะ</div>
               </div>
 
-              {rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
+              {selectedRoute && rounds.filter(r => r.routeId === selectedRoute.id).map(round => {
                 const isFull = round.sold >= round.seats;
                 const prices = (round.price || selectedRoute?.price || {}) as RoundPricing;
 
@@ -2212,6 +2212,7 @@ function TourSystemApp() {
             {/* === สรุปสถานะการชำระเงิน (Dynamic Calculation) === */}
             {(() => {
               const getPaxStatus = (p: Passenger) => {
+                if (!p || !selectedRound) return 'pending';
                 const total = selectedRound.price?.[p.roomType || 'adultTwin'] || 0;
                 const paid = p.paidAmount || 0;
 
@@ -2414,6 +2415,7 @@ function TourSystemApp() {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                           {indivPax.map((pax, idx) => {
+                            if (!pax) return null;
                             const total = selectedRound.price?.[pax.roomType || 'adultTwin'] || 0;
                             // Fix: if status is paid but amount is 0 (legacy data), treat as full paid
                             const paid = pax.paidAmount || (pax.paymentStatus === 'paid' ? total : 0);
