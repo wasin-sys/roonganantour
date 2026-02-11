@@ -1,6 +1,6 @@
 import React from 'react';
 import { TaxInvoice, Booking, Round, Route, Receipt, BankAccount } from '../../types';
-import logo from '../../../dist/roonganan_newlogo.png';
+import logo from '../../assets/roonganan_newlogo.png';
 
 interface TaxInvoicePDFProps {
     taxInvoice: TaxInvoice;

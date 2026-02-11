@@ -1,6 +1,6 @@
 import React from 'react';
 import { Receipt, Booking, Round, Route, BankAccount } from '../../types';
-import logo from '../../../dist/roonganan_newlogo.png';
+import logo from '../../assets/roonganan_newlogo.png';
 
 interface ReceiptPDFProps {
     receipt: Receipt;

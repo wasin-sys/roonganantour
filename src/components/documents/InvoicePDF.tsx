@@ -1,6 +1,6 @@
 import React from 'react';
 import { BillingNote, Booking, Round, Route, BankAccount } from '../../types';
-import logo from '../../../dist/roonganan_newlogo.png';
+import logo from '../../assets/roonganan_newlogo.png';
 
 interface InvoicePDFProps {
     billingNote: BillingNote;

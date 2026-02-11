@@ -24,7 +24,7 @@ import {
     MOCK_BOOKING_GROUPS
 } from '../mockData';
 
-import logo from '../../dist/roonganan_newlogo.png';
+import logo from '../assets/roonganan_newlogo.png';
 
 interface CustomerDashboardProps {
     targetCustomerId?: number;
