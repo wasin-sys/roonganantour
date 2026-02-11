@@ -1,15 +1,16 @@
 import React from 'react';
-import { Receipt, Booking, Round, Route } from '../../types';
-import logo from '../../assets/roonganan_logo.png';
+import { Receipt, Booking, Round, Route, BankAccount } from '../../types';
+import logo from '../../../dist/roonganan_newlogo.png';
 
 interface ReceiptPDFProps {
     receipt: Receipt;
     booking?: Booking;
     round?: Round;
     route?: Route;
+    bankAccount?: BankAccount;
 }
 
-const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route }) => {
+const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route, bankAccount }) => {
 
     // Helper functions
     const formatCurrency = (amount: number) => {
@@ -139,24 +140,18 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
                     {/* Left: Logo and Company Info */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                         <div style={{
-                            width: '60px',
-                            height: '60px',
-                            minWidth: '60px',
-                            minHeight: '60px',
+                            height: '65px',
+                            width: 'auto',
                             flexShrink: 0,
-                            backgroundColor: 'white',
-                            border: `1px solid ${CI[500]}`,
-                            borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            overflow: 'hidden'
                         }}>
-                            <img src={logo} alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                            <img src={logo} alt="Logo" style={{ height: '100%', width: 'auto', maxWidth: '180px', objectFit: 'contain' }} />
                         </div>
                         <div style={{ paddingTop: '2px' }}>
                             <div style={{ fontSize: '15px', fontWeight: 'bold', color: CI[800], textTransform: 'uppercase', lineHeight: '1.2' }}>
-                                ROONG A NAN TOUR
+                                ROONG ANAN TOUR
                             </div>
                             <div style={{ fontSize: '13px', fontWeight: 'bold', color: CI[600] }}>
                                 บจก. รุ่งอนันต์ ทัวร์
@@ -359,7 +354,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ receipt, booking, round, route 
                                                 fontSize: '9px',
                                                 color: '#6b7280',
                                             }}>
-                                                <div>ธนาคาร: <span style={{ color: '#111827' }}>กสิกรไทย</span> เลขบัญชี: <span style={{ fontFamily: 'monospace' }}>123-4-56789-0</span></div>
+                                                <div>ธนาคาร: <span style={{ color: '#111827' }}>{bankAccount?.bank || '-'}</span> เลขบัญชี: <span style={{ fontFamily: 'monospace' }}>{bankAccount?.accountNumber || '-'}</span></div>
                                             </div>
                                         )}
                                     </div>

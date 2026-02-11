@@ -1,15 +1,16 @@
 import React from 'react';
-import { BillingNote, Booking, Round, Route } from '../../types';
-import logo from '../../assets/roonganan_logo.png';
+import { BillingNote, Booking, Round, Route, BankAccount } from '../../types';
+import logo from '../../../dist/roonganan_newlogo.png';
 
 interface InvoicePDFProps {
     billingNote: BillingNote;
     booking?: Booking;
     round?: Round;
     route?: Route;
+    bankAccount?: BankAccount;
 }
 
-const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, route }) => {
+const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, route, bankAccount }) => {
 
     // Helper function used across pages
     const formatCurrency = (amount: number) => {
@@ -182,24 +183,18 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                     {/* Left: Logo and Company Info */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                         <div style={{
-                            width: '60px',
-                            height: '60px',
-                            minWidth: '60px', // Force min width
-                            minHeight: '60px', // Force min height
-                            flexShrink: 0, // Prevent squashing
-                            backgroundColor: 'white',
-                            border: `1px solid ${CI[500]}`,
-                            borderRadius: '50%',
+                            height: '65px',
+                            width: 'auto',
+                            flexShrink: 0,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            overflow: 'hidden'
                         }}>
-                            <img src={logo} alt="Logo" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                            <img src={logo} alt="Logo" style={{ height: '100%', width: 'auto', maxWidth: '180px', objectFit: 'contain' }} />
                         </div>
                         <div style={{ paddingTop: '2px' }}>
                             <div style={{ fontSize: '15px', fontWeight: 'bold', color: CI[800], textTransform: 'uppercase', lineHeight: '1.2' }}>
-                                ROONG A NAN TOUR
+                                ROONG ANAN TOUR
                             </div>
                             <div style={{ fontSize: '13px', fontWeight: 'bold', color: CI[600] }}>
                                 บจก. รุ่งอนันต์ ทัวร์
@@ -379,15 +374,15 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ billingNote, booking, round, ro
                             <div style={{ fontSize: '10px', color: '#374151', paddingLeft: '6px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                                     <span style={{ color: '#6b7280' }}>ธนาคาร:</span>
-                                    <span style={{ fontWeight: 600, color: '#111827' }}>กสิกรไทย (KBank)</span>
+                                    <span style={{ fontWeight: 600, color: '#111827' }}>{bankAccount?.bank || '-'}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                                     <span style={{ color: '#6b7280' }}>เลขบัญชี:</span>
-                                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#111827' }}>123-4-56789-0</span>
+                                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#111827' }}>{bankAccount?.accountNumber || '-'}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                     <span style={{ color: '#6b7280' }}>ชื่อบัญชี:</span>
-                                    <span style={{ color: '#111827' }}>บจก. รุ่งอนันต์ ทัวร์</span>
+                                    <span style={{ color: '#111827' }}>{bankAccount?.accountName || '-'}</span>
                                 </div>
                             </div>
                             <div style={{

@@ -438,6 +438,21 @@ function TourSystemApp() {
     const relatedRound = rounds.find(r => r.id === (relatedBooking?.roundId || data.roundId));
     const relatedRoute = routes.find(r => r.id === (relatedRound?.routeId || data.routeId));
 
+    // Find Bank Account for Invoice
+    let relatedBank: BankAccount | undefined;
+    if (type === 'invoice') {
+      if (selectedBillingBankId) {
+        relatedBank = bankAccounts.find(b => String(b.id) === String(selectedBillingBankId));
+      } else if ((data as BillingNote).bankAccountId) {
+        relatedBank = bankAccounts.find(b => b.id === (data as BillingNote).bankAccountId);
+      }
+      if (!relatedBank && bankAccounts.length > 0) relatedBank = bankAccounts[0];
+    } else if (type === 'receipt') {
+      if ((data as Receipt).bankAccountId) {
+        relatedBank = bankAccounts.find(b => b.id === (data as Receipt).bankAccountId);
+      }
+    }
+
     // Render component to the wrapper
     const root = createRoot(pdfWrapper);
 
@@ -448,11 +463,18 @@ function TourSystemApp() {
           booking={relatedBooking}
           round={relatedRound}
           route={relatedRoute}
+          bankAccount={relatedBank}
         />
       );
     } else if (type === 'tax_invoice') {
       const taxInvoiceData = data as TaxInvoice;
       const relatedReceipts = receipts.filter(r => taxInvoiceData.receiptIds.includes(r.id));
+
+      let taxInvoiceBank: BankAccount | undefined;
+      if (relatedReceipts.length > 0 && relatedReceipts[0].bankAccountId) {
+        taxInvoiceBank = bankAccounts.find(b => b.id === relatedReceipts[0].bankAccountId);
+      }
+
       root.render(
         <TaxInvoicePDF
           taxInvoice={taxInvoiceData}
@@ -460,6 +482,7 @@ function TourSystemApp() {
           booking={relatedBooking}
           round={relatedRound}
           route={relatedRoute}
+          bankAccount={taxInvoiceBank}
         />
       );
     } else {
@@ -469,6 +492,7 @@ function TourSystemApp() {
           booking={relatedBooking}
           round={relatedRound}
           route={relatedRoute}
+          bankAccount={relatedBank}
         />
       );
     }
